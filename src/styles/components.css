@@ -1,0 +1,231 @@
+/* ==========================================================================
+   Mesa — Component styles
+   Ported from the Mesa design-system handoff. The handoff injected each
+   component's CSS at runtime via injectOnce(); for SSR we collect it here as a
+   single stylesheet imported once from globals.css. All values are Mesa tokens.
+   ========================================================================== */
+
+/* --- Button --------------------------------------------------------------- */
+.mesa-btn {
+  --_bg: var(--brand); --_fg: var(--brand-on); --_bd: transparent;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-family: var(--font-sans); font-weight: 600; line-height: 1;
+  border-radius: var(--radius-pill); border: 1.5px solid var(--_bd);
+  background: var(--_bg); color: var(--_fg); cursor: pointer;
+  white-space: nowrap; text-decoration: none;
+  transition: background var(--dur-fast) var(--ease-standard),
+              transform var(--dur-fast) var(--ease-standard),
+              border-color var(--dur-fast) var(--ease-standard),
+              box-shadow var(--dur-fast) var(--ease-standard);
+}
+.mesa-btn:focus-visible { outline: none; box-shadow: var(--ring); }
+.mesa-btn:active { transform: scale(0.975); }
+.mesa-btn[disabled] { opacity: 0.45; cursor: not-allowed; transform: none; }
+.mesa-btn--sm { height: 36px; padding: 0 16px; font-size: 14px; }
+.mesa-btn--md { height: 44px; padding: 0 22px; font-size: 15px; }
+.mesa-btn--lg { height: 54px; padding: 0 30px; font-size: 17px; }
+.mesa-btn--block { display: flex; width: 100%; }
+.mesa-btn--primary { --_bg: var(--brand); --_fg: var(--brand-on); }
+.mesa-btn--primary:hover:not([disabled]) { --_bg: var(--brand-hover); }
+.mesa-btn--primary:active:not([disabled]) { --_bg: var(--brand-active); }
+.mesa-btn--secondary { --_bg: var(--surface-card); --_fg: var(--text-strong); --_bd: var(--border-strong); }
+.mesa-btn--secondary:hover:not([disabled]) { --_bg: var(--surface-sunken); --_bd: var(--bean-400); }
+.mesa-btn--soft { --_bg: var(--brand-soft); --_fg: var(--clay-700); }
+.mesa-btn--soft:hover:not([disabled]) { --_bg: var(--clay-100); }
+.mesa-btn--ghost { --_bg: transparent; --_fg: var(--text-body); }
+.mesa-btn--ghost:hover:not([disabled]) { --_bg: var(--surface-muted); }
+.mesa-btn--danger { --_bg: var(--soldout); --_fg: #fff; }
+.mesa-btn--danger:hover:not([disabled]) { --_bg: var(--berry-600); }
+.mesa-btn svg { width: 1.15em; height: 1.15em; }
+
+/* --- IconButton ----------------------------------------------------------- */
+.mesa-iconbtn {
+  --_bg: transparent; --_fg: var(--text-body); --_bd: transparent;
+  display: inline-grid; place-items: center; flex: none;
+  border-radius: var(--radius-pill); border: 1.5px solid var(--_bd);
+  background: var(--_bg); color: var(--_fg); cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-standard),
+              transform var(--dur-fast) var(--ease-standard),
+              color var(--dur-fast) var(--ease-standard);
+}
+.mesa-iconbtn:focus-visible { outline: none; box-shadow: var(--ring); }
+.mesa-iconbtn:active { transform: scale(0.92); }
+.mesa-iconbtn[disabled] { opacity: 0.4; cursor: not-allowed; transform: none; }
+.mesa-iconbtn--sm { width: 36px; height: 36px; }
+.mesa-iconbtn--md { width: 44px; height: 44px; }
+.mesa-iconbtn--lg { width: 52px; height: 52px; }
+.mesa-iconbtn--sm svg { width: 18px; height: 18px; }
+.mesa-iconbtn--md svg { width: 21px; height: 21px; }
+.mesa-iconbtn--lg svg { width: 24px; height: 24px; }
+.mesa-iconbtn--ghost:hover:not([disabled]) { --_bg: var(--surface-muted); }
+.mesa-iconbtn--soft { --_bg: var(--surface-card); --_bd: var(--border-default); box-shadow: var(--shadow-xs); }
+.mesa-iconbtn--soft:hover:not([disabled]) { --_bg: var(--surface-sunken); }
+.mesa-iconbtn--primary { --_bg: var(--brand); --_fg: var(--brand-on); }
+.mesa-iconbtn--primary:hover:not([disabled]) { --_bg: var(--brand-hover); }
+
+/* --- Input ---------------------------------------------------------------- */
+.mesa-field { display: flex; flex-direction: column; gap: 6px; font-family: var(--font-sans); }
+.mesa-field__label { font-size: 14px; font-weight: 600; color: var(--text-strong); }
+.mesa-field__req { color: var(--brand); margin-left: 2px; }
+.mesa-field__hint { font-size: 12.5px; color: var(--text-muted); }
+.mesa-field__hint--error { color: var(--soldout); }
+.mesa-input-wrap { position: relative; display: flex; align-items: center; }
+.mesa-input-wrap svg { position: absolute; width: 18px; height: 18px; color: var(--text-subtle); pointer-events: none; }
+.mesa-input-wrap--icon svg { left: 14px; }
+.mesa-input {
+  width: 100%; font-family: var(--font-sans); font-size: 15px; color: var(--text-strong);
+  background: var(--surface-card); border: 1.5px solid var(--border-default);
+  border-radius: var(--radius-md); padding: 0 14px; height: 46px;
+  transition: border-color var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard);
+}
+.mesa-input::placeholder { color: var(--text-subtle); }
+.mesa-input:hover { border-color: var(--border-strong); }
+.mesa-input:focus { outline: none; border-color: var(--border-focus); box-shadow: var(--ring); }
+.mesa-input-wrap--icon .mesa-input { padding-left: 42px; }
+.mesa-input[disabled] { background: var(--surface-sunken); color: var(--text-subtle); cursor: not-allowed; }
+.mesa-input--error { border-color: var(--soldout); }
+.mesa-input--error:focus { box-shadow: 0 0 0 3px color-mix(in oklab, var(--soldout) 24%, transparent); }
+textarea.mesa-input { height: auto; padding: 12px 14px; line-height: 1.5; resize: vertical; min-height: 96px; }
+
+/* --- Select --------------------------------------------------------------- */
+.mesa-select-wrap { position: relative; display: flex; align-items: center; }
+.mesa-select-wrap > svg, .mesa-select-wrap > i {
+  position: absolute; right: 14px; width: 18px; height: 18px;
+  color: var(--text-muted); pointer-events: none;
+}
+.mesa-select {
+  width: 100%; appearance: none; -webkit-appearance: none;
+  font-family: var(--font-sans); font-size: 15px; color: var(--text-strong);
+  background: var(--surface-card); border: 1.5px solid var(--border-default);
+  border-radius: var(--radius-md); padding: 0 40px 0 14px; height: 46px; cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard);
+}
+.mesa-select:hover { border-color: var(--border-strong); }
+.mesa-select:focus { outline: none; border-color: var(--border-focus); box-shadow: var(--ring); }
+.mesa-select[disabled] { background: var(--surface-sunken); color: var(--text-subtle); cursor: not-allowed; }
+
+/* --- Switch --------------------------------------------------------------- */
+.mesa-switch { display: inline-flex; align-items: center; gap: 10px; font-family: var(--font-sans); cursor: pointer; user-select: none; }
+.mesa-switch[data-disabled="true"] { opacity: 0.5; cursor: not-allowed; }
+.mesa-switch__track {
+  position: relative; flex: none; width: 46px; height: 28px; border-radius: var(--radius-pill);
+  background: var(--bean-300); transition: background var(--dur-base) var(--ease-standard);
+}
+.mesa-switch__thumb {
+  position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%;
+  background: var(--white); box-shadow: var(--shadow-sm);
+  transition: transform var(--dur-base) var(--ease-standard);
+}
+.mesa-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+.mesa-switch input:checked + .mesa-switch__track { background: var(--available); }
+.mesa-switch input:checked + .mesa-switch__track .mesa-switch__thumb { transform: translateX(18px); }
+.mesa-switch input:focus-visible + .mesa-switch__track { box-shadow: var(--ring); }
+.mesa-switch__label { font-size: 15px; color: var(--text-strong); font-weight: 500; }
+.mesa-switch[data-tone="brand"] input:checked + .mesa-switch__track { background: var(--brand); }
+
+/* --- Badge ---------------------------------------------------------------- */
+.mesa-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-sans); font-weight: 600; line-height: 1;
+  border-radius: var(--radius-pill); white-space: nowrap;
+  font-size: 12px; padding: 5px 11px;
+}
+.mesa-badge--sm { font-size: 11px; padding: 4px 9px; }
+.mesa-badge__dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.mesa-badge svg, .mesa-badge i { width: 13px; height: 13px; }
+.mesa-badge--available { background: var(--available-soft); color: var(--sage-700); }
+.mesa-badge--soldout   { background: var(--soldout-soft);   color: var(--berry-600); }
+.mesa-badge--highlight { background: var(--highlight-soft); color: var(--honey-700); }
+.mesa-badge--brand     { background: var(--brand-soft);     color: var(--clay-700); }
+.mesa-badge--neutral   { background: var(--surface-muted);  color: var(--text-muted); }
+.mesa-badge--solid     { background: var(--brand);          color: var(--brand-on); }
+
+/* --- Card ----------------------------------------------------------------- */
+.mesa-card {
+  background: var(--surface-card); border-radius: var(--radius-lg);
+  border: 1px solid var(--border-soft); overflow: hidden;
+  transition: box-shadow var(--dur-base) var(--ease-standard),
+              transform var(--dur-base) var(--ease-standard);
+}
+.mesa-card--flat { box-shadow: none; }
+.mesa-card--raised { box-shadow: var(--shadow-md); border-color: transparent; }
+.mesa-card--interactive { cursor: pointer; }
+.mesa-card--interactive:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); border-color: transparent; }
+.mesa-card--interactive:active { transform: translateY(0); box-shadow: var(--shadow-sm); }
+.mesa-card__pad { padding: var(--space-5); }
+
+/* --- Avatar --------------------------------------------------------------- */
+.mesa-avatar {
+  display: inline-grid; place-items: center; flex: none; overflow: hidden;
+  background: var(--clay-100); color: var(--clay-700);
+  font-family: var(--font-display); font-weight: 600; line-height: 1;
+  border-radius: var(--radius-md);
+}
+.mesa-avatar--circle { border-radius: var(--radius-circle); }
+.mesa-avatar--ring { box-shadow: 0 0 0 2px var(--surface-card), 0 0 0 3.5px var(--border-strong); }
+.mesa-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mesa-avatar--xs { width: 28px; height: 28px; font-size: 12px; }
+.mesa-avatar--sm { width: 36px; height: 36px; font-size: 14px; }
+.mesa-avatar--md { width: 48px; height: 48px; font-size: 18px; }
+.mesa-avatar--lg { width: 64px; height: 64px; font-size: 24px; }
+.mesa-avatar--xl { width: 88px; height: 88px; font-size: 32px; }
+
+/* --- Tabs ----------------------------------------------------------------- */
+.mesa-tabs { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; }
+.mesa-tabs::-webkit-scrollbar { display: none; }
+.mesa-tab {
+  flex: none; font-family: var(--font-sans); font-size: 15px; font-weight: 600;
+  color: var(--text-muted); background: transparent; border: 1.5px solid transparent;
+  border-radius: var(--radius-pill); padding: 9px 18px; cursor: pointer; white-space: nowrap;
+  transition: background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard),
+              border-color var(--dur-fast) var(--ease-standard);
+}
+.mesa-tab:hover { background: var(--surface-muted); color: var(--text-strong); }
+.mesa-tab[aria-selected="true"] { background: var(--brand); color: var(--brand-on); }
+.mesa-tab:focus-visible { outline: none; box-shadow: var(--ring); }
+.mesa-tabs--underline { gap: 4px; border-bottom: 1px solid var(--border-soft); }
+.mesa-tabs--underline .mesa-tab { border-radius: 0; padding: 12px 14px; border: 0; border-bottom: 2.5px solid transparent; }
+.mesa-tabs--underline .mesa-tab:hover { background: transparent; color: var(--text-strong); }
+.mesa-tabs--underline .mesa-tab[aria-selected="true"] { background: transparent; color: var(--brand); border-bottom-color: var(--brand); }
+
+/* --- Logo ----------------------------------------------------------------- */
+.mesa-logo { display: inline-flex; align-items: center; gap: 0.34em; line-height: 1; color: var(--brand-ink); }
+.mesa-logo--onbrand, .mesa-logo--ondark { color: currentColor; }
+.mesa-logo__mark { flex: none; width: 1.12em; height: 1.12em; display: block; }
+.mesa-logo__word { font-family: var(--font-display); font-weight: 500; letter-spacing: -0.01em; color: inherit; }
+
+/* --- MenuItem ------------------------------------------------------------- */
+.mesa-mi { font-family: var(--font-sans); color: var(--text-body); text-align: left; }
+.mesa-mi[data-clickable="true"] { cursor: pointer; }
+.mesa-mi__name { font-family: var(--font-display); font-weight: 500; color: var(--text-strong); letter-spacing: -0.01em; }
+.mesa-mi__desc { color: var(--text-muted); font-size: 13.5px; line-height: 1.45; margin-top: 3px; }
+.mesa-mi__price { font-family: var(--font-display); color: var(--text-strong); font-weight: 500; white-space: nowrap; }
+.mesa-mi__photo { background: var(--surface-muted); object-fit: cover; display: block; }
+.mesa-mi--soldout .mesa-mi__photo { filter: grayscale(0.9) brightness(0.97); opacity: 0.7; }
+.mesa-mi--soldout .mesa-mi__name, .mesa-mi--soldout .mesa-mi__price { color: var(--text-subtle); }
+.mesa-mi--row { display: flex; gap: 14px; align-items: flex-start; width: 100%; background: transparent; border: 0; padding: 14px 0; border-bottom: 1px solid var(--border-soft); }
+.mesa-mi--row .mesa-mi__body { flex: 1; min-width: 0; }
+.mesa-mi--row .mesa-mi__top { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.mesa-mi--row .mesa-mi__name { font-size: 17px; }
+.mesa-mi--row .mesa-mi__price { font-size: 16px; }
+.mesa-mi--row .mesa-mi__photo { width: 76px; height: 76px; border-radius: var(--radius-md); flex: none; }
+.mesa-mi--row[data-clickable="true"]:hover .mesa-mi__name { color: var(--brand); }
+.mesa-mi--card { display: flex; flex-direction: column; background: var(--surface-card); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); border: 1px solid var(--border-soft); width: 100%; padding: 0; transition: box-shadow var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard); }
+.mesa-mi--card[data-clickable="true"]:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+.mesa-mi--card .mesa-mi__photowrap { position: relative; }
+.mesa-mi--card .mesa-mi__photo { width: 100%; aspect-ratio: 4 / 3; }
+.mesa-mi--card .mesa-mi__badge { position: absolute; top: 10px; left: 10px; }
+.mesa-mi--card .mesa-mi__body { padding: 13px 15px 16px; }
+.mesa-mi--card .mesa-mi__top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.mesa-mi--card .mesa-mi__name { font-size: 18px; }
+.mesa-mi--card .mesa-mi__price { font-size: 16px; }
+.mesa-mi__placeholder { display: grid; place-items: center; color: var(--bean-300); }
+
+/* --- Stepper -------------------------------------------------------------- */
+.mesa-stepper { display: inline-flex; align-items: center; gap: 2px; background: var(--surface-card); border: 1.5px solid var(--border-default); border-radius: var(--radius-pill); padding: 3px; }
+.mesa-stepper__btn { width: 34px; height: 34px; display: grid; place-items: center; border: 0; background: transparent; color: var(--brand); border-radius: var(--radius-pill); cursor: pointer; transition: background var(--dur-fast) var(--ease-standard); }
+.mesa-stepper__btn:hover:not([disabled]) { background: var(--brand-soft); }
+.mesa-stepper__btn:active:not([disabled]) { transform: scale(0.9); }
+.mesa-stepper__btn[disabled] { color: var(--bean-300); cursor: not-allowed; }
+.mesa-stepper__btn svg { width: 18px; height: 18px; }
+.mesa-stepper__val { min-width: 26px; text-align: center; font-family: var(--font-sans); font-weight: 700; font-size: 16px; color: var(--text-strong); font-variant-numeric: tabular-nums; }

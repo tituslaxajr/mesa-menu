@@ -1,0 +1,110 @@
+/* ==========================================================================
+   Mesa — Color tokens
+   Warm, creamy, appetizing. A cafe palette: espresso neutrals, terracotta
+   primary, sage for "available", honey for highlights, a muted berry for
+   sold-out. Soft contrast, nothing corporate-cold.
+   ========================================================================== */
+
+:root {
+  /* --- Brand primary: Clay / terracotta ------------------------------------ */
+  --clay-50:  #FBEEE7;
+  --clay-100: #F6D9C9;
+  --clay-200: #EFBBA0;
+  --clay-300: #E59B77;
+  --clay-400: #D9774A;
+  --clay-500: #C8592E;   /* primary */
+  --clay-600: #AE4A24;
+  --clay-700: #8E3B1D;
+  --clay-800: #6E2E17;
+  --clay-900: #4E2110;
+
+  /* --- Warm neutrals: Bean (espresso → cream) ------------------------------ */
+  --bean-950: #1F140E;   /* near-black espresso */
+  --bean-900: #2A1D16;
+  --bean-800: #3B2A21;
+  --bean-700: #4F392D;
+  --bean-600: #6B5142;
+  --bean-500: #8A6E5C;
+  --bean-400: #AB9180;
+  --bean-300: #C9B6A5;
+  --bean-200: #E2D5C6;
+  --bean-150: #EDE3D5;
+  --bean-100: #F3EBDE;
+  --bean-50:  #FAF4EA;
+  --cream:    #FBF6EE;   /* default page background */
+  --white:    #FFFFFF;
+
+  /* --- Sage: freshness / available / success ------------------------------- */
+  --sage-50:  #EEF2E8;
+  --sage-100: #DCE5CF;
+  --sage-300: #A9BE8B;
+  --sage-500: #6E8B5B;   /* success */
+  --sage-600: #5A7549;
+  --sage-700: #455A38;
+
+  /* --- Honey: highlight / warning / "new" ---------------------------------- */
+  --honey-50:  #FCF1DA;
+  --honey-100: #F8E2B4;
+  --honey-300: #EEC56A;
+  --honey-500: #E0A53F;  /* warning / highlight */
+  --honey-600: #C2862A;
+  --honey-700: #97661E;
+
+  /* --- Berry: sold-out / destructive --------------------------------------- */
+  --berry-50:  #F8E7E4;
+  --berry-100: #EFC8C2;
+  --berry-300: #D58C82;
+  --berry-500: #B6493F;  /* error / sold-out */
+  --berry-600: #98382F;
+  --berry-700: #762A23;
+
+  /* ======================================================================
+     Semantic aliases — reference these in components, not the raw ramps.
+     ====================================================================== */
+
+  /* Surfaces */
+  --surface-page:       var(--cream);
+  --surface-card:       var(--white);
+  --surface-sunken:     var(--bean-50);
+  --surface-raised:     var(--white);
+  --surface-inverse:    var(--bean-900);
+  --surface-muted:      var(--bean-100);
+
+  /* Text */
+  --text-strong:    var(--bean-900);
+  --text-body:      var(--bean-800);
+  --text-muted:     var(--bean-600);
+  --text-subtle:    var(--bean-500);
+  --text-inverse:   var(--bean-50);
+  --text-on-clay:   #FFF6F0;
+
+  /* Borders / hairlines */
+  --border-soft:    var(--bean-150);
+  --border-default: var(--bean-200);
+  --border-strong:  var(--bean-300);
+  --border-focus:   var(--clay-500);
+
+  /* Brand / interactive */
+  --brand:          var(--clay-500);
+  --brand-hover:    var(--clay-600);
+  --brand-active:   var(--clay-700);
+  --brand-soft:     var(--clay-50);
+  --brand-on:       var(--text-on-clay);
+  --brand-ink:      #4A2510;   /* espresso brown of the logo mark & wordmark */
+
+  /* Status */
+  --available:      var(--sage-500);
+  --available-soft: var(--sage-50);
+  --soldout:        var(--berry-500);
+  --soldout-soft:   var(--berry-50);
+  --highlight:      var(--honey-500);
+  --highlight-soft: var(--honey-50);
+
+  /* Accent surfaces for section/hero variety */
+  --accent-cream:   var(--bean-50);
+  --accent-clay:    var(--clay-500);
+  --accent-espresso:var(--bean-900);
+
+  /* Focus ring */
+  --ring: 0 0 0 3px color-mix(in oklab, var(--clay-500) 28%, transparent);
+}

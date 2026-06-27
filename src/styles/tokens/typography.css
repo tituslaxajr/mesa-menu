@@ -1,0 +1,50 @@
+/* ==========================================================================
+   Mesa — Typography tokens
+   Display: Newsreader (warm editorial serif) — headlines, menu category &
+            item names, prices, warm italic accents.
+   UI/Body: Hanken Grotesk (clean humanist sans) — everything functional.
+   ========================================================================== */
+
+:root {
+  /* Font families resolve through next/font CSS variables (see app/layout.tsx),
+     with web-safe fallbacks so type still renders if a variable is missing. */
+  --font-display: var(--font-newsreader), Georgia, 'Times New Roman', serif;
+  --font-sans: var(--font-hanken), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, Menlo, Consolas, monospace;
+
+  /* Type scale (1.20 minor-third-ish, tuned). rem assumes 16px root. */
+  --text-2xs: 0.6875rem;  /* 11px — micro labels, only when essential */
+  --text-xs:  0.75rem;    /* 12px */
+  --text-sm:  0.875rem;   /* 14px */
+  --text-base:1rem;       /* 16px — body default */
+  --text-md:  1.125rem;   /* 18px */
+  --text-lg:  1.375rem;   /* 22px */
+  --text-xl:  1.75rem;    /* 28px */
+  --text-2xl: 2.25rem;    /* 36px */
+  --text-3xl: 3rem;       /* 48px */
+  --text-4xl: 4rem;       /* 64px */
+  --text-5xl: 5.25rem;    /* 84px — hero display */
+
+  /* Weights */
+  --weight-regular: 400;
+  --weight-medium:  500;
+  --weight-semibold:600;
+  --weight-bold:    700;
+
+  /* Line heights */
+  --leading-tight:   1.08;
+  --leading-snug:    1.22;
+  --leading-normal:  1.5;
+  --leading-relaxed: 1.65;
+
+  /* Letter spacing */
+  --tracking-tight:  -0.02em;
+  --tracking-snug:   -0.01em;
+  --tracking-normal: 0;
+  --tracking-wide:   0.04em;
+  --tracking-caps:   0.12em;  /* uppercase eyebrows / micro-labels */
+
+  /* Semantic roles */
+  --role-display-family: var(--font-display);
+  --role-body-family:    var(--font-sans);
+}

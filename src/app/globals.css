@@ -1,49 +1,55 @@
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ==========================================================================
+   Mesa — global stylesheet (single entry point, mirrors the handoff styles.css)
+   Fonts are loaded via next/font in app/layout.tsx, so tokens/fonts.css is
+   intentionally not imported here.
+   ========================================================================== */
+
+@import url('../styles/tokens/colors.css');
+@import url('../styles/tokens/typography.css');
+@import url('../styles/tokens/spacing.css');
+@import url('../styles/tokens/effects.css');
+@import url('../styles/tokens/base.css');
+@import url('../styles/components.css');
+
+/* Smooth in-page anchor scrolling for the landing nav. */
+html { scroll-behavior: smooth; }
+
+/* Shared, gentle enter motion (respects reduced-motion). */
+@keyframes mesa-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.mesa-rise { animation: mesa-rise var(--dur-slow) var(--ease-out) both; }
+
+/* Bottom-sheet motion: scrim fade + panel slide-up. */
+@keyframes mesa-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes mesa-sheet { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.mesa-anim-fade { animation: mesa-fade var(--dur-base) var(--ease-standard) both; }
+.mesa-anim-sheet { animation: mesa-sheet var(--dur-sheet) var(--ease-out) both; }
+.mesa-anim-rise { animation: mesa-rise var(--dur-base) var(--ease-out) both; }
+
+/* Edit drawer slides in from the right. */
+@keyframes mesa-drawer { from { transform: translateX(100%); } to { transform: translateX(0); } }
+.mesa-anim-drawer { animation: mesa-drawer var(--dur-slow) var(--ease-out) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Utility: constrained content column used across marketing + app. */
+.mesa-container { max-width: var(--container-lg); margin: 0 auto; padding-left: 28px; padding-right: 28px; }
+
+/* Responsive nav: drop the tagline, then the section links, as space tightens. */
+@media (max-width: 768px) {
+  .mesa-nav__tagline { display: none; }
+  .mesa-container { padding-left: 18px; padding-right: 18px; }
+}
+@media (max-width: 560px) {
+  .mesa-nav__link--section { display: none; }
 }
 
-html {
-  height: 100%;
-}
-
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-body {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+/* Studio Appearance: drop the live preview to its own row on narrow screens. */
+@media (max-width: 1080px) {
+  .mesa-appearance-grid { grid-template-columns: minmax(0, 1fr) !important; }
 }

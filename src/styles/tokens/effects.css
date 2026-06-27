@@ -1,0 +1,42 @@
+/* ==========================================================================
+   Mesa — Radii, shadows, motion.
+   Soft rounded corners (cozy, not sharp/corporate). Warm-tinted shadows that
+   feel like soft daylight, never cold gray. Gentle, quick motion.
+   ========================================================================== */
+
+:root {
+  /* Corner radii — rounded & friendly */
+  --radius-xs:  6px;
+  --radius-sm:  10px;
+  --radius-md:  14px;   /* default card / input */
+  --radius-lg:  20px;
+  --radius-xl:  28px;
+  --radius-2xl: 36px;
+  --radius-pill:999px;  /* chips, category pills, buttons */
+  --radius-circle:50%;
+
+  /* Shadows — warm, soft, low-spread. Built on espresso, never #000 gray. */
+  --shadow-xs:  0 1px 2px rgba(42, 29, 22, 0.06);
+  --shadow-sm:  0 1px 2px rgba(42, 29, 22, 0.06),
+                0 2px 6px rgba(42, 29, 22, 0.05);
+  --shadow-md:  0 2px 4px rgba(42, 29, 22, 0.05),
+                0 6px 16px rgba(42, 29, 22, 0.08);
+  --shadow-lg:  0 4px 10px rgba(42, 29, 22, 0.07),
+                0 16px 36px rgba(42, 29, 22, 0.12);
+  --shadow-xl:  0 8px 20px rgba(42, 29, 22, 0.10),
+                0 28px 60px rgba(42, 29, 22, 0.16);
+
+  /* Inset / pressed */
+  --shadow-inset: inset 0 1px 2px rgba(42, 29, 22, 0.08);
+
+  /* Focus ring lives in colors.css as --ring */
+
+  /* Motion — gentle and quick; nothing bouncy/gimmicky */
+  --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1); /* @kind other */
+  --ease-out:      cubic-bezier(0.16, 1, 0.3, 1);  /* @kind other */
+  --ease-in-out:   cubic-bezier(0.65, 0, 0.35, 1); /* @kind other */
+  --dur-fast:   120ms; /* @kind other */
+  --dur-base:   200ms; /* @kind other */
+  --dur-slow:   320ms; /* @kind other */
+  --dur-sheet:  420ms; /* @kind other */  /* bottom sheets / dialogs */
+}
