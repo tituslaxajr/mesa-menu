@@ -48,7 +48,7 @@
   --honey-300: #EEC56A;
   --honey-500: #E0A53F;  /* warning / highlight */
   --honey-600: #C2862A;
-  --honey-700: #97661E;
+  --honey-700: #8C5E1A;   /* deep honey — AA (5.0:1) as highlight-badge text on honey-50 */
 
   /* --- Berry: sold-out / destructive --------------------------------------- */
   --berry-50:  #F8E7E4;
@@ -74,7 +74,7 @@
   --text-strong:    var(--bean-900);
   --text-body:      var(--bean-800);
   --text-muted:     var(--bean-600);
-  --text-subtle:    var(--bean-500);
+  --text-subtle:    #806451;   /* between bean-500/600 — AA (>=4.6:1) on cream/white/bean-100, still lighter than --text-muted */
   --text-inverse:   var(--bean-50);
   --text-on-clay:   #FFF6F0;
 
@@ -84,10 +84,12 @@
   --border-strong:  var(--bean-300);
   --border-focus:   var(--clay-500);
 
-  /* Brand / interactive */
-  --brand:          var(--clay-500);
-  --brand-hover:    var(--clay-600);
-  --brand-active:   var(--clay-700);
+  /* Brand / interactive.
+     Brand fill/text is clay-600 (not clay-500) so white-on-brand and
+     brand-on-white both clear WCAG AA (~5.5:1 vs 4.26:1 for clay-500). */
+  --brand:          var(--clay-600);
+  --brand-hover:    var(--clay-700);
+  --brand-active:   var(--clay-800);
   --brand-soft:     var(--clay-50);
   --brand-on:       var(--text-on-clay);
   --brand-ink:      #4A2510;   /* espresso brown of the logo mark & wordmark */

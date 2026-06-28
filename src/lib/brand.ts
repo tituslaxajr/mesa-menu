@@ -76,7 +76,7 @@ export function surfaceVars(surface: string): Record<string, string> {
     "--text-strong": INK,
     "--text-body": "#3B2A21",
     "--text-muted": "#6B5142",
-    "--text-subtle": "#8A6E5C",
+    "--text-subtle": "#806451",
     "--border-soft": "rgba(31,20,14,0.08)",
     "--border-default": "rgba(31,20,14,0.14)",
   };

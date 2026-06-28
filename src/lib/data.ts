@@ -13,6 +13,15 @@ const U = (id: string, w = 600) =>
 /** The five guest-menu layouts an owner can choose from. */
 export type ThemeKey = "warm" | "minimal" | "bold" | "soft" | "playful";
 
+/**
+ * How guests order:
+ *  - "browse"  — menu only, no cart.
+ *  - "counter" — guest builds a cart → summary screen to show staff (for cafés
+ *    that run their own POS; Mesa logs it for analytics but not the kitchen board).
+ *  - "kitchen" — full Mesa ordering: orders flow to the live Orders board.
+ */
+export type OrderMode = "browse" | "counter" | "kitchen";
+
 export interface Cafe {
   slug: string;
   name: string;
@@ -25,6 +34,34 @@ export interface Cafe {
   plan: PlanId;
   /** The guest-menu theme the owner picked. */
   theme: ThemeKey;
+  /** How guests order. Undefined = legacy default (kitchen if the plan allows
+   *  ordering, else browse). "kitchen" requires an ordering plan; "counter" works
+   *  on any plan. */
+  orderMode?: OrderMode;
+  /**
+   * Owner switch to pause guest ordering (e.g. kitchen closed / too busy).
+   * When false, the menu is browse-only regardless of orderMode.
+   */
+  acceptingOrders?: boolean;
+}
+
+/** One selectable choice within an OptionGroup (e.g. "Large", "Oat milk"). */
+export interface OptionChoice {
+  id: string;
+  label: string;
+  /** Price added to the item's base price when chosen, in ₱. Default 0. */
+  priceDelta?: number;
+}
+
+/** A group of choices on an item (e.g. "Size", "Milk", "Add-ons"). */
+export interface OptionGroup {
+  id: string;
+  label: string;
+  /** Single-select groups: must pick one (defaults to the first choice). */
+  required?: boolean;
+  /** true = multi-select (checkboxes, e.g. add-ons); false = single-select. */
+  multi?: boolean;
+  choices: OptionChoice[];
 }
 
 export interface MenuItem {
@@ -37,6 +74,50 @@ export interface MenuItem {
   badge?: string;
   soldOut?: boolean;
   best?: boolean;
+  /** Customizations shown in the item detail sheet. Optional — plain items omit it. */
+  options?: OptionGroup[];
+  /** Dietary / allergen / custom tags. Self-contained (label + emoji) so custom
+   *  ones render everywhere without a registry. Shown on cards + the detail. */
+  tags?: MenuTag[];
+}
+
+/** A menu tag — a preset (vegetarian, etc.) or an owner's custom one (e.g. Keto). */
+export interface MenuTag {
+  id: string;
+  label: string;
+  emoji?: string;
+}
+
+/** Curated quick-add tags. Owners can also create custom tags (e.g. Keto 🥑). */
+export const DIET_TAGS: MenuTag[] = [
+  { id: "vegetarian", label: "Vegetarian", emoji: "🥬" },
+  { id: "vegan", label: "Vegan", emoji: "🌱" },
+  { id: "spicy", label: "Spicy", emoji: "🌶️" },
+  { id: "nuts", label: "Contains nuts", emoji: "🥜" },
+  { id: "dairy", label: "Contains dairy", emoji: "🥛" },
+  { id: "gluten", label: "Contains gluten", emoji: "🌾" },
+];
+/** Build a preset tag object by id (for seeding items). */
+const dt = (id: string): MenuTag => DIET_TAGS.find((t) => t.id === id)!;
+
+/**
+ * Migrate an item whose `tags` were saved in the legacy `string[]` shape (tag
+ * ids) to `MenuTag[]`. Preset ids resolve to their label+emoji; unknown strings
+ * become `{id, label}`. Items already in the new shape pass through unchanged.
+ * Apply when loading items from storage so old café menus don't render blank.
+ */
+export function normalizeTags(item: MenuItem): MenuItem {
+  const raw = item.tags as unknown;
+  if (!Array.isArray(raw) || raw.length === 0) return item;
+  let changed = false;
+  const tags: MenuTag[] = raw.map((t) => {
+    if (typeof t === "string") {
+      changed = true;
+      return DIET_TAGS.find((p) => p.id === t) ?? { id: t, label: t };
+    }
+    return t as MenuTag;
+  });
+  return changed ? { ...item, tags } : item;
 }
 
 export type PlanId = "starter" | "brew" | "roast";
@@ -125,6 +206,25 @@ export function annualPerMonth(monthly: number): number {
   return Math.round((monthly * MONTHS_BILLED_ANNUALLY) / 12);
 }
 
+/**
+ * Phase gate. Phase 1 (beta): browse + counter (show-staff summary). Phase 2
+ * (live order board + guest tracking) is built but held behind this flag — flip
+ * to true to light up "Order to kitchen". Phase 3 (Mesa as POS) is future work.
+ */
+export const PHASE2_ORDERING = false;
+
+/**
+ * The order mode actually in effect for a café: folds in the Phase-2 gate, the
+ * plan (kitchen needs an ordering plan; counter works on any), and the pause
+ * switch (browse when paused). Default is "counter" — the Phase 1 experience.
+ */
+export function resolveOrderMode(cafe: Cafe, planAllowsOrders: boolean): OrderMode {
+  if (cafe.acceptingOrders === false) return "browse";
+  const chosen = cafe.orderMode ?? "counter";
+  if (chosen === "kitchen" && (!PHASE2_ORDERING || !planAllowsOrders)) return "counter";
+  return chosen;
+}
+
 // ---- Demo café + menu ------------------------------------------------------
 
 export const DEMO_CAFE: Cafe = {
@@ -149,31 +249,72 @@ export const DEMO_CAFE_STARTER: Cafe = {
   cover: U("photo-1453614512568-c4024d13c247", 1200),
   plan: "starter",
   theme: "minimal",
+  orderMode: "browse",
 };
 
 const CAFES: Cafe[] = [DEMO_CAFE, DEMO_CAFE_STARTER];
 
 export const CATEGORIES = ["All", "Hot Coffee", "Iced Coffee", "Sweet Things", "Kitchen"];
 
+// Shared option groups, reused across the coffee items.
+const SIZE_GROUP: OptionGroup = {
+  id: "size",
+  label: "Size",
+  required: true,
+  choices: [
+    { id: "s", label: "Small" },
+    { id: "m", label: "Medium", priceDelta: 20 },
+    { id: "l", label: "Large", priceDelta: 40 },
+  ],
+};
+const MILK_GROUP: OptionGroup = {
+  id: "milk",
+  label: "Milk",
+  required: true,
+  choices: [
+    { id: "whole", label: "Whole milk" },
+    { id: "oat", label: "Oat milk", priceDelta: 30 },
+    { id: "almond", label: "Almond milk", priceDelta: 30 },
+  ],
+};
+const COFFEE_ADDONS: OptionGroup = {
+  id: "addons",
+  label: "Add-ons",
+  multi: true,
+  choices: [
+    { id: "shot", label: "Extra shot", priceDelta: 40 },
+    { id: "vanilla", label: "Vanilla syrup", priceDelta: 25 },
+  ],
+};
+const COFFEE_OPTIONS: OptionGroup[] = [SIZE_GROUP, MILK_GROUP, COFFEE_ADDONS];
+
 export const MENU: MenuItem[] = [
-  { id: "flat-white", cat: "Hot Coffee", name: "Flat White", price: 130, best: true, desc: "Slow-pulled espresso, steamed milk, a little foam.", img: U("photo-1541167760496-1628856ab772"), badge: "Bestseller" },
-  { id: "cappuccino", cat: "Hot Coffee", name: "Cappuccino", price: 120, desc: "Equal parts espresso, steamed milk, and airy foam.", img: U("photo-1572442388796-11668a67e53d") },
-  { id: "caramel-latte", cat: "Hot Coffee", name: "Salted Caramel Latte", price: 150, desc: "House caramel, a pinch of sea salt, velvety milk.", img: U("photo-1534687941688-651ccaafbff8") },
-  { id: "iced-spanish", cat: "Iced Coffee", name: "Iced Spanish Latte", price: 150, desc: "Sweet condensed milk over a double shot, lots of ice.", img: U("photo-1461023058943-07fcbe16d735"), badge: "New" },
-  { id: "iced-latte", cat: "Iced Coffee", name: "Iced Latte", price: 140, desc: "Smooth espresso, cold milk, slow melt.", img: U("photo-1517701550927-30cf4ba1dba5") },
-  { id: "butter-croissant", cat: "Sweet Things", name: "Butter Croissant", price: 95, desc: "Baked this morning. Flaky, buttery, warm.", img: U("photo-1555507036-ab1f4038808a") },
-  { id: "raspberry-cake", cat: "Sweet Things", name: "Raspberry Cream Cake", price: 165, desc: "Soft sponge, fresh cream, tart raspberries.", img: U("photo-1565958011703-44f9829ba187") },
-  { id: "choc-cookies", cat: "Sweet Things", name: "Brown Butter Cookies", price: 80, desc: "Crisp edges, gooey middle, dark chocolate.", img: U("photo-1499636136210-6f4ee915583e"), soldOut: true },
-  { id: "pulled-sandwich", cat: "Kitchen", name: "Pulled Pork Sandwich", price: 220, desc: "Slow-cooked pork, slaw, toasted brioche.", img: U("photo-1606755962773-d324e0a13086") },
-  { id: "sourdough", cat: "Kitchen", name: "Sourdough & Eggs", price: 195, desc: "House sourdough, soft eggs, salted butter.", img: U("photo-1509440159596-0249088772ff") },
+  { id: "flat-white", cat: "Hot Coffee", name: "Flat White", price: 130, best: true, desc: "Slow-pulled espresso, steamed milk, a little foam.", img: U("photo-1541167760496-1628856ab772"), badge: "Bestseller", options: COFFEE_OPTIONS, tags: [dt("vegetarian"), dt("dairy")] },
+  { id: "cappuccino", cat: "Hot Coffee", name: "Cappuccino", price: 120, desc: "Equal parts espresso, steamed milk, and airy foam.", img: U("photo-1572442388796-11668a67e53d"), options: COFFEE_OPTIONS, tags: [dt("vegetarian"), dt("dairy")] },
+  { id: "caramel-latte", cat: "Hot Coffee", name: "Salted Caramel Latte", price: 150, desc: "House caramel, a pinch of sea salt, velvety milk.", img: U("photo-1534687941688-651ccaafbff8"), options: COFFEE_OPTIONS, tags: [dt("vegetarian"), dt("dairy")] },
+  { id: "iced-spanish", cat: "Iced Coffee", name: "Iced Spanish Latte", price: 150, desc: "Sweet condensed milk over a double shot, lots of ice.", img: U("photo-1461023058943-07fcbe16d735"), badge: "New", options: COFFEE_OPTIONS, tags: [dt("vegetarian"), dt("dairy")] },
+  { id: "iced-latte", cat: "Iced Coffee", name: "Iced Latte", price: 140, desc: "Smooth espresso, cold milk, slow melt.", img: U("photo-1517701550927-30cf4ba1dba5"), options: COFFEE_OPTIONS, tags: [dt("vegetarian"), dt("dairy")] },
+  { id: "butter-croissant", cat: "Sweet Things", name: "Butter Croissant", price: 95, desc: "Baked this morning. Flaky, buttery, warm.", img: U("photo-1555507036-ab1f4038808a"), tags: [dt("vegetarian"), dt("dairy"), dt("gluten")] },
+  { id: "raspberry-cake", cat: "Sweet Things", name: "Raspberry Cream Cake", price: 165, desc: "Soft sponge, fresh cream, tart raspberries.", img: U("photo-1565958011703-44f9829ba187"), tags: [dt("vegetarian"), dt("dairy"), dt("gluten")] },
+  { id: "choc-cookies", cat: "Sweet Things", name: "Brown Butter Cookies", price: 80, desc: "Crisp edges, gooey middle, dark chocolate.", img: U("photo-1499636136210-6f4ee915583e"), soldOut: true, tags: [dt("vegetarian"), dt("dairy"), dt("gluten"), dt("nuts")] },
+  {
+    id: "pulled-sandwich", cat: "Kitchen", name: "Pulled Pork Sandwich", price: 220, desc: "Slow-cooked pork, slaw, toasted brioche.", img: U("photo-1606755962773-d324e0a13086"), tags: [dt("gluten"), dt("spicy")],
+    options: [
+      { id: "addons", label: "Add-ons", multi: true, choices: [
+        { id: "combo", label: "Make it a combo (fries + drink)", priceDelta: 90 },
+        { id: "slaw", label: "Extra slaw", priceDelta: 20 },
+      ] },
+    ],
+  },
+  { id: "sourdough", cat: "Kitchen", name: "Sourdough & Eggs", price: 195, desc: "House sourdough, soft eggs, salted butter.", img: U("photo-1509440159596-0249088772ff"), tags: [dt("vegetarian"), dt("dairy"), dt("gluten")] },
 ];
 
 export const THEMES: MenuTheme[] = [
-  { key: "warm", name: "Warm & Cozy", blurb: "Cover photo, bottom tab bar, best-sellers rail.", dark: false, swatch: ["#FBF6EE", "#C8592E", "#3B2A21"] },
+  { key: "warm", name: "Warm & Cozy", blurb: "Cover photo, bottom tab bar, best-sellers rail.", dark: false, swatch: ["#FBF6EE", "#AE4A24", "#3B2A21"] },
   { key: "minimal", name: "Clean & Minimal", blurb: "Centered logo, underline tabs, calm list.", dark: false, swatch: ["#FFFFFF", "#7A5230", "#2A1D16"] },
   { key: "bold", name: "Bold & Appetizing", blurb: "Dark surface, big cover, pill nav.", dark: true, swatch: ["#1F140E", "#E0A53F", "#FBF6EE"] },
   { key: "soft", name: "Soft & Natural", blurb: "Rounded header card, sage accents.", dark: false, swatch: ["#F3EBDE", "#6E8B5B", "#3B2A21"] },
-  { key: "playful", name: "Modern & Playful", blurb: "Gradient header, icon chips, popular rail.", dark: false, swatch: ["#FCF1DA", "#C8592E", "#2A1D16"] },
+  { key: "playful", name: "Modern & Playful", blurb: "Gradient header, icon chips, popular rail.", dark: false, swatch: ["#FCF1DA", "#AE4A24", "#2A1D16"] },
 ];
 
 // ---- Owner Studio content --------------------------------------------------
@@ -250,7 +391,7 @@ export const SURFACE_PRESETS: SurfacePreset[] = [
 ];
 
 export const ACCENT_PRESETS: AccentPreset[] = [
-  { id: "clay", name: "Terracotta", base: "#C8592E" },
+  { id: "clay", name: "Terracotta", base: "#AE4A24" },
   { id: "espresso", name: "Espresso", base: "#7A5230" },
   { id: "forest", name: "Forest", base: "#3C6E47" },
   { id: "ocean", name: "Ocean", base: "#2C6E8F" },
@@ -321,7 +462,7 @@ export interface BrandKit {
 
 export const DEFAULT_BRAND: BrandKit = {
   logo: null,
-  accent: "#C8592E",
+  accent: "#AE4A24",
   paletteId: "clay",
   headingFont: "newsreader",
   bodyFont: "hanken",
