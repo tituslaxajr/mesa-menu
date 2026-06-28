@@ -17,11 +17,13 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { MenuItem, Tabs, Badge, IconButton, Logo, Avatar } from "@/components/ds";
-import { CAT_ICONS, type Cafe, type MenuItem as MenuItemType, type ThemeKey } from "@/lib/data";
+import { CAT_ICONS, type Cafe, type MenuItem as MenuItemType, type MenuTag, type ThemeKey } from "@/lib/data";
 
 const peso = (n: number) => `₱${n}`;
 
-export const HAS_TAB_BAR: ThemeKey[] = ["warm", "playful"];
+// A QR diner menu has no real "Home/Promos/About" destinations, so the decorative
+// bottom tab bar is disabled (TabBar kept for reference, gated by this list).
+export const HAS_TAB_BAR: ThemeKey[] = [];
 export const HAS_SEARCH: ThemeKey[] = ["warm", "minimal"];
 
 /** Per-theme CSS-variable overrides, layered onto the menu column. */
@@ -65,6 +67,8 @@ export interface LayoutProps {
   setQ: (s: string) => void;
   /** True when viewing "All" with no active search — show feature rails. */
   showRails: boolean;
+  /** Dietary filter chip bar (rendered above the menu sections); null if none. */
+  filterBar?: React.ReactNode;
 }
 
 /* ── Shared bits ─────────────────────────────────────────────────── */
@@ -261,6 +265,22 @@ function Eyebrow({ children, color = "var(--text-subtle)" }: { children: React.R
   );
 }
 
+/* Compact at-a-glance dietary/allergen chips for menu cards (emoji + tooltip).
+ * Full labels live in the item detail sheet. */
+function DietChips({ tags, marginTop = 6, light = false }: { tags?: MenuTag[]; marginTop?: number; light?: boolean }) {
+  if (!tags || !tags.length) return null;
+  const labels = tags.map((t) => t.label).join(", ");
+  // Tags with an emoji show it (compact); emoji-less custom tags fall back to a
+  // short uppercase initial so they're still visible at a glance.
+  return (
+    <span title={labels} aria-label={labels} style={{ display: "inline-flex", gap: 4, alignItems: "center", fontSize: 13, lineHeight: 1, marginTop, opacity: light ? 0.95 : 1 }}>
+      {tags.map((t) => t.emoji
+        ? <span key={t.id} aria-hidden>{t.emoji}</span>
+        : <span key={t.id} aria-hidden style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: "0.02em", padding: "2px 5px", borderRadius: 5, background: light ? "rgba(255,255,255,0.22)" : "var(--surface-muted)", color: light ? "#fff" : "var(--text-muted)" }}>{t.label.slice(0, 3).toUpperCase()}</span>)}
+    </span>
+  );
+}
+
 /* A soft rounded item card (used by soft & playful). */
 function SoftRow({ m, onOpen, badgeVariant = "highlight" }: { m: MenuItemType; onOpen: (m: MenuItemType) => void; badgeVariant?: "highlight" | "available" }) {
   return (
@@ -276,14 +296,17 @@ function SoftRow({ m, onOpen, badgeVariant = "highlight" }: { m: MenuItemType; o
           {m.soldOut ? <Badge variant="soldout" size="sm">Sold out</Badge> : m.badge && <Badge variant={badgeVariant} size="sm">{m.badge}</Badge>}
         </div>
         <div style={{ fontSize: 12.5, color: "var(--text-muted)", marginTop: 3, lineHeight: 1.4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{m.desc}</div>
-        <div style={{ fontFamily: "var(--font-display)", fontSize: 15, color: "var(--brand)", marginTop: 6 }}>{peso(m.price)}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>
+          <span style={{ fontFamily: "var(--font-display)", fontSize: 15, color: "var(--brand)" }}>{peso(m.price)}</span>
+          <DietChips tags={m.tags} marginTop={0} />
+        </div>
       </div>
     </button>
   );
 }
 
 /* ════════════════════════ WARM & COZY ════════════════════════════ */
-function LayoutWarm({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat, onOpen, q, setQ, showRails }: LayoutProps) {
+function LayoutWarm({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat, onOpen, q, setQ, showRails, filterBar }: LayoutProps) {
   const best = menu.filter((m) => m.best && !m.soldOut);
   const searching = !!q.trim();
   return (
@@ -315,6 +338,7 @@ function LayoutWarm({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat, o
       </div>
 
       <div style={{ padding: "8px 0 24px" }}>
+        {filterBar && <div style={{ padding: "0 20px" }}>{filterBar}</div>}
         {showRails && best.length > 0 && (
           <section style={{ marginTop: 18 }}>
             <h2 style={{ fontFamily: "var(--font-display)", fontSize: 21, fontWeight: 500, color: "var(--text-strong)", padding: "0 20px", marginBottom: 14 }}>Best sellers</h2>
@@ -327,8 +351,8 @@ function LayoutWarm({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat, o
                     {m.badge && <div style={{ position: "absolute", top: 8, left: 8 }}><Badge variant="highlight" size="sm">{m.badge}</Badge></div>}
                   </div>
                   <div style={{ padding: "11px 13px 13px" }}>
-                    <div style={{ fontFamily: "var(--font-display)", fontSize: 16, color: "var(--text-strong)", lineHeight: 1.15 }}>{m.name}</div>
-                    <div style={{ fontFamily: "var(--font-display)", fontSize: 15, color: "var(--brand)", marginTop: 5 }}>{peso(m.price)}</div>
+                    <div style={{ fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 500, color: "var(--text-strong)", lineHeight: 1.15 }}>{m.name}</div>
+                    <div style={{ fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 500, color: "var(--text-strong)", marginTop: 5 }}>{peso(m.price)}</div>
                   </div>
                 </button>
               ))}
@@ -339,7 +363,7 @@ function LayoutWarm({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat, o
           <Sections
             groups={groups}
             renderRow={(m) => (
-              <MenuItem key={m.id} name={m.name} price={m.price} image={m.img} description={m.desc} badge={m.badge} soldOut={m.soldOut} onClick={() => onOpen(m)} />
+              <MenuItem key={m.id} name={m.name} price={m.price} image={m.img} description={m.desc} badge={m.badge} soldOut={m.soldOut} footer={<DietChips tags={m.tags} />} onClick={() => onOpen(m)} />
             )}
           />
           {!whiteLabel && <TrustFooter />}
@@ -350,7 +374,7 @@ function LayoutWarm({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat, o
 }
 
 /* ════════════════════════ CLEAN & MINIMAL ════════════════════════ */
-function LayoutMinimal({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat, onOpen, q, setQ, showRails }: LayoutProps) {
+function LayoutMinimal({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat, onOpen, q, setQ, showRails, filterBar }: LayoutProps) {
   const favs = menu.filter((m) => m.best && !m.soldOut).slice(0, 2);
   const searching = !!q.trim();
   return (
@@ -377,6 +401,7 @@ function LayoutMinimal({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat
       )}
 
       <div style={{ padding: "4px 22px 24px" }}>
+        {filterBar}
         {showRails && favs.length > 0 && (
           <section style={{ marginTop: 22 }}>
             <Eyebrow>Today&apos;s favorites</Eyebrow>
@@ -407,7 +432,10 @@ function LayoutMinimal({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat
                   {m.soldOut ? <Badge variant="soldout" size="sm">Sold out</Badge> : m.badge && <Badge variant="highlight" size="sm">{m.badge}</Badge>}
                 </div>
                 <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4, lineHeight: 1.45 }}>{m.desc}</div>
-                <div style={{ fontFamily: "var(--font-display)", fontSize: 15, color: "var(--text-strong)", marginTop: 7 }}>{peso(m.price)}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 7 }}>
+                  <span style={{ fontFamily: "var(--font-display)", fontSize: 15, color: "var(--text-strong)" }}>{peso(m.price)}</span>
+                  <DietChips tags={m.tags} marginTop={0} />
+                </div>
               </div>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={m.img} alt="" style={{ width: 72, height: 72, borderRadius: "var(--radius-md)", objectFit: "cover", flex: "none", filter: m.soldOut ? "grayscale(0.9)" : "none" }} />
@@ -421,7 +449,7 @@ function LayoutMinimal({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat
 }
 
 /* ════════════════════════ BOLD & APPETIZING (dark) ═══════════════ */
-function LayoutBold({ cafe, logo, whiteLabel, groups, cats, cat, setCat, onOpen }: LayoutProps) {
+function LayoutBold({ cafe, logo, whiteLabel, groups, cats, cat, setCat, onOpen, filterBar }: LayoutProps) {
   return (
     <>
       <div style={{ position: "relative" }}>
@@ -444,7 +472,7 @@ function LayoutBold({ cafe, logo, whiteLabel, groups, cats, cat, setCat, onOpen 
           {cats.map((c) => {
             const on = cat === c;
             return (
-              <button key={c} onClick={() => setCat(c)} style={{ flex: "none", border: "1.5px solid", borderColor: on ? "var(--cream)" : "rgba(255,255,255,0.18)", background: on ? "var(--cream)" : "transparent", color: on ? "var(--bean-950)" : "var(--bean-200)", borderRadius: 999, padding: "9px 18px", fontSize: 14.5, fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-sans)" }}>
+              <button key={c} onClick={() => setCat(c)} style={{ flex: "none", border: "1.5px solid", borderColor: on ? "var(--cream)" : "rgba(255,255,255,0.18)", background: on ? "var(--cream)" : "transparent", color: on ? "var(--bean-950)" : "var(--bean-200)", borderRadius: 999, padding: "12px 18px", fontSize: 14.5, fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-sans)" }}>
                 {c}
               </button>
             );
@@ -453,6 +481,7 @@ function LayoutBold({ cafe, logo, whiteLabel, groups, cats, cat, setCat, onOpen 
       </div>
 
       <div style={{ padding: "10px 18px 24px" }}>
+        {filterBar}
         {groups.map((g) => (
           <section key={g.c} style={{ marginTop: 22 }}>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 14 }}>
@@ -475,6 +504,7 @@ function LayoutBold({ cafe, logo, whiteLabel, groups, cats, cat, setCat, onOpen 
                       <div style={{ minWidth: 0 }}>
                         <div style={{ fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 500, lineHeight: 1.1 }}>{m.name}</div>
                         <div style={{ fontSize: 13, opacity: 0.9, marginTop: 4, lineHeight: 1.4 }}>{m.desc}</div>
+                        <DietChips tags={m.tags} light />
                       </div>
                       <span style={{ fontFamily: "var(--font-display)", fontSize: 19, whiteSpace: "nowrap", background: "var(--brand)", color: "var(--brand-on)", padding: "5px 13px", borderRadius: 999 }}>{peso(m.price)}</span>
                     </div>
@@ -491,7 +521,7 @@ function LayoutBold({ cafe, logo, whiteLabel, groups, cats, cat, setCat, onOpen 
 }
 
 /* ════════════════════════ SOFT & NATURAL ═════════════════════════ */
-function LayoutSoft({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat, onOpen, showRails }: LayoutProps) {
+function LayoutSoft({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat, onOpen, showRails, filterBar }: LayoutProps) {
   const special = menu.find((m) => m.badge === "New" && !m.soldOut) || menu.find((m) => m.best && !m.soldOut);
   return (
     <>
@@ -523,6 +553,7 @@ function LayoutSoft({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat, o
       </div>
 
       <div style={{ padding: "6px 18px 24px" }}>
+        {filterBar}
         {showRails && special && (
           <section style={{ marginTop: 12 }}>
             <Eyebrow color="var(--sage-700)">Today&apos;s special</Eyebrow>
@@ -548,7 +579,7 @@ function LayoutSoft({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat, o
 }
 
 /* ════════════════════════ MODERN & PLAYFUL ═══════════════════════ */
-function LayoutPlayful({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat, onOpen, showRails }: LayoutProps) {
+function LayoutPlayful({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat, onOpen, showRails, filterBar }: LayoutProps) {
   const popular = menu.filter((m) => m.best && !m.soldOut);
   return (
     <>
@@ -580,6 +611,7 @@ function LayoutPlayful({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat
       </div>
 
       <div style={{ padding: "6px 18px 24px" }}>
+        {filterBar}
         {showRails && popular.length > 0 && (
           <section style={{ marginTop: 12 }}>
             <Eyebrow color="var(--brand-active)">Popular picks</Eyebrow>

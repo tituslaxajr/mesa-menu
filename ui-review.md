@@ -32,6 +32,7 @@ _Living document for the UI polish loop. Re-render and re-score; never mark a sc
 ### Work done so far
 - **Iteration 1:** Fixed dashboard Home + Analytics stat cards — were `flex:1; min-width:0` 4-across, collapsing to ~75px on mobile so the icon overlapped the number and "Sold out today" wrapped to 3 lines. Now a responsive `grid auto-fit minmax(150px,1fr)` → clean 2×2 on mobile, 4-across on desktop. Verified at 375px. ✅
 - **Iteration 2:** Rendered all 5 customer-menu themes (warm/minimal/bold/soft/playful) at mobile + audited intra-theme consistency (per added rubric item 9). Themes are well-built and internally cohesive (verified bold dark-theme text-over-photo has a proper gradient scrim; chips/badges adapt via tokens). Fixed touch targets: dietary filter chips were 35px and category tabs 40px (both < 44px min). Chips → `minHeight:44`; `.mesa-tab` padding 9→11px → 44px. Shared controls, so all themes benefit; now harmonized with the 46px search bar. Verified 44px + no visual regression. ✅
+- **Iteration 3:** Deepened the theme consistency audit to pills/fonts/prices (per user follow-up). Scanned every `₱` price node's computed color/size/weight per theme. Found + fixed two Med mismatches: (T8) warm best-seller rail price was clay/15/400 vs list text-strong/16/500 → unified to text-strong/16/500; (T9) bold theme's hand-rolled category pills were 40px (missed by iter-2's `.mesa-tab` fix) → 45px. Both verified by computed measurement (screenshots flaky this session — see Gotcha 2; computed values are the authoritative check for exact color/size/height anyway). minimal/bold/playful prices already uniform; soft's lone sage "special" price is intentional. ✅
 
 ---
 
@@ -46,7 +47,7 @@ Score each screen PASS/FAIL per item, at mobile (375) **and** desktop (1280). Se
 6. **States** — loading / empty / error present and on-brand (empty states especially).
 7. **Cross-screen consistency** — shared components render identically; same radii/shadow language.
 8. **Polish** — alignment, radii, shadow weight, icon weight/size, no overlap/overflow/clipping.
-9. **Intra-theme visual consistency** _(per user directive)_ — within each of the 5 customer-menu themes, ALL elements share one visual language: consistent radii, border weight/treatment, surface/text token usage (no off-token hardcodes), icon weight/size, badge style, and control heights. Render each theme and check element-to-element coherence, not just the theme vs. the brand.
+9. **Intra-theme visual consistency** _(per user directive)_ — within each of the 5 customer-menu themes, ALL elements share one visual language: consistent radii, border weight/treatment, surface/text token usage (no off-token hardcodes), icon weight/size, control heights, and **explicitly: pills (badges/chips/category/price), fonts, and price styling (color + size + weight) must match element-to-element within a theme.** Render each theme and check element-to-element coherence, not just the theme vs. the brand. _Method:_ scan all `₱` price nodes + pill controls per theme and compare computed color/size/weight/height — don't eyeball.
 
 ---
 
@@ -82,6 +83,10 @@ All 5 themes rendered via `?theme=`. Each is internally cohesive; no High intra-
 | T4 | bold | Chips/badges/tabs adapt to dark surface via tokens | PASS | — | No hardcoded light colors leaking; cohesive. |
 | T5 | minimal | Underline tabs, centered logo, pill search | PASS | — | Clean & consistent. Featured card photo-left vs row photo-right = intentional (featured vs list). |
 | T6 | soft / playful | Icon-chip categories + clay eyebrows | PASS | Low | Rail uses uppercase eyebrow, sections use serif — deliberate hierarchy, consistent across themes. |
+| T8 | warm | **Price styling inconsistent**: best-seller rail price was clay/15px/400, list prices text-strong/16px/500 (same theme, 3-way mismatch) | **FIXED** | Med | Rail price+name → text-strong/16px/500 to match canonical `.mesa-mi__price`. Verified: all active prices now `rgb(42,29,22)/16px/w500` (+1 intentional muted sold-out). |
+| T9 | bold | Category pills hand-rolled (not `.mesa-tab`) → 40px, missed by iter-2 touch fix + inconsistent with other themes' pills | **FIXED** | Med | padding 9→12px = 45px (≥44). Verified. |
+| T10 | soft | "Special" price is sage-700 vs clay list prices | PASS | Low | Deliberate — matches the green "special" card accent + featured size. Intentional hierarchy, not a defect. |
+| T11 | minimal/bold/playful | Prices uniform within theme (text-strong / clay-pill / clay resp.) | PASS | — | Measured: no intra-theme price drift. |
 | T7 | ALL | Item sheet / cart / ordering flow, sold-out & empty states | _not yet rendered_ | — | Pending — open an item, add to cart. |
 
 ### Landing `/` — _not yet rendered_
