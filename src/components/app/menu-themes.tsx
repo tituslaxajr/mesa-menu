@@ -43,6 +43,9 @@ export function themeVars(theme: ThemeKey): Record<string, string> {
         "--text-subtle": "var(--bean-400)",
         "--border-soft": "rgba(255,255,255,0.09)",
         "--border-default": "rgba(255,255,255,0.16)",
+        // Logo wordmark/mark ink is espresso by default — invisible on this dark
+        // surface; remap to cream so "powered by Mesa" stays legible (WCAG).
+        "--brand-ink": "var(--cream)",
       };
     case "soft":
       return { "--surface-page": "var(--bean-100)", "--surface-muted": "var(--bean-50)" };
