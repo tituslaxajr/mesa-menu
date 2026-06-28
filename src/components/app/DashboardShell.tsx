@@ -962,7 +962,7 @@ function AppearanceTab(props: {
         {subs.map(([k, label, Icon]) => {
           const on = sub === k;
           return (
-            <button key={k} onClick={() => setSub(k)} style={{ display: "inline-flex", alignItems: "center", gap: 7, border: 0, cursor: "pointer", borderRadius: 999, padding: "8px 16px", fontSize: 14, fontWeight: 600, fontFamily: "var(--font-sans)", background: on ? "var(--surface-card)" : "transparent", color: on ? "var(--text-strong)" : "var(--text-muted)", boxShadow: on ? "var(--shadow-xs)" : "none" }}>
+            <button key={k} onClick={() => setSub(k)} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, minHeight: 44, border: 0, cursor: "pointer", borderRadius: 999, padding: "0 18px", fontSize: 14, fontWeight: 600, fontFamily: "var(--font-sans)", background: on ? "var(--surface-card)" : "transparent", color: on ? "var(--text-strong)" : "var(--text-muted)", boxShadow: on ? "var(--shadow-xs)" : "none" }}>
               <Icon size={16} /> {label}
             </button>
           );
@@ -1085,7 +1085,7 @@ function QRTab({ cafe, brand, caps, toast }: { cafe: Cafe; brand: BrandKit; caps
                 <img src={qrImg(tableUrl(n), 180)} alt={`Table ${n} QR`} width={120} height={120} style={{ display: "block" }} />
               </div>
               <div style={{ fontFamily: "var(--font-display)", fontSize: 17, color: "var(--text-strong)", marginTop: 8 }}>Table {n}</div>
-              <Button as="a" href={qrImg(tableUrl(n), 600)} download={`mesa-${cafe.slug}-table-${n}.png`} target="_blank" variant="ghost" size="sm" style={{ marginTop: 6 }}><Download size={14} /> PNG</Button>
+              <Button as="a" href={qrImg(tableUrl(n), 600)} download={`mesa-${cafe.slug}-table-${n}.png`} target="_blank" variant="ghost" size="md" style={{ marginTop: 6 }}><Download size={14} /> PNG</Button>
             </div>
           ))}
         </div>
@@ -1789,7 +1789,7 @@ export function DashboardShell({ cafe: cafe0, menu, categories: categories0, pla
       const on = tab === n.id;
       const badge = n.id === "orders" && newOrders > 0 ? newOrders : 0;
       return (
-        <button key={n.id} onClick={() => { setTab(n.id); onPick(); }} style={{ display: "flex", alignItems: "center", gap: 11, padding: "11px 12px", borderRadius: "var(--radius-md)", border: 0, cursor: "pointer", fontFamily: "var(--font-sans)", fontSize: 14.5, fontWeight: 600, textAlign: "left", background: on ? "var(--brand)" : "transparent", color: on ? "var(--brand-on)" : "var(--text-body)" }}>
+        <button key={n.id} onClick={() => { setTab(n.id); onPick(); }} style={{ display: "flex", alignItems: "center", gap: 11, minHeight: 44, padding: "11px 14px", borderRadius: "var(--radius-md)", border: 0, cursor: "pointer", fontFamily: "var(--font-sans)", fontSize: 14.5, fontWeight: 600, textAlign: "left", background: on ? "var(--brand)" : "transparent", color: on ? "var(--brand-on)" : "var(--text-body)" }}>
           <n.icon size={18} /> {n.label}
           {badge > 0 && (
             <span style={{ marginLeft: "auto", minWidth: 20, height: 20, padding: "0 6px", borderRadius: 999, display: "grid", placeItems: "center", fontSize: 12, fontWeight: 700, background: on ? "var(--brand-on)" : "var(--brand)", color: on ? "var(--brand)" : "var(--brand-on)" }}>{badge}</span>
@@ -1852,7 +1852,7 @@ export function DashboardShell({ cafe: cafe0, menu, categories: categories0, pla
         <div className="mesa-dash-topbar" style={{ alignItems: "center", gap: 10, padding: "10px 14px", borderBottom: "1px solid var(--border-soft)", background: "var(--surface-card)", position: "sticky", top: 0, zIndex: 8 }}>
           <Brandmark size={28} />
           <span style={{ flex: 1, minWidth: 0, fontFamily: "var(--font-display)", fontSize: 16.5, fontWeight: 600, color: "var(--text-strong)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{cafe.name}</span>
-          <Button as="a" href={`/m/${cafe.slug}`} target="_blank" variant="ghost" size="sm" aria-label="View live menu"><ExternalLink /></Button>
+          <Button as="a" href={`/m/${cafe.slug}`} target="_blank" variant="ghost" size="md" aria-label="View live menu"><ExternalLink /></Button>
         </div>
 
         <div className="mesa-dash-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "18px 28px", borderBottom: "1px solid var(--border-soft)", background: "color-mix(in oklab, var(--surface-page) 82%, transparent)", backdropFilter: "blur(8px)", position: "sticky", top: 0, zIndex: 6 }}>
