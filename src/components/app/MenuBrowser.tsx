@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { X, ArrowRight, CheckCircle2, Send, Clock, ChefHat, BellRing, Check } from "lucide-react";
+import { X, ArrowRight, CheckCircle2, Send, Clock, ChefHat, BellRing, Check, Tag } from "lucide-react";
 import { Badge, Button, IconButton, Input, Stepper } from "@/components/ds";
-import { DEFAULT_BRAND, capsFor, clampBrand, clampTheme, resolveOrderMode, normalizeTags, type BrandKit, type Cafe, type MenuItem as MenuItemType, type MenuTag, type OptionGroup, type PlanId, type ThemeKey } from "@/lib/data";
+import { DEFAULT_BRAND, capsFor, clampBrand, clampTheme, resolveOrderMode, normalizeTags, type BrandKit, type Cafe, type MenuItem as MenuItemType, type MenuTag, type OptionGroup, type PlanId, type Promo, type ThemeKey } from "@/lib/data";
 import { brandVars, surfaceVars } from "@/lib/brand";
 import { readStudioOverrides } from "@/lib/studio-store";
 import { placeOrder, useMyOrders, type Order } from "@/lib/orders-store";
@@ -13,6 +13,10 @@ const peso = (n: number) => `₱${n}`;
 
 // "Contains X" allergen presets are info-only, not offered as inclusion filters.
 const ALLERGEN_TAG_IDS = new Set(["nuts", "dairy", "gluten"]);
+
+// Promo banner tints by tone (own light backing, so legible on any theme incl. bold).
+const PROMO_BG: Record<string, string> = { highlight: "var(--highlight-soft)", brand: "var(--brand-soft)", neutral: "var(--surface-muted)" };
+const PROMO_FG: Record<string, string> = { highlight: "var(--honey-700)", brand: "var(--brand-active)", neutral: "var(--text-muted)" };
 
 /* ── Cart / option helpers ───────────────────────────────────────────
  * Choice ids are unique within an item, so a flat list of chosen ids is
@@ -88,6 +92,8 @@ export function MenuBrowser({ cafe: cafe0, menu: menu0, categories: categories0,
   const [categories, setCategories] = useState(categories0);
   const [theme, setTheme] = useState<ThemeKey>(theme0);
   const [brand, setBrand] = useState<BrandKit>(DEFAULT_BRAND);
+  const [promos, setPromos] = useState<Promo[]>([]);
+  const [dismissedPromos, setDismissedPromos] = useState<string[]>([]);
   const caps = capsFor(plan);
 
   // Merge Studio edits on mount, and keep in sync if another tab saves changes.
@@ -98,6 +104,7 @@ export function MenuBrowser({ cafe: cafe0, menu: menu0, categories: categories0,
       if (o.cafe) setCafe(o.cafe);
       if (o.categories) setCategories(o.categories);
       if (o.brand) setBrand(o.brand);
+      if (o.promos) setPromos(o.promos);
       if (!themeOverridden && o.theme) setTheme(o.theme);
     };
     apply();
@@ -120,6 +127,7 @@ export function MenuBrowser({ cafe: cafe0, menu: menu0, categories: categories0,
     if (typeof window === "undefined") return;
     const p = new URLSearchParams(window.location.search);
     const t = p.get("t") || p.get("table");
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- seed table from the QR's ?t= param on mount
     if (t) setTable(t.slice(0, 12));
   }, []);
 
@@ -239,6 +247,7 @@ export function MenuBrowser({ cafe: cafe0, menu: menu0, categories: categories0,
   const filterBar = dietFilters.length > 0
     ? <DietFilterBar tags={dietFilters} selected={diet} onToggle={toggleDiet} />
     : null;
+  const activePromos = promos.filter((p) => p.active && !dismissedPromos.includes(p.id));
   // Effective order mode folds in the plan, the owner's chosen mode, and the
   // pause switch. "counter" = build a summary to show staff; "kitchen" = send
   // to the live board; "browse" = no ordering.
@@ -263,6 +272,21 @@ export function MenuBrowser({ cafe: cafe0, menu: menu0, categories: categories0,
         ...(effBrand.surface && effTheme !== "bold" ? (surfaceVars(effBrand.surface) as React.CSSProperties) : {}),
       }}
     >
+      {activePromos.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "10px 14px 0" }}>
+          {activePromos.map((p) => (
+            <div key={p.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, background: PROMO_BG[p.tone], color: PROMO_FG[p.tone], borderRadius: "var(--radius-md)", padding: "10px 12px", fontFamily: "var(--font-sans)" }}>
+              <Tag size={16} style={{ flex: "none", marginTop: 1 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 700, fontSize: 13.5 }}>{p.title}</div>
+                <div style={{ fontSize: 12.5, opacity: 0.92 }}>{p.desc}</div>
+              </div>
+              <button onClick={() => setDismissedPromos((d) => [...d, p.id])} aria-label="Dismiss promo" style={{ flex: "none", border: 0, background: "transparent", cursor: "pointer", color: "inherit", opacity: 0.6, display: "grid", placeItems: "center" }}><X size={15} /></button>
+            </div>
+          ))}
+        </div>
+      )}
+
       <ThemeLayout
         theme={effTheme}
         cafe={cafe}

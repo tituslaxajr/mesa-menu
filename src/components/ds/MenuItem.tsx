@@ -10,6 +10,8 @@ export interface MenuItemProps
   layout?: "row" | "card";
   soldOut?: boolean;
   badge?: string;
+  /** Optional extra content under the description (e.g. dietary chips). */
+  footer?: React.ReactNode;
   onClick?: React.MouseEventHandler;
 }
 
@@ -54,6 +56,7 @@ export function MenuItem({
   layout = "row",
   soldOut = false,
   badge,
+  footer,
   onClick,
   className = "",
   ...rest
@@ -86,6 +89,7 @@ export function MenuItem({
             <span className="mesa-mi__price">{priceText(price)}</span>
           </div>
           {description && <p className="mesa-mi__desc">{description}</p>}
+          {footer}
         </div>
       </Tag>
     );
@@ -101,6 +105,7 @@ export function MenuItem({
           <span className="mesa-mi__price">{priceText(price)}</span>
         </div>
         {description && <p className="mesa-mi__desc">{description}</p>}
+        {footer}
         {statusBadge && <div style={{ marginTop: 8 }}>{statusBadge}</div>}
       </div>
     </Tag>

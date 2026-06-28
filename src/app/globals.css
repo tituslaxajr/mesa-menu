@@ -53,3 +53,20 @@ html { scroll-behavior: smooth; }
 @media (max-width: 1080px) {
   .mesa-appearance-grid { grid-template-columns: minmax(0, 1fr) !important; }
 }
+
+/* ── Studio dashboard: phone layout ──────────────────────────────────
+   Owners/staff run the Studio on a phone (the counter tablet is the POS).
+   The desktop sidebar becomes a hamburger drawer; rigid grids stack. */
+.mesa-dash-topbar { display: none; }            /* desktop: hidden */
+.mesa-dash-bottombar { display: none; }         /* desktop: hidden */
+@keyframes mesa-drawer-left { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+.mesa-anim-drawer-left { animation: mesa-drawer-left var(--dur-slow) var(--ease-out) both; }
+
+@media (max-width: 860px) {
+  .mesa-dash-sidebar   { display: none !important; }
+  .mesa-dash-topbar    { display: flex !important; }
+  .mesa-dash-bottombar { display: flex !important; }
+  .mesa-dash-header    { position: static !important; flex-wrap: wrap; padding: 12px 16px !important; }
+  .mesa-dash-page      { padding-left: 16px !important; padding-right: 16px !important; padding-bottom: 88px !important; }
+  .mesa-dash-2col      { grid-template-columns: minmax(0, 1fr) !important; }
+}

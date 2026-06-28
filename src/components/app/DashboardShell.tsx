@@ -47,6 +47,7 @@ import {
   ChevronUp,
   ChevronDown,
   Search,
+  Copy,
   type LucideIcon,
 } from "lucide-react";
 import { Logo, Avatar, Button, IconButton, Input, Select, Switch, Badge, Card } from "@/components/ds";
@@ -86,6 +87,37 @@ import {
 } from "@/lib/data";
 
 const dpeso = (n: number | string) => `₱${n}`;
+
+// Neutral placeholder for items without a photo yet — avoids an empty `src=""`
+// (which warns + breaks the <img>) and reads as "add a photo" in the editor.
+const PLACEHOLDER_IMG = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="8" height="6"><rect width="8" height="6" fill="#ece2d4"/></svg>');
+
+/**
+ * Current time, refreshed every `ms` (for live "x min ago" / today-totals).
+ * Starts at 0 so SSR/prerender is stable (lazy Date.now() init would bake the
+ * build time into the HTML); the effect sets the real time right after mount.
+ * The `|| Date.now()` fallback keeps numbers correct on the first frame after a
+ * (re)mount — e.g. switching tabs — before the effect runs.
+ */
+function useNow(ms: number): number {
+  const [now, setNow] = useState(0);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- seed real time on mount (intentional SSR-safe pattern, see above)
+    setNow(Date.now());
+    const t = setInterval(() => setNow(Date.now()), ms);
+    return () => clearInterval(t);
+  }, [ms]);
+  // eslint-disable-next-line react-hooks/purity -- pre-mount fallback only; output is time-independent until data loads
+  return now || Date.now();
+}
+
+/** Café logo (or default coffee mark). Module-scope so it isn't remounted each render. */
+function Brandmark({ logo, size = 32 }: { logo?: string | null; size?: number }) {
+  return logo
+    // eslint-disable-next-line @next/next/no-img-element
+    ? <img src={logo} alt="" style={{ width: size, height: size, borderRadius: 9, objectFit: "cover", flex: "none" }} />
+    : <span style={{ width: size, height: size, borderRadius: 9, background: "var(--brand)", display: "grid", placeItems: "center", flex: "none" }}><Coffee size={size * 0.53} style={{ color: "var(--brand-on)" }} /></span>;
+}
 
 // ── New-order alerts (chime + desktop notification) ─────────────────
 let audioCtx: AudioContext | null = null;
@@ -231,14 +263,9 @@ const orderStatusText = (o: Order) => (o.channel === "counter" ? "counter" : o.s
 function HomeTab({ items, cafe, theme, brand, orders, setTab }: { items: MenuItem[]; cafe: Cafe; theme: ThemeKey; brand: BrandKit; orders: Order[]; setTab: (t: TabId) => void }) {
   const soldOut = items.filter((i) => i.soldOut).length;
 
-  // "Today" = since local midnight. Re-tick so time-ago labels stay fresh.
-  const [now, setNow] = useState(0);
-  useEffect(() => {
-    setNow(Date.now());
-    const t = setInterval(() => setNow(Date.now()), 30000);
-    return () => clearInterval(t);
-  }, []);
-  const dayStart = (() => { const d = new Date(now || Date.now()); d.setHours(0, 0, 0, 0); return d.getTime(); })();
+  // "Today" = since local midnight. Re-ticks so time-ago labels stay fresh.
+  const now = useNow(30000);
+  const dayStart = (() => { const d = new Date(now); d.setHours(0, 0, 0, 0); return d.getTime(); })();
   const todays = orders.filter((o) => o.placedAt >= dayStart && o.status !== "cancelled");
   const ordersToday = todays.length;
   const revenueToday = todays.reduce((s, o) => s + o.total, 0);
@@ -333,7 +360,7 @@ function HomeTab({ items, cafe, theme, brand, orders, setTab }: { items: MenuIte
 }
 
 /* ════ MENU manager ════════════════════════════════════════════════ */
-function ManagerRow({ item, index, count, canReorder, onMove, onToggle, onEdit }: { item: MenuItem; index: number; count: number; canReorder: boolean; onMove: (id: string, dir: -1 | 1) => void; onToggle: (id: string) => void; onEdit: (m: MenuItem) => void }) {
+function ManagerRow({ item, index, count, canReorder, onMove, onDuplicate, onToggle, onEdit }: { item: MenuItem; index: number; count: number; canReorder: boolean; onMove: (id: string, dir: -1 | 1) => void; onDuplicate: (id: string) => void; onToggle: (id: string) => void; onEdit: (m: MenuItem) => void }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 16px", background: "var(--surface-card)", border: "1px solid var(--border-soft)", borderRadius: "var(--radius-md)" }}>
       {canReorder && (
@@ -355,6 +382,7 @@ function ManagerRow({ item, index, count, canReorder, onMove, onToggle, onEdit }
       <div style={{ width: 142, display: "flex", justifyContent: "flex-end", flex: "none" }}>
         <Switch checked={!item.soldOut} onChange={() => onToggle(item.id)} label={item.soldOut ? "Sold out" : "Available"} />
       </div>
+      <IconButton label="Duplicate" variant="ghost" onClick={() => onDuplicate(item.id)}><Copy /></IconButton>
       <IconButton label="Edit" variant="ghost" onClick={() => onEdit(item)}><Pencil /></IconButton>
     </div>
   );
@@ -517,12 +545,29 @@ function EditDrawer({ item, cats, customTags, onClose, onSave }: { item: DraftIt
   );
 }
 
-function MenuTab({ items, categories, onMove, onToggle, onEdit }: { items: MenuItem[]; categories: string[]; onMove: (id: string, dir: -1 | 1) => void; onToggle: (id: string) => void; onEdit: (m: MenuItem) => void }) {
+function MenuTab({ items, categories, onMove, onDuplicate, onToggle, onCategorySoldOut, onAdd, onEdit }: { items: MenuItem[]; categories: string[]; onMove: (id: string, dir: -1 | 1) => void; onDuplicate: (id: string) => void; onToggle: (id: string) => void; onCategorySoldOut: (cat: string, soldOut: boolean) => void; onAdd: () => void; onEdit: (m: MenuItem) => void }) {
   const [q, setQ] = useState("");
   const query = q.trim().toLowerCase();
   const cats = categories.filter((c) => c !== "All");
   const match = (m: MenuItem) => !query || m.name.toLowerCase().includes(query) || m.desc.toLowerCase().includes(query) || (m.tags ?? []).some((t) => t.label.toLowerCase().includes(query));
   const totalMatches = items.filter(match).length;
+
+  // First-run: a brand-new café has no items yet.
+  if (items.length === 0) {
+    return (
+      <PageWrap max={940}>
+        <Card variant="flat" padded>
+          <div style={{ textAlign: "center", padding: "34px 12px" }}>
+            <span style={{ width: 52, height: 52, borderRadius: 14, background: "var(--brand-soft)", color: "var(--brand-active)", display: "grid", placeItems: "center", margin: "0 auto 14px" }}><Utensils size={26} /></span>
+            <h3 style={{ fontFamily: "var(--font-display)", fontSize: 19, color: "var(--text-strong)" }}>Your menu is empty</h3>
+            <p style={{ fontSize: 13.5, color: "var(--text-muted)", margin: "6px auto 18px", maxWidth: 340 }}>Add your first item — name, price, a photo, and any options or tags. It goes live on your QR menu instantly.</p>
+            <Button variant="primary" onClick={onAdd}><Plus /> Add your first item</Button>
+          </div>
+        </Card>
+      </PageWrap>
+    );
+  }
+
   return (
     <PageWrap max={940}>
       <div style={{ marginBottom: 18, maxWidth: 420 }}>
@@ -536,9 +581,17 @@ function MenuTab({ items, categories, onMove, onToggle, onEdit }: { items: MenuI
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
               <h2 style={{ fontFamily: "var(--font-display)", fontSize: 19, fontWeight: 500, color: "var(--text-strong)" }}>{c}</h2>
               <Badge variant="neutral">{rows.length}</Badge>
+              {!query && (() => {
+                const allOut = rows.every((r) => r.soldOut);
+                return (
+                  <Button variant="ghost" size="sm" style={{ marginLeft: "auto" }} onClick={() => onCategorySoldOut(c, !allOut)}>
+                    {allOut ? <><Check size={14} /> Mark all available</> : <><Ban size={14} /> Mark all sold out</>}
+                  </Button>
+                );
+              })()}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {rows.map((m, i) => <ManagerRow key={m.id} item={m} index={i} count={rows.length} canReorder={!query} onMove={onMove} onToggle={onToggle} onEdit={onEdit} />)}
+              {rows.map((m, i) => <ManagerRow key={m.id} item={m} index={i} count={rows.length} canReorder={!query} onMove={onMove} onDuplicate={onDuplicate} onToggle={onToggle} onEdit={onEdit} />)}
             </div>
           </section>
         );
@@ -1095,31 +1148,77 @@ function QRTab({ cafe, brand, caps, toast }: { cafe: Cafe; brand: BrandKit; caps
 }
 
 /* ════ PROMOS ══════════════════════════════════════════════════════ */
-function PromosTab({ promos, setPromos }: { promos: Promo[]; setPromos: (f: (p: Promo[]) => Promo[]) => void }) {
+const PROMO_TONE_BG: Record<string, string> = { highlight: "var(--highlight-soft)", brand: "var(--brand-soft)", neutral: "var(--surface-muted)" };
+const PROMO_TONE_FG: Record<string, string> = { highlight: "var(--honey-700)", brand: "var(--brand-active)", neutral: "var(--text-muted)" };
+
+function PromoEditor({ value, onSave, onCancel }: { value: Promo; onSave: (p: Promo) => void; onCancel: () => void }) {
+  const [d, setD] = useState<Promo>(value);
+  const set = <K extends keyof Promo>(k: K, v: Promo[K]) => setD((p) => ({ ...p, [k]: v }));
+  return (
+    <Card variant="flat" padded style={{ marginBottom: 14, border: "1.5px solid var(--brand)" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <Input label="Title" value={d.title} onChange={(e) => set("title", e.target.value)} placeholder="e.g. Merienda hour" />
+        <Input label="Description" value={d.desc} onChange={(e) => set("desc", e.target.value)} placeholder="₱20 off any pastry with a hot drink." />
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <Input label="When" value={d.period} onChange={(e) => set("period", e.target.value)} placeholder="Daily · 2:00–5:00 PM" />
+          <Select label="Colour" value={d.tone} onChange={(e) => set("tone", e.target.value as Promo["tone"])} options={[{ value: "highlight", label: "Highlight" }, { value: "brand", label: "Brand" }, { value: "neutral", label: "Neutral" }]} />
+        </div>
+        <Switch checked={d.active} tone="brand" onChange={(v) => set("active", v)} label="Show on the live menu" />
+      </div>
+      <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
+        <Button variant="ghost" onClick={onCancel}>Cancel</Button>
+        <Button variant="primary" block disabled={!d.title.trim()} onClick={() => onSave({ ...d, title: d.title.trim(), desc: d.desc.trim(), period: d.period.trim() })}>Save promo</Button>
+      </div>
+    </Card>
+  );
+}
+
+function PromosTab({ promos, setPromos, toast }: { promos: Promo[]; setPromos: (f: (p: Promo[]) => Promo[]) => void; toast: (m: string) => void }) {
+  const [editing, setEditing] = useState<Promo | null>(null);
   const toggle = (id: string) => setPromos((arr) => arr.map((p) => (p.id === id ? { ...p, active: !p.active } : p)));
-  const toneBg: Record<string, string> = { highlight: "var(--highlight-soft)", brand: "var(--brand-soft)", neutral: "var(--surface-muted)" };
-  const toneFg: Record<string, string> = { highlight: "var(--honey-700)", brand: "var(--brand-active)", neutral: "var(--text-muted)" };
+  const blank = (): Promo => ({ id: "promo-" + Date.now(), title: "", desc: "", period: "", tone: "highlight", active: true });
+  const save = (p: Promo) => {
+    setPromos((arr) => (arr.some((x) => x.id === p.id) ? arr.map((x) => (x.id === p.id ? p : x)) : [...arr, p]));
+    setEditing(null);
+    toast("Promo saved");
+  };
+  const remove = (id: string) => { setPromos((arr) => arr.filter((x) => x.id !== id)); toast("Promo deleted"); };
   return (
     <PageWrap max={820}>
-      <SectionTitle right={<Button variant="primary"><Plus /> New promo</Button>}>Promo banners</SectionTitle>
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {promos.map((p) => (
-          <Card key={p.id} variant="flat" padded>
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
-              <span style={{ width: 42, height: 42, borderRadius: 11, flex: "none", display: "grid", placeItems: "center", background: toneBg[p.tone], color: toneFg[p.tone] }}><Tag size={20} /></span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontFamily: "var(--font-display)", fontSize: 17, color: "var(--text-strong)" }}>{p.title}</span>
-                  {p.active ? <Badge variant="available" dot>Active</Badge> : <Badge variant="neutral">Paused</Badge>}
+      <SectionTitle right={!editing ? <Button variant="primary" onClick={() => setEditing(blank())}><Plus /> New promo</Button> : undefined}>Promo banners</SectionTitle>
+      <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: -6, marginBottom: 14 }}>Active promos show as a banner at the top of your live menu.</p>
+
+      {editing && <PromoEditor value={editing} onSave={save} onCancel={() => setEditing(null)} />}
+
+      {promos.length === 0 && !editing ? (
+        <div style={{ textAlign: "center", padding: "30px 12px", color: "var(--text-muted)" }}>
+          <Tag size={26} style={{ color: "var(--text-subtle)", marginBottom: 8 }} />
+          <div style={{ fontSize: 14 }}>No promos yet. Add one to highlight a special on your menu.</div>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {promos.map((p) => (
+            <Card key={p.id} variant="flat" padded>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+                <span style={{ width: 42, height: 42, borderRadius: 11, flex: "none", display: "grid", placeItems: "center", background: PROMO_TONE_BG[p.tone], color: PROMO_TONE_FG[p.tone] }}><Tag size={20} /></span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontFamily: "var(--font-display)", fontSize: 17, color: "var(--text-strong)" }}>{p.title}</span>
+                    {p.active ? <Badge variant="available" dot>Active</Badge> : <Badge variant="neutral">Paused</Badge>}
+                  </div>
+                  {p.desc && <div style={{ fontSize: 13.5, color: "var(--text-muted)", marginTop: 3 }}>{p.desc}</div>}
+                  {p.period && <div style={{ fontSize: 12.5, color: "var(--text-subtle)", marginTop: 6, display: "flex", alignItems: "center", gap: 6 }}><Clock size={13} /> {p.period}</div>}
                 </div>
-                <div style={{ fontSize: 13.5, color: "var(--text-muted)", marginTop: 3 }}>{p.desc}</div>
-                <div style={{ fontSize: 12.5, color: "var(--text-subtle)", marginTop: 6, display: "flex", alignItems: "center", gap: 6 }}><Clock size={13} /> {p.period}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 4, flex: "none" }}>
+                  <Switch checked={p.active} onChange={() => toggle(p.id)} tone="brand" />
+                  <IconButton label="Edit promo" variant="ghost" onClick={() => setEditing(p)}><Pencil /></IconButton>
+                  <IconButton label="Delete promo" variant="ghost" onClick={() => remove(p.id)}><Trash2 /></IconButton>
+                </div>
               </div>
-              <Switch checked={p.active} onChange={() => toggle(p.id)} tone="brand" />
-            </div>
-          </Card>
-        ))}
-      </div>
+            </Card>
+          ))}
+        </div>
+      )}
     </PageWrap>
   );
 }
@@ -1281,13 +1380,8 @@ function printReport(cafeName: string, scopeLabel: string, dateLabel: string, li
 }
 
 function AnalyticsTab({ orders, cafeName }: { orders: Order[]; cafeName: string }) {
-  const [now, setNow] = useState(0);
-  useEffect(() => {
-    setNow(Date.now());
-    const t = setInterval(() => setNow(Date.now()), 60000);
-    return () => clearInterval(t);
-  }, []);
-  const s = computeSales(orders, now || Date.now());
+  const now = useNow(60000);
+  const s = computeSales(orders, now);
   const money = (n: number) => `₱${n.toLocaleString("en-PH")}`;
   const [scope, setScope] = useState("today");
 
@@ -1308,7 +1402,7 @@ function AnalyticsTab({ orders, cafeName }: { orders: Order[]; cafeName: string 
   }
 
   const peakDay = s.series.indexOf(Math.max(...s.series));
-  const nowTs = now || Date.now();
+  const nowTs = now;
   const scopeList = ordersInScope(orders, scope, nowTs);
   const dateLabel = scope === "7d" ? `${fmtDate(dayStartOf(nowTs) - 6 * DAY_MS)} – ${fmtDate(nowTs)}` : fmtDate(nowTs);
   const fileStamp = new Date(nowTs).toISOString().slice(0, 10);
@@ -1549,16 +1643,11 @@ function OrderCard({ order, now, api }: { order: Order; now: number; api: Orders
 }
 
 function OrdersTab({ orders, api, items, slug }: { orders: Order[]; api: OrdersApi; items: MenuItem[]; slug: string }) {
-  const [now, setNow] = useState(0);
-  useEffect(() => {
-    setNow(Date.now());
-    const t = setInterval(() => setNow(Date.now()), 30000);
-    return () => clearInterval(t);
-  }, []);
+  const now = useNow(30000);
   const [archiveAfter, setArchiveAfter] = useLocalStore<string>(`mesa.orders.${slug}.archiveAfter`, "4h");
 
   const finished = orders.filter((o) => o.status === "completed" || o.status === "cancelled");
-  const cutoff = archiveCutoff(archiveAfter, now || Date.now());
+  const cutoff = archiveCutoff(archiveAfter, now);
   const visibleFinished = finished.filter((o) => (o.completedAt ?? o.placedAt) >= cutoff);
   const archivedCount = finished.length - visibleFinished.length;
 
@@ -1687,7 +1776,7 @@ export function DashboardShell({ cafe: cafe0, menu, categories: categories0, pla
   // Alert (chime + desktop notification) when a NEW order arrives. Establish a
   // baseline of order ids on first load so we don't alert for existing ones.
   const soundOnRef = useRef(soundOn);
-  soundOnRef.current = soundOn;
+  useEffect(() => { soundOnRef.current = soundOn; }, [soundOn]);
   const seenOrderIds = useRef<Set<string>>(new Set());
   useEffect(() => {
     const prev = seenOrderIds.current;
@@ -1747,6 +1836,27 @@ export function DashboardShell({ cafe: cafe0, menu, categories: categories0, pla
     [next[i], next[j]] = [next[j], next[i]];
     return next;
   });
+  // Duplicate an item (same category/price/options/tags) right after it, then
+  // open the copy in the editor to tweak. New id keeps cart keys distinct.
+  const duplicateItem = (id: string) => {
+    const src = items.find((m) => m.id === id);
+    if (!src) return;
+    const copy: MenuItem = { ...src, id: "item-" + Date.now(), name: `${src.name} (copy)`, best: false };
+    setItems((arr) => {
+      const i = arr.findIndex((m) => m.id === id);
+      const next = arr.slice();
+      next.splice(i < 0 ? next.length : i + 1, 0, copy);
+      return next;
+    });
+    setEditing(copy);
+    toast("Duplicated — edit the copy");
+  };
+  const addItem = () => setEditing({ id: "new-" + Date.now(), _new: true, name: "", price: 0, cat: categories.find((c) => c !== "All") || "Hot Coffee", desc: "", img: items[0]?.img || PLACEHOLDER_IMG });
+  // Bulk sold-out toggle for a whole category (kitchen closed / ran out).
+  const setCategorySoldOut = (cat: string, soldOut: boolean) => {
+    setItems((arr) => arr.map((m) => (m.cat === cat ? { ...m, soldOut } : m)));
+    toast(soldOut ? `“${cat}” marked sold out` : `“${cat}” back available`);
+  };
   const save = (draft: DraftItem) => {
     setItems((arr) => {
       const exists = arr.some((m) => m.id === draft.id);
@@ -1797,18 +1907,13 @@ export function DashboardShell({ cafe: cafe0, menu, categories: categories0, pla
         </button>
       );
     });
-  const Brandmark = ({ size = 32 }: { size?: number }) =>
-    brand.logo
-      // eslint-disable-next-line @next/next/no-img-element
-      ? <img src={brand.logo} alt="" style={{ width: size, height: size, borderRadius: 9, objectFit: "cover", flex: "none" }} />
-      : <span style={{ width: size, height: size, borderRadius: 9, background: "var(--brand)", display: "grid", placeItems: "center", flex: "none" }}><Coffee size={size * 0.53} style={{ color: "var(--brand-on)" }} /></span>;
 
   return (
     <div style={{ display: "flex", minHeight: "100dvh", background: "var(--surface-page)", ...(brandVars(brand) as React.CSSProperties) }}>
       {/* Sidebar (desktop) */}
       <aside className="mesa-dash-sidebar" style={{ width: 236, flex: "none", background: "var(--surface-card)", borderRight: "1px solid var(--border-soft)", display: "flex", flexDirection: "column", padding: "20px 14px", position: "sticky", top: 0, height: "100dvh" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "4px 8px 20px" }}>
-          <Brandmark />
+          <Brandmark logo={brand.logo} />
           <span style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 600, color: "var(--text-strong)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{cafe.name}</span>
         </div>
         <nav style={{ display: "flex", flexDirection: "column", gap: 3 }}>
@@ -1832,7 +1937,7 @@ export function DashboardShell({ cafe: cafe0, menu, categories: categories0, pla
           <div className="mesa-anim-fade" onClick={() => setNavOpen(false)} style={{ position: "absolute", inset: 0, background: "rgba(31,20,14,0.45)" }} />
           <aside className="mesa-anim-drawer-left" style={{ position: "relative", width: "min(284px, 84%)", background: "var(--surface-card)", height: "100%", display: "flex", flexDirection: "column", padding: "16px 14px", boxShadow: "8px 0 40px rgba(31,20,14,0.2)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "4px 4px 16px" }}>
-              <Brandmark size={30} />
+              <Brandmark logo={brand.logo} size={30} />
               <span style={{ flex: 1, minWidth: 0, fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 600, color: "var(--text-strong)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{cafe.name}</span>
               <IconButton label="Close menu" variant="ghost" onClick={() => setNavOpen(false)}><X /></IconButton>
             </div>
@@ -1850,7 +1955,7 @@ export function DashboardShell({ cafe: cafe0, menu, categories: categories0, pla
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
         {/* Mobile top bar (hidden on desktop via CSS) */}
         <div className="mesa-dash-topbar" style={{ alignItems: "center", gap: 10, padding: "10px 14px", borderBottom: "1px solid var(--border-soft)", background: "var(--surface-card)", position: "sticky", top: 0, zIndex: 8 }}>
-          <Brandmark size={28} />
+          <Brandmark logo={brand.logo} size={28} />
           <span style={{ flex: 1, minWidth: 0, fontFamily: "var(--font-display)", fontSize: 16.5, fontWeight: 600, color: "var(--text-strong)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{cafe.name}</span>
           <Button as="a" href={`/m/${cafe.slug}`} target="_blank" variant="ghost" size="md" aria-label="View live menu"><ExternalLink /></Button>
         </div>
@@ -1867,7 +1972,7 @@ export function DashboardShell({ cafe: cafe0, menu, categories: categories0, pla
               </Button>
             )}
             {tab === "menu" && (
-              <Button variant="secondary" onClick={() => setEditing({ id: "new-" + Date.now(), _new: true, name: "", price: 0, cat: categories.find((c) => c !== "All") || "Hot Coffee", desc: "", img: items[0]?.img || "" })}>
+              <Button variant="secondary" onClick={addItem}>
                 <Plus /> Add item
               </Button>
             )}
@@ -1877,11 +1982,11 @@ export function DashboardShell({ cafe: cafe0, menu, categories: categories0, pla
 
         {tab === "home" && <HomeTab items={items} cafe={cafe} theme={theme} brand={brand} orders={orders} setTab={setTab} />}
         {tab === "orders" && <OrdersTab orders={kitchenOrders} api={ordersApi} items={items} slug={slug} />}
-        {tab === "menu" && <MenuTab items={items} categories={categories} onMove={moveItem} onToggle={toggle} onEdit={setEditing} />}
+        {tab === "menu" && <MenuTab items={items} categories={categories} onMove={moveItem} onDuplicate={duplicateItem} onToggle={toggle} onCategorySoldOut={setCategorySoldOut} onAdd={addItem} onEdit={setEditing} />}
         {tab === "categories" && <CategoriesTab items={items} categories={categories} setCategories={setCategories} onDelete={deleteCategory} toast={toast} />}
         {tab === "appearance" && <AppearanceTab theme={theme} setTheme={setTheme} brand={brand} setBrand={setBrand} cafe={cafe} items={items} categories={categories} caps={caps} plan={cafe.plan} />}
         {tab === "qr" && <QRTab cafe={cafe} brand={brand} caps={caps} toast={toast} />}
-        {tab === "promos" && <PromosTab promos={promos} setPromos={setPromos} />}
+        {tab === "promos" && <PromosTab promos={promos} setPromos={setPromos} toast={toast} />}
         {tab === "analytics" && <AnalyticsTab orders={orders} cafeName={cafe.name} />}
         {tab === "subscription" && <SubscriptionTab currentId={planId} toast={toast} />}
         {tab === "settings" && <SettingsTab cafe={cafe} setCafe={setCafe} toast={toast} />}

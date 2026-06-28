@@ -83,6 +83,19 @@ const ICON_BY_NAME: Record<string, LucideIcon> = {
   utensils: Utensils,
 };
 
+/**
+ * Lucide icons are stroke-drawn, so stroke weight is how an icon "matches" a
+ * theme: a hairline reads minimalist, a heavy line reads bold/appetising. Each
+ * theme gets a weight that mirrors its personality.
+ */
+export const ICON_STROKE: Record<ThemeKey, number> = {
+  warm: 1.9,
+  minimal: 1.5, // hairline — clean & minimal
+  bold: 2.6, // heavy — punchy & appetising
+  soft: 1.6, // gentle & natural
+  playful: 2.4, // chunky & fun
+};
+
 function OpenPill() {
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(110,139,91,0.95)", color: "#fff", fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 999 }}>
@@ -158,11 +171,13 @@ function CatIconRow({
   cat,
   setCat,
   shape,
+  stroke,
 }: {
   cats: string[];
   cat: string;
   setCat: (c: string) => void;
   shape: "circle" | "square";
+  stroke: number;
 }) {
   const list = cats.filter((c) => c !== "All");
   return (
@@ -190,7 +205,7 @@ function CatIconRow({
                 transform: on ? "translateY(-1px)" : "none",
               }}
             >
-              <Icon size={24} />
+              <Icon size={24} strokeWidth={stroke} />
             </span>
             <span style={{ fontSize: 11.5, fontWeight: 600, color: on ? "var(--text-strong)" : "var(--text-muted)", textAlign: "center", lineHeight: 1.15 }}>
               {c}
@@ -538,7 +553,7 @@ function LayoutSoft({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat, o
               background="var(--brand-soft)"
               fallback={
                 <span style={{ width: 60, height: 60, borderRadius: 999, background: "var(--brand-soft)", color: "var(--brand)", display: "grid", placeItems: "center" }}>
-                  <Coffee size={28} />
+                  <Coffee size={28} strokeWidth={ICON_STROKE.soft} />
                 </span>
               }
             />
@@ -552,7 +567,7 @@ function LayoutSoft({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat, o
       </div>
 
       <div style={{ padding: "18px 16px 6px" }}>
-        <CatIconRow cats={cats} cat={cat} setCat={setCat} shape="circle" />
+        <CatIconRow cats={cats} cat={cat} setCat={setCat} shape="circle" stroke={ICON_STROKE.soft} />
       </div>
 
       <div style={{ padding: "6px 18px 24px" }}>
@@ -596,7 +611,7 @@ function LayoutPlayful({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat
               background="var(--brand)"
               fallback={
                 <span style={{ width: 50, height: 50, borderRadius: 16, background: "var(--brand)", color: "var(--brand-on)", display: "grid", placeItems: "center", boxShadow: "var(--shadow-sm)" }}>
-                  <Coffee size={24} />
+                  <Coffee size={24} strokeWidth={ICON_STROKE.playful} />
                 </span>
               }
             />
@@ -610,7 +625,7 @@ function LayoutPlayful({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat
       </div>
 
       <div style={{ padding: "18px 16px 4px" }}>
-        <CatIconRow cats={cats} cat={cat} setCat={setCat} shape="square" />
+        <CatIconRow cats={cats} cat={cat} setCat={setCat} shape="square" stroke={ICON_STROKE.playful} />
       </div>
 
       <div style={{ padding: "6px 18px 24px" }}>
