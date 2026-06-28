@@ -223,7 +223,7 @@ textarea.mesa-input { height: auto; padding: 12px 14px; line-height: 1.5; resize
 
 /* --- Stepper -------------------------------------------------------------- */
 .mesa-stepper { display: inline-flex; align-items: center; gap: 2px; background: var(--surface-card); border: 1.5px solid var(--border-default); border-radius: var(--radius-pill); padding: 3px; }
-.mesa-stepper__btn { width: 34px; height: 34px; display: grid; place-items: center; border: 0; background: transparent; color: var(--brand); border-radius: var(--radius-pill); cursor: pointer; transition: background var(--dur-fast) var(--ease-standard); }
+.mesa-stepper__btn { width: 44px; height: 44px; display: grid; place-items: center; border: 0; background: transparent; color: var(--brand); border-radius: var(--radius-pill); cursor: pointer; transition: background var(--dur-fast) var(--ease-standard); }
 .mesa-stepper__btn:hover:not([disabled]) { background: var(--brand-soft); }
 .mesa-stepper__btn:active:not([disabled]) { transform: scale(0.9); }
 .mesa-stepper__btn[disabled] { color: var(--bean-300); cursor: not-allowed; }

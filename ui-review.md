@@ -23,8 +23,7 @@ _Living document for the UI polish loop. Re-render and re-score; never mark a sc
 ### Render method
 - Dev server via Preview MCP: `.claude/launch.json` → `mesa` (npm run dev, port 3000, autoPort).
 - **Gotcha 1 (Next 16 single-instance):** only one `next dev` per dir. If a stale server holds port 3000, the preview server dies on start. Free the port (`taskkill /PID <pid> /F` after `netstat -ano | grep :3000`) then `preview_start`.
-- **Gotcha 2 (screenshot hangs):** full-page screenshots can time out while the page settles. Inject an animation-kill style first and retry:
-  `*,*::before,*::after{animation-duration:0s!important;transition-duration:0s!important;}` then re-screenshot. Navigation via `window.location.assign('http://localhost:3000/...')` (relative href fails).
+- **Gotcha 2 (screenshot hangs → fully down by iter 4):** `preview_screenshot` first needed an animation-kill style + retries; by iteration 4 it times out on *every* page (customer menu included) even after a server restart — environmental, not app. **Authoritative verification = `preview_eval` computed measurements (color/size/height) + `preview_snapshot` (a11y tree) + code.** Navigation via `window.location.assign('http://localhost:3000/...')` (relative href fails). Visual-only issues (alignment/rhythm/balance) can't be fully assessed while screenshots are down — flagged per screen rather than claimed verified.
 
 ### Discrepancies vs. brief
 - None material. Repo aesthetic (warm café, minimalist) matches the stated intent. Pricing source-of-truth note in memory is about the marketing Pricing section content, not in scope for visual polish.
@@ -32,6 +31,7 @@ _Living document for the UI polish loop. Re-render and re-score; never mark a sc
 ### Work done so far
 - **Iteration 1:** Fixed dashboard Home + Analytics stat cards — were `flex:1; min-width:0` 4-across, collapsing to ~75px on mobile so the icon overlapped the number and "Sold out today" wrapped to 3 lines. Now a responsive `grid auto-fit minmax(150px,1fr)` → clean 2×2 on mobile, 4-across on desktop. Verified at 375px. ✅
 - **Iteration 2:** Rendered all 5 customer-menu themes (warm/minimal/bold/soft/playful) at mobile + audited intra-theme consistency (per added rubric item 9). Themes are well-built and internally cohesive (verified bold dark-theme text-over-photo has a proper gradient scrim; chips/badges adapt via tokens). Fixed touch targets: dietary filter chips were 35px and category tabs 40px (both < 44px min). Chips → `minHeight:44`; `.mesa-tab` padding 9→11px → 44px. Shared controls, so all themes benefit; now harmonized with the 46px search bar. Verified 44px + no visual regression. ✅
+- **Iteration 4:** Customer-menu item detail sheet (ordering flow) touch-target audit by measurement. Single-select option pills (Small/Medium/Large, milk) were 38px and the quantity `Stepper` buttons 34px — both < 44px on the most-tapped ordering controls. Option pills → `minHeight:44, padding 0 16px`; `.mesa-stepper__btn` 34→44px (only used in this sheet, contained blast radius). Verified both 44px. Landing `/` measured (buttons 54px ✅, hero h1 = fluid `clamp(40px,6vw,68px)` ✅ not an orphan, nav 49px). NOTE: screenshot renderer fully down this session — landing/visual-rhythm review deferred to a session with working capture. ✅ (touch-target fixes)
 - **Iteration 3:** Deepened the theme consistency audit to pills/fonts/prices (per user follow-up). Scanned every `₱` price node's computed color/size/weight per theme. Found + fixed two Med mismatches: (T8) warm best-seller rail price was clay/15/400 vs list text-strong/16/500 → unified to text-strong/16/500; (T9) bold theme's hand-rolled category pills were 40px (missed by iter-2's `.mesa-tab` fix) → 45px. Both verified by computed measurement (screenshots flaky this session — see Gotcha 2; computed values are the authoritative check for exact color/size/height anyway). minimal/bold/playful prices already uniform; soft's lone sage "special" price is intentional. ✅
 
 ---
@@ -87,7 +87,18 @@ All 5 themes rendered via `?theme=`. Each is internally cohesive; no High intra-
 | T9 | bold | Category pills hand-rolled (not `.mesa-tab`) → 40px, missed by iter-2 touch fix + inconsistent with other themes' pills | **FIXED** | Med | padding 9→12px = 45px (≥44). Verified. |
 | T10 | soft | "Special" price is sage-700 vs clay list prices | PASS | Low | Deliberate — matches the green "special" card accent + featured size. Intentional hierarchy, not a defect. |
 | T11 | minimal/bold/playful | Prices uniform within theme (text-strong / clay-pill / clay resp.) | PASS | — | Measured: no intra-theme price drift. |
-| T7 | ALL | Item sheet / cart / ordering flow, sold-out & empty states | _not yet rendered_ | — | Pending — open an item, add to cart. |
+| T7a | warm | Item-sheet option pills (Small/Med/Large, milk) 38px & quantity stepper btns 34px < 44px | **FIXED** | Med | Option pills→minHeight 44; `.mesa-stepper__btn`→44px. Verified (most-tapped ordering controls). |
+| T7b | warm | Item-sheet price weight 400 vs list prices weight 500 | OPEN | Low | Minor type-weight drift in detail view; size diff (22 vs 16) is intentional hierarchy. Align weight next pass. |
+| T7c | ALL | Cart drawer, sold-out, empty/search-no-results states | _needs visual_ | — | Measurable controls OK; visual review blocked by screenshot outage. |
+
+### Landing `/` — mobile (375), measured iteration 4 (no screenshot — tool down)
+| # | Item | Verdict | Sev | Note |
+|---|------|---------|-----|------|
+| L1 | Primary/secondary/pricing CTAs | PASS | — | All 54px (`mesa-btn--lg`) — strong touch targets. |
+| L2 | Hero h1 sizing | PASS | — | `clamp(40px,6vw,68px)` fluid display — intentional, brackets the type scale. |
+| L3 | Nav at mobile | PASS | Low | Section links hidden ≤560px (by design); logo + CTA remain. |
+| L4 | Section spacing rhythm, hierarchy, image balance, Pricing card layout | _needs visual_ | — | Cannot assess without screenshots; deferred. |
+| L5 | Desktop (1280) layout | _not yet rendered_ | — | Pending. |
 
 ### Landing `/` — _not yet rendered_
 Pending (mobile + desktop): Nav, Hero, section rhythm, Pricing, Footer.

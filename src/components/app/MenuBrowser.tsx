@@ -520,7 +520,7 @@ function OptionGroupBlock({
                 key={c.id}
                 type="button"
                 onClick={() => onToggle(group, c.id)}
-                style={{ border: "1.5px solid", borderColor: on ? "var(--brand)" : "var(--border-default)", background: on ? "var(--brand)" : "var(--surface-card)", color: on ? "var(--brand-on)" : "var(--text-strong)", borderRadius: 999, padding: "9px 15px", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-sans)" }}
+                style={{ display: "inline-flex", alignItems: "center", minHeight: 44, border: "1.5px solid", borderColor: on ? "var(--brand)" : "var(--border-default)", background: on ? "var(--brand)" : "var(--surface-card)", color: on ? "var(--brand-on)" : "var(--text-strong)", borderRadius: 999, padding: "0 16px", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-sans)" }}
               >
                 {c.label}{c.priceDelta ? ` +${peso(c.priceDelta)}` : ""}
               </button>
