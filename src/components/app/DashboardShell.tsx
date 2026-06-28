@@ -338,8 +338,8 @@ function ManagerRow({ item, index, count, canReorder, onMove, onToggle, onEdit }
     <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 16px", background: "var(--surface-card)", border: "1px solid var(--border-soft)", borderRadius: "var(--radius-md)" }}>
       {canReorder && (
         <div style={{ display: "flex", flexDirection: "column", gap: 1, flex: "none" }}>
-          <IconButton label="Move up" variant="ghost" size="sm" disabled={index === 0} onClick={() => onMove(item.id, -1)}><ChevronUp size={16} /></IconButton>
-          <IconButton label="Move down" variant="ghost" size="sm" disabled={index === count - 1} onClick={() => onMove(item.id, 1)}><ChevronDown size={16} /></IconButton>
+          <IconButton label="Move up" variant="ghost" size="md" disabled={index === 0} onClick={() => onMove(item.id, -1)}><ChevronUp size={16} /></IconButton>
+          <IconButton label="Move down" variant="ghost" size="md" disabled={index === count - 1} onClick={() => onMove(item.id, 1)}><ChevronDown size={16} /></IconButton>
         </div>
       )}
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -592,8 +592,8 @@ function CategoriesTab({ items, categories, setCategories, onDelete, toast }: { 
           return (
             <div key={c} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", background: "var(--surface-card)", border: "1px solid var(--border-soft)", borderRadius: "var(--radius-md)" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 1, flex: "none" }}>
-                <IconButton label="Move up" variant="ghost" size="sm" disabled={i === 0} onClick={() => moveCat(c, -1)}><ChevronUp size={16} /></IconButton>
-                <IconButton label="Move down" variant="ghost" size="sm" disabled={i === cats.length - 1} onClick={() => moveCat(c, 1)}><ChevronDown size={16} /></IconButton>
+                <IconButton label="Move up" variant="ghost" size="md" disabled={i === 0} onClick={() => moveCat(c, -1)}><ChevronUp size={16} /></IconButton>
+                <IconButton label="Move down" variant="ghost" size="md" disabled={i === cats.length - 1} onClick={() => moveCat(c, 1)}><ChevronDown size={16} /></IconButton>
               </div>
               <span style={{ width: 38, height: 38, borderRadius: 10, background: "var(--brand-soft)", color: "var(--brand-active)", display: "grid", placeItems: "center" }}><Icon size={18} /></span>
               <div style={{ flex: 1 }}>
