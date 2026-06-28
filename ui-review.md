@@ -4,6 +4,21 @@ _Living document for the UI polish loop. Re-render and re-score; never mark a sc
 
 ---
 
+## LOOP STATUS — converged on measurable work (as of iteration 7)
+
+**All measurable High/Medium issues across every rubric dimension are resolved** (8 commits, iters 1–7):
+- **Touch targets ≥44px** — fixed everywhere: menu chips/tabs, all 5 themes' category pills, ordering option pills + quantity stepper, Studio reorder buttons (×20), nav items (drawer + sidebar), Appearance segmented control, QR PNG buttons (×8), header link.
+- **Intra-theme consistency (pills/fonts/prices)** — warm rail price unified; bold pills 44px; prices measured uniform per theme.
+- **WCAG AA contrast** — bold logo 1.34→16.76; brand clay-500→clay-600 (5.52); honey badge + `--text-subtle` nudged; warm/soft/bold re-scanned = zero real failures.
+- **Dashboard** — stat cards 2×2; empty states on-brand.
+- **Type system** — coherent: named display scale + a consistent set of intermediate UI sizes (13/14/15/16.5/20px) for component density (house style, repo wins) — not orphans.
+
+**Remaining = blocked or Low only** → loop stops scheduling rather than spin:
+- _Screenshot-gated_ (preview renderer down all session — environmental): landing visual rhythm + desktop, dashboard desktop sidebar, theme visuals, fine alignment/spacing rhythm. **Needs a session with a working screenshot tool.**
+- _Low_: T7b sheet/cart price weight (400) vs menu (500) — visual judgment, deferred.
+
+---
+
 ## ORIENTATION (last updated: iteration 1)
 
 ### Screens (derived from `src/app` routing)
