@@ -9,6 +9,7 @@ import {
   DM_Sans,
 } from "next/font/google";
 import "./globals.css";
+import { SITE_URL } from "@/lib/site";
 
 // Display serif — headlines, menu names, prices, warm italic accents.
 const newsreader = Newsreader({
@@ -39,7 +40,7 @@ const BRAND_FONTS = [playfair, dmSerif, spaceGrotesk, workSans, dmSans]
   .join(" ");
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://mesa.menu"),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "Mesa — A better menu for every table",
     template: "%s · Mesa",

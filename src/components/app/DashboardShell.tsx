@@ -57,6 +57,7 @@ import { studioKey } from "@/lib/studio-store";
 import { useStudioState, useAutosave, type SaveStatus } from "@/lib/studio-sync";
 import { saveMenu, saveBrand, saveCafeProfile, savePromos } from "@/lib/studio-actions";
 import { uploadCafeImage } from "@/lib/storage";
+import { menuUrl, menuLabel } from "@/lib/site";
 import { useOrders, timeAgo, type Order, type OrdersApi, type OrderStatus } from "@/lib/orders-store";
 import { palette, hue, extractBrandColor, accentContrast, surfaceContrast, type ContrastLevel } from "@/lib/color";
 import { brandVars } from "@/lib/brand";
@@ -291,7 +292,7 @@ function HomeTab({ items, cafe, theme, brand, orders, setTab }: { items: MenuIte
   const newToday = todays.filter((o) => o.status === "new").length;
   const recent = orders.slice(0, 6);
   const curTheme = THEMES.find((t) => t.key === theme) || THEMES[0];
-  const qr = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent("https://mesa.menu/" + cafe.slug)}&size=240x240&color=2A1D16&bgcolor=FFFFFF&margin=8`;
+  const qr = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(menuUrl(cafe.slug))}&size=240x240&color=2A1D16&bgcolor=FFFFFF&margin=8`;
   const quick: { icon: LucideIcon; label: string; sub: string; go: TabId }[] = [
     { icon: Plus, label: "Add item", sub: "New menu item", go: "menu" },
     { icon: Ban, label: "Mark sold out", sub: "Hide for today", go: "menu" },
@@ -369,7 +370,7 @@ function HomeTab({ items, cafe, theme, brand, orders, setTab }: { items: MenuIte
           <Card variant="flat" padded style={{ textAlign: "center" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={qr} alt="QR" width={124} height={124} style={{ borderRadius: 12, display: "block", margin: "0 auto 10px", background: "#fff", padding: 6 }} />
-            <div style={{ fontSize: 13, color: "var(--text-muted)" }}>mesa.menu/{cafe.slug}</div>
+            <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{menuLabel(cafe.slug)}</div>
             <Button variant="ghost" size="sm" style={{ marginTop: 8 }} onClick={() => setTab("qr")}><Download /> Get QR code</Button>
           </Card>
         </div>
@@ -1059,7 +1060,7 @@ function AppearanceTab(props: {
 
 /* ════ QR ══════════════════════════════════════════════════════════ */
 function QRTab({ cafe, brand, caps, toast }: { cafe: Cafe; brand: BrandKit; caps: BrandCaps; toast: (m: string) => void }) {
-  const url = `https://mesa.menu/${cafe.slug}`;
+  const url = menuUrl(cafe.slug);
   const qrImg = (data: string, size = 320) => `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(data)}&size=${size}x${size}&color=2A1D16&bgcolor=FFFFFF&margin=10`;
   // QR modules stay dark for reliable scanning; branding goes on the poster around it.
   const qr = qrImg(url, 320);
