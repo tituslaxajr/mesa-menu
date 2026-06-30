@@ -16,9 +16,22 @@ import {
   type MenuItem,
   type MenuTag,
   type OptionGroup,
+  type PlanId,
   type Promo,
   type ThemeKey,
 } from "@/lib/data";
+
+// Neutral 8×6 beige block for missing cover/item photos — avoids `<img src="">`,
+// which makes the browser re-fetch the whole page in a loop. Reads as "no photo
+// yet" until the owner adds one.
+const IMG_PLACEHOLDER =
+  "data:image/svg+xml," +
+  encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="8" height="6"><rect width="8" height="6" fill="#ece2d4"/></svg>');
+
+// One menu item + its nested options & tags. Shared by the public read path and
+// the owner dashboard read so the shapes never drift.
+const MENU_SELECT =
+  "id, name, price, descr, img, badge, sold_out, best, position, category:categories(name), option_groups(id, label, required, multi, position, option_choices(id, label, price_delta, position)), menu_item_tags(menu_tags(key, label, emoji))";
 
 /** All the content the guest menu page needs for one café, in one fetch. */
 export interface CafeData {
@@ -52,7 +65,7 @@ function toCafe(r: CafeRow): Cafe {
     tagline: r.tagline,
     intro: r.intro,
     hours: r.hours,
-    cover: r.cover ?? "",
+    cover: r.cover || IMG_PLACEHOLDER,
     plan: r.plan,
     theme: r.theme,
     orderMode: r.order_mode ?? undefined,
@@ -91,7 +104,7 @@ function toMenuItem(r: any): MenuItem {
     name: r.name,
     price: r.price,
     desc: r.descr,
-    img: r.img ?? "",
+    img: r.img || IMG_PLACEHOLDER,
     badge: r.badge ?? undefined,
     soldOut: r.sold_out || undefined,
     best: r.best || undefined,
@@ -160,13 +173,7 @@ export const getCafeData = cache(async (slug: string): Promise<CafeData | null> 
 
   const [cats, items, brand, promos] = await Promise.all([
     supabase.from("categories").select("name, position").eq("cafe_id", cafeId).order("position"),
-    supabase
-      .from("menu_items")
-      .select(
-        "id, name, price, descr, img, badge, sold_out, best, position, category:categories(name), option_groups(id, label, required, multi, position, option_choices(id, label, price_delta, position)), menu_item_tags(menu_tags(key, label, emoji))",
-      )
-      .eq("cafe_id", cafeId)
-      .order("position"),
+    supabase.from("menu_items").select(MENU_SELECT).eq("cafe_id", cafeId).order("position"),
     supabase.from("brand_kits").select("*").eq("cafe_id", cafeId).maybeSingle(),
     supabase.from("promos").select("*").eq("cafe_id", cafeId).order("position"),
   ]);
@@ -179,3 +186,65 @@ export const getCafeData = cache(async (slug: string): Promise<CafeData | null> 
     promos: (promos.data ?? []).map(toPromo),
   };
 });
+
+/**
+ * The logged-in owner's café + its content for the dashboard. Unlike the public
+ * read path, this reads the owner's OWN café (drafts included, unpublished ok)
+ * by resolving their account from cafe_members — RLS member policies authorize
+ * it. Returns null when the owner has no café yet (→ onboarding).
+ */
+export const getOwnerCafeData = cache(
+  async (): Promise<{ data: CafeData; planId: PlanId } | null> => {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const { data: mem } = await supabase
+      .from("cafe_members")
+      .select("account_id")
+      .eq("user_id", user.id)
+      .limit(1)
+      .maybeSingle();
+    if (!mem) return null;
+    const accountId = (mem as { account_id: string }).account_id;
+
+    const { data: acct } = await supabase
+      .from("accounts")
+      .select("plan")
+      .eq("id", accountId)
+      .maybeSingle();
+    const planId = ((acct as { plan?: PlanId } | null)?.plan ?? "starter") as PlanId;
+
+    // The owner's own café — scoped to their account (not the public view, so
+    // unpublished drafts are included). First location for now (1 for Brew).
+    const { data: cafeRows } = await supabase
+      .from("cafes")
+      .select("id, slug, name, tagline, intro, hours, cover, theme, order_mode, accepting_orders")
+      .eq("account_id", accountId)
+      .order("position")
+      .limit(1);
+    const cafeRow = cafeRows?.[0] as (Omit<CafeRow, "plan"> & { id: string }) | undefined;
+    if (!cafeRow) return null; // owner exists but hasn't created a café → onboarding
+
+    const cafeId = cafeRow.id;
+    const [cats, items, brand, promos] = await Promise.all([
+      supabase.from("categories").select("name, position").eq("cafe_id", cafeId).order("position"),
+      supabase.from("menu_items").select(MENU_SELECT).eq("cafe_id", cafeId).order("position"),
+      supabase.from("brand_kits").select("*").eq("cafe_id", cafeId).maybeSingle(),
+      supabase.from("promos").select("*").eq("cafe_id", cafeId).order("position"),
+    ]);
+
+    return {
+      planId,
+      data: {
+        cafe: toCafe({ ...cafeRow, plan: planId } as CafeRow),
+        categories: ["All", ...((cats.data ?? []).map((c) => c.name as string))],
+        menu: (items.data ?? []).map(toMenuItem),
+        brand: toBrand(brand.data),
+        promos: (promos.data ?? []).map(toPromo),
+      },
+    };
+  },
+);

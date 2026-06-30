@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-import { DEMO_CAFE, getMenu, getCategories } from "@/lib/data";
+import { redirect } from "next/navigation";
+import { verifySession } from "@/lib/dal";
+import { getOwnerCafeData } from "@/lib/queries";
 import { DashboardShell } from "@/components/app/DashboardShell";
 
 export const metadata: Metadata = {
@@ -7,11 +9,19 @@ export const metadata: Metadata = {
   description: "Manage your Mesa menu — items, themes, brand kit, QR code, promos, analytics, and settings.",
 };
 
-export default function DashboardPage() {
-  // BACKEND SEAM: the demo café stands in for the logged-in owner's café.
-  const cafe = DEMO_CAFE;
-  const menu = getMenu(cafe.slug);
-  const categories = getCategories(cafe.slug);
+export default async function DashboardPage() {
+  await verifySession(); // redirects to /login if signed out
+  const owner = await getOwnerCafeData();
+  // Signed in but no café yet → first-run onboarding.
+  if (!owner) redirect("/dashboard/new");
 
-  return <DashboardShell cafe={cafe} menu={menu} categories={categories} planId={cafe.plan} />;
+  const { data, planId } = owner;
+  return (
+    <DashboardShell
+      cafe={data.cafe}
+      menu={data.menu}
+      categories={data.categories}
+      planId={planId}
+    />
+  );
 }

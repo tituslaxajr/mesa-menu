@@ -48,6 +48,7 @@ import {
   ChevronDown,
   Search,
   Copy,
+  Smartphone,
   type LucideIcon,
 } from "lucide-react";
 import { Logo, Avatar, Button, IconButton, Input, Select, Switch, Badge, Card } from "@/components/ds";
@@ -1742,10 +1743,61 @@ function OrdersTab({ orders, api, items, slug }: { orders: Order[]; api: OrdersA
 }
 
 /* ════ SHELL ═══════════════════════════════════════════════════════ */
+/**
+ * Live phone-frame preview of the guest menu, fed by the current editing state
+ * so it updates as the owner edits. Persistent right column on wide screens
+ * (≥1280px, CSS-gated); an on-demand drawer on narrower screens.
+ */
+function PreviewPane({
+  open, onClose, cafe, items, categories, theme, brand,
+}: {
+  open: boolean;
+  onClose: () => void;
+  cafe: Cafe;
+  items: MenuItem[];
+  categories: string[];
+  theme: ThemeKey;
+  brand: BrandKit;
+}) {
+  const caption = "This is what guests see. It updates as you edit.";
+  return (
+    <>
+      {/* Wide screens: persistent right column */}
+      <aside
+        className="mesa-dash-preview"
+        style={{ width: 380, flex: "none", flexDirection: "column", alignItems: "center", gap: 14, borderLeft: "1px solid var(--border-soft)", background: "var(--surface-card)", position: "sticky", top: 0, height: "100dvh", overflowY: "auto", padding: "22px 20px" }}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", alignSelf: "stretch", gap: 8 }}>
+          <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: ".05em", textTransform: "uppercase", color: "var(--text-muted)" }}>Live preview</span>
+          <Button as="a" href={`/m/${cafe.slug}`} target="_blank" variant="ghost"><ExternalLink /> Open</Button>
+        </div>
+        <LivePreview cafe={cafe} menu={items} categories={categories} theme={theme} brand={brand} plan={cafe.plan} width={300} height={600} />
+        <span style={{ fontSize: 12, color: "var(--text-muted)", textAlign: "center", maxWidth: 280 }}>{caption}</span>
+      </aside>
+
+      {/* Narrow screens: drawer overlay opened from the "Preview" toggle */}
+      {open && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 55, display: "flex", justifyContent: "flex-end" }}>
+          <div className="mesa-anim-fade" onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(31,20,14,0.45)" }} />
+          <aside className="mesa-anim-drawer-right" style={{ position: "relative", width: "min(380px, 92%)", background: "var(--surface-card)", height: "100%", overflowY: "auto", padding: "18px 18px 28px", display: "flex", flexDirection: "column", alignItems: "center", gap: 14, boxShadow: "-8px 0 40px rgba(31,20,14,0.2)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", alignSelf: "stretch" }}>
+              <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: ".05em", textTransform: "uppercase", color: "var(--text-muted)" }}>Live preview</span>
+              <IconButton label="Close preview" variant="ghost" onClick={onClose}><X /></IconButton>
+            </div>
+            <LivePreview cafe={cafe} menu={items} categories={categories} theme={theme} brand={brand} plan={cafe.plan} width={300} height={600} />
+            <span style={{ fontSize: 12, color: "var(--text-muted)", textAlign: "center", maxWidth: 280 }}>{caption}</span>
+          </aside>
+        </div>
+      )}
+    </>
+  );
+}
+
 export function DashboardShell({ cafe: cafe0, menu, categories: categories0, planId }: Props) {
   const slug = cafe0.slug;
   const [tab, setTab] = useState<TabId>("home");
   const [navOpen, setNavOpen] = useState(false); // mobile nav drawer
+  const [previewOpen, setPreviewOpen] = useState(false); // narrow-screen live-preview drawer
   const [rawItems, setItems] = useLocalStore<MenuItem[]>(studioKey(slug, "items"), menu);
   // Normalize on read so legacy string[] tags from older saved menus always
   // render correctly, regardless of when useLocalStore hydrates. Writes go
@@ -1976,6 +2028,9 @@ export function DashboardShell({ cafe: cafe0, menu, categories: categories0, pla
                 <Plus /> Add item
               </Button>
             )}
+            <span className="mesa-dash-preview-toggle">
+              <Button variant="secondary" onClick={() => setPreviewOpen(true)}><Smartphone /> Preview</Button>
+            </span>
             <Button as="a" href={`/m/${cafe.slug}`} target="_blank" variant="primary"><ExternalLink /> View live menu</Button>
           </div>
         </div>
@@ -1991,6 +2046,9 @@ export function DashboardShell({ cafe: cafe0, menu, categories: categories0, pla
         {tab === "subscription" && <SubscriptionTab currentId={planId} toast={toast} />}
         {tab === "settings" && <SettingsTab cafe={cafe} setCafe={setCafe} toast={toast} />}
       </div>
+
+      {/* Live guest-menu preview — right column on wide screens, drawer on narrow */}
+      <PreviewPane open={previewOpen} onClose={() => setPreviewOpen(false)} cafe={cafe} items={items} categories={categories} theme={theme} brand={brand} />
 
       {/* Mobile bottom tab bar — fast access to the daily-use screens */}
       <nav className="mesa-dash-bottombar" style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 8, background: "var(--surface-card)", borderTop: "1px solid var(--border-soft)", paddingBottom: "env(safe-area-inset-bottom)", boxShadow: "0 -2px 16px rgba(31,20,14,0.06)" }}>

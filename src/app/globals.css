@@ -61,6 +61,17 @@ html { scroll-behavior: smooth; }
 .mesa-dash-bottombar { display: none; }         /* desktop: hidden */
 @keyframes mesa-drawer-left { from { transform: translateX(-100%); } to { transform: translateX(0); } }
 .mesa-anim-drawer-left { animation: mesa-drawer-left var(--dur-slow) var(--ease-out) both; }
+@keyframes mesa-drawer-right { from { transform: translateX(100%); } to { transform: translateX(0); } }
+.mesa-anim-drawer-right { animation: mesa-drawer-right var(--dur-slow) var(--ease-out) both; }
+
+/* Live-preview pane: persistent right column only when there's room (≥1280px);
+   below that it collapses to the "Preview" toggle, which opens a drawer. */
+.mesa-dash-preview { display: none; }
+.mesa-dash-preview-toggle { display: inline-flex; }
+@media (min-width: 1280px) {
+  .mesa-dash-preview { display: flex; }
+  .mesa-dash-preview-toggle { display: none; }
+}
 
 @media (max-width: 860px) {
   .mesa-dash-sidebar   { display: none !important; }
