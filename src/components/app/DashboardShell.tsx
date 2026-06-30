@@ -55,7 +55,7 @@ import { Logo, Avatar, Button, IconButton, Input, Select, Switch, Badge, Card } 
 import { useLocalStore } from "@/lib/useLocalStore";
 import { studioKey } from "@/lib/studio-store";
 import { useStudioState, useAutosave, type SaveStatus } from "@/lib/studio-sync";
-import { saveMenu, saveBrand, saveCafeProfile, savePromos } from "@/lib/studio-actions";
+import { saveMenu, saveBrand, saveCafeProfile, savePromos, setPlan } from "@/lib/studio-actions";
 import { uploadCafeImage } from "@/lib/storage";
 import { menuUrl, menuLabel } from "@/lib/site";
 import { useOrders, timeAgo, type Order, type OrdersApi, type OrderStatus } from "@/lib/orders-store";
@@ -1476,13 +1476,18 @@ function AnalyticsTab({ orders, cafeName }: { orders: Order[]; cafeName: string 
 }
 
 /* ════ SUBSCRIPTION ════════════════════════════════════════════════ */
-function SubscriptionTab({ currentId }: { currentId: string }) {
+function SubscriptionTab({ currentId, onSwitch }: { currentId: string; onSwitch: (id: PlanId) => void | Promise<void> }) {
+  const [busy, setBusy] = useState<string | null>(null);
+  const switchTo = async (id: PlanId) => {
+    setBusy(id);
+    try { await onSwitch(id); } finally { /* page reloads on success */ }
+  };
   return (
     <PageWrap max={1000}>
-      <SectionTitle>Your plan</SectionTitle>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "0 0 16px", padding: "10px 14px", borderRadius: "var(--radius-md)", background: "var(--surface-muted)", color: "var(--text-body)", fontSize: 13.5, fontFamily: "var(--font-sans)" }}>
-        <Sparkles size={15} style={{ flex: "none", color: "var(--brand)" }} />
-        <span>Your tier was chosen at sign-up. During the beta, message us to change it.</span>
+      <SectionTitle>Choose your plan</SectionTitle>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "0 0 16px", padding: "10px 14px", borderRadius: "var(--radius-md)", background: "var(--brand-soft)", color: "var(--brand-active)", fontSize: 13.5, fontFamily: "var(--font-sans)" }}>
+        <Sparkles size={15} style={{ flex: "none" }} />
+        <span><strong>Beta:</strong> switch tiers freely to try each one&rsquo;s features — no payment yet.</span>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
         {PLANS.map((p) => {
@@ -1503,9 +1508,9 @@ function SubscriptionTab({ currentId }: { currentId: string }) {
                   </div>
                 ))}
               </div>
-              {current
-                ? <Button variant="secondary" block disabled>Your plan</Button>
-                : <div style={{ textAlign: "center", fontSize: 13, color: "var(--text-subtle)", padding: "10px 0", fontFamily: "var(--font-sans)" }}>Not your current tier</div>}
+              <Button variant={current ? "secondary" : "primary"} block disabled={current || !!busy} onClick={() => switchTo(p.id)}>
+                {busy === p.id ? "Switching…" : current ? "Your plan" : `Switch to ${p.name}`}
+              </Button>
             </div>
           );
         })}
@@ -1872,6 +1877,19 @@ export function DashboardShell({
     return () => clearTimeout(t);
   }, [toastMsg]);
 
+  // BETA: switch the account's tier, then reload so plan-gated capabilities
+  // (themes, custom colours, white-label, etc.) re-resolve from the new plan.
+  const onSwitchPlan = async (id: PlanId) => {
+    if (!(dbSave && cafeId)) { toast("Tier switching works on your live dashboard."); return; }
+    const r = await setPlan(id);
+    if (r.ok) {
+      toast(`Switched to ${PLANS.find((p) => p.id === id)?.name ?? id}`);
+      if (typeof window !== "undefined") window.location.reload();
+    } else {
+      toast("Couldn't switch plan — try again.");
+    }
+  };
+
   // Demo showcase shows only the tabs worth demoing; the live app shows all
   // (minus Orders until live tracking ships).
   const DEMO_TABS: TabId[] = ["home", "menu", "categories", "appearance", "promos", "qr"];
@@ -2103,7 +2121,7 @@ export function DashboardShell({
         {tab === "qr" && <QRTab cafe={cafe} brand={brand} caps={caps} toast={toast} />}
         {tab === "promos" && <PromosTab promos={promos} setPromos={setPromos} toast={toast} />}
         {tab === "analytics" && <AnalyticsTab orders={orders} cafeName={cafe.name} />}
-        {tab === "subscription" && <SubscriptionTab currentId={planId} />}
+        {tab === "subscription" && <SubscriptionTab currentId={planId} onSwitch={onSwitchPlan} />}
         {tab === "settings" && <SettingsTab cafe={cafe} setCafe={setCafe} toast={toast} />}
       </div>
 

@@ -6,7 +6,7 @@
 import { revalidatePath } from "next/cache";
 import { verifySession } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
-import type { BrandKit, Cafe, MenuItem, Promo, ThemeKey } from "@/lib/data";
+import type { BrandKit, Cafe, MenuItem, PlanId, Promo, ThemeKey } from "@/lib/data";
 
 export type SaveResult = { ok: true } | { ok: false; error: string };
 
@@ -75,6 +75,15 @@ export async function savePromos(cafeId: string, promos: Promo[]): Promise<SaveR
     if (error) return { ok: false, error: error.message };
   }
   return { ok: true };
+}
+
+// BETA: switch the owner's account to any tier (no payment). See migration 0009.
+export async function setPlan(plan: PlanId): Promise<SaveResult> {
+  await verifySession();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_account_plan", { p_plan: plan });
+  if (!error) revalidatePath("/dashboard");
+  return error ? { ok: false, error: error.message } : { ok: true };
 }
 
 export async function saveMenu(
