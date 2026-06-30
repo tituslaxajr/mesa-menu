@@ -225,7 +225,9 @@ export function resolveOrderMode(cafe: Cafe, planAllowsOrders: boolean): OrderMo
   return chosen;
 }
 
-// ---- Demo café + menu ------------------------------------------------------
+// ---- Demo café + menu (marketing landing graphics only) --------------------
+// The live demo café/menu come from the database (see supabase/migrations); the
+// constants below are used only by the marketing PhoneMock / DashboardMock.
 
 export const DEMO_CAFE: Cafe = {
   slug: "demo",
@@ -237,24 +239,6 @@ export const DEMO_CAFE: Cafe = {
   plan: "brew",
   theme: "warm",
 };
-
-/** A second sample café on the Starter (browse-only) tier, for demonstrating
- *  tier gating: same menu, no ordering controls. */
-export const DEMO_CAFE_STARTER: Cafe = {
-  slug: "demo-starter",
-  name: "Tindahan Coffee",
-  tagline: "Small-batch roasts · Angeles, Pampanga",
-  intro: "Small-batch roasts and simple, honest food, served all day.",
-  hours: "Open today · 8:00am – 9:00pm",
-  cover: U("photo-1453614512568-c4024d13c247", 1200),
-  plan: "starter",
-  theme: "minimal",
-  orderMode: "browse",
-};
-
-const CAFES: Cafe[] = [DEMO_CAFE, DEMO_CAFE_STARTER];
-
-export const CATEGORIES = ["All", "Hot Coffee", "Iced Coffee", "Sweet Things", "Kitchen"];
 
 // Shared option groups, reused across the coffee items.
 const SIZE_GROUP: OptionGroup = {
@@ -327,42 +311,6 @@ export interface Promo {
   active: boolean;
   tone: "highlight" | "brand" | "neutral";
 }
-
-export const PROMOS: Promo[] = [
-  { id: "merienda", title: "Merienda hour", desc: "2–5 PM · ₱20 off any pastry with a hot drink.", period: "Daily · 2:00–5:00 PM", active: true, tone: "highlight" },
-  { id: "student", title: "Student Tuesdays", desc: "10% off for students, all day Tuesday.", period: "Every Tuesday", active: true, tone: "brand" },
-  { id: "rainy", title: "Rainy-day soup set", desc: "Free soup with any sandwich when it rains.", period: "Seasonal · paused", active: false, tone: "neutral" },
-];
-
-export const ANALYTICS = {
-  viewsThisWeek: 320,
-  viewsDelta: "+12%",
-  uptime: "98%",
-  series: [120, 180, 150, 240, 210, 300, 320],
-  days: ["May 10", "May 11", "May 12", "May 13", "May 14", "May 15", "May 16"],
-  topItems: [
-    { name: "Salted Caramel Latte", views: 120 },
-    { name: "Iced Spanish Latte", views: 98 },
-    { name: "Flat White", views: 76 },
-    { name: "Raspberry Cream Cake", views: 54 },
-    { name: "Butter Croissant", views: 42 },
-  ],
-};
-
-export interface Activity {
-  item: string;
-  action: string;
-  icon: string;
-  when: string;
-  tone: "highlight" | "soldout" | "brand" | "neutral";
-}
-
-export const ACTIVITY: Activity[] = [
-  { item: "Iced Spanish Latte", action: "Marked as new", icon: "sparkles", when: "2 hours ago", tone: "highlight" },
-  { item: "Brown Butter Cookies", action: "Marked sold out", icon: "ban", when: "5 hours ago", tone: "soldout" },
-  { item: "Salted Caramel Latte", action: "Price updated to ₱150", icon: "banknote", when: "1 day ago", tone: "brand" },
-  { item: "Flat White", action: "Photo replaced", icon: "image", when: "2 days ago", tone: "neutral" },
-];
 
 // ---- Brand kit -------------------------------------------------------------
 
@@ -560,23 +508,9 @@ export function isThemeKey(v: string | undefined | null): v is ThemeKey {
   return !!v && (THEME_KEYS as string[]).includes(v);
 }
 
-// ---- Accessors (BACKEND SEAM) ----------------------------------------------
-// Replace these with real fetches (DB / API) when a backend exists. The rest of
-// the app only talks to the functions below, never to the constants directly.
-
-export function getCafe(slug: string): Cafe | null {
-  // BACKEND SEAM: look up café by slug.
-  return CAFES.find((c) => c.slug === slug) ?? null;
-}
-
-export function getMenu(_slug: string): MenuItem[] {
-  // BACKEND SEAM: fetch this café's menu.
-  return MENU;
-}
-
-export function getCategories(_slug: string): string[] {
-  return CATEGORIES;
-}
+// ---- Plan catalog lookup ---------------------------------------------------
+// Café/menu/category reads are now DB-backed in src/lib/queries.ts. PLANS is a
+// static pricing catalog (not tenant data), so this stays a simple lookup.
 
 export function getPlan(id: PlanId): Plan | undefined {
   return PLANS.find((p) => p.id === id);

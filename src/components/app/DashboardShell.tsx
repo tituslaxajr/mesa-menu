@@ -63,7 +63,6 @@ import { brandVars } from "@/lib/brand";
 import { LivePreview } from "./LivePreview";
 import {
   THEMES,
-  PROMOS,
   ACCENT_PRESETS,
   SURFACE_PRESETS,
   PAIRINGS,
@@ -1842,7 +1841,7 @@ export function DashboardShell({
   const [cafe, setCafe] = useStudioState<Cafe>(persist, studioKey(slug, "cafe"), cafe0);
   const [brand, setBrand] = useStudioState<BrandKit>(persist, studioKey(slug, "brand"), initialBrand ?? DEFAULT_BRAND);
   const [theme, setTheme] = useStudioState<ThemeKey>(persist, studioKey(slug, "theme"), cafe0.theme);
-  const [promos, setPromos] = useStudioState<Promo[]>(persist, studioKey(slug, "promos"), initialPromos ?? PROMOS);
+  const [promos, setPromos] = useStudioState<Promo[]>(persist, studioKey(slug, "promos"), initialPromos ?? []);
   const [categories, setCategories] = useStudioState<string[]>(persist, studioKey(slug, "categories"), categories0);
 
   // DB mode: debounced auto-save of each concern to Supabase via Server Actions.
