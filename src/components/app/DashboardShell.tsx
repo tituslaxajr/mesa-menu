@@ -1041,18 +1041,10 @@ function AppearanceTab(props: {
           );
         })}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 28, alignItems: "start" }} className="mesa-appearance-grid">
-        <div style={{ minWidth: 0 }}>
-          {sub === "theme"
-            ? <ThemeSubTab theme={props.theme} setTheme={props.setTheme} accent={props.brand.accent} caps={props.caps} />
-            : <BrandKitSubTab brand={props.brand} setBrand={props.setBrand} theme={props.theme} caps={props.caps} uploadImage={props.uploadImage} />}
-        </div>
-        <div style={{ position: "sticky", top: 90, display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-          <LivePreview cafe={props.cafe} menu={props.items} categories={props.categories} theme={props.theme} brand={props.brand} plan={props.plan} width={284} height={560} />
-          <span style={{ fontSize: 12, color: "var(--text-subtle)", display: "inline-flex", alignItems: "center", gap: 6 }}>
-            <span style={{ width: 7, height: 7, borderRadius: 999, background: "var(--available)" }} /> Live preview
-          </span>
-        </div>
+      <div style={{ maxWidth: 720, minWidth: 0 }}>
+        {sub === "theme"
+          ? <ThemeSubTab theme={props.theme} setTheme={props.setTheme} accent={props.brand.accent} caps={props.caps} />
+          : <BrandKitSubTab brand={props.brand} setBrand={props.setBrand} theme={props.theme} caps={props.caps} uploadImage={props.uploadImage} />}
       </div>
     </div>
   );

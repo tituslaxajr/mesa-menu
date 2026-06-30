@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useMemo, useState } from "react";
 import { ThemeLayout, themeVars } from "./menu-themes";
 import { brandVars, surfaceVars } from "@/lib/brand";
@@ -19,11 +18,13 @@ interface Props {
 
 /**
  * A live phone-frame preview of the guest menu, reflecting the current theme +
- * brand kit (accent, fonts, logo) and any menu edits. Read-only — item taps are
- * inert here. Used in the Studio's Appearance tab.
+ * brand kit (accent, fonts, logo) and any menu edits. Tapping an item opens a
+ * read-only detail view (photo, description, options, tags) — like the live
+ * menu, minus ordering. Used in the dashboard's live-preview pane.
  */
 export function LivePreview({ cafe, menu, categories, theme: theme0, brand: brand0, plan, width = 300, height = 600 }: Props) {
   const [cat, setCat] = useState("All");
+  const [openItem, setOpenItem] = useState<MenuItem | null>(null);
   const caps = plan ? capsFor(plan) : null;
   const brand = caps ? clampBrand(brand0, caps) : brand0;
   const theme = caps ? clampTheme(theme0, caps) : theme0;
@@ -42,6 +43,7 @@ export function LivePreview({ cafe, menu, categories, theme: theme0, brand: bran
     <div style={{ width, flex: "none", borderRadius: 40, background: "#1F140E", padding: 10, boxShadow: "var(--shadow-xl)" }}>
       <div
         style={{
+          position: "relative",
           borderRadius: 31,
           overflow: "hidden",
           height,
@@ -62,11 +64,61 @@ export function LivePreview({ cafe, menu, categories, theme: theme0, brand: bran
           cats={categories}
           cat={cat}
           setCat={setCat}
-          onOpen={() => {}}
+          onOpen={(m) => setOpenItem(m)}
           q=""
           setQ={() => {}}
           showRails={cat === "All"}
         />
+
+        {openItem && (
+          <div style={{ position: "absolute", inset: 0, zIndex: 5, background: "var(--surface-page)", color: "var(--text-strong)", overflowY: "auto", display: "flex", flexDirection: "column" }}>
+            <div style={{ padding: 10 }}>
+              <button
+                onClick={() => setOpenItem(null)}
+                style={{ display: "inline-flex", alignItems: "center", gap: 6, border: 0, background: "var(--surface-card)", color: "var(--text-strong)", borderRadius: 999, padding: "7px 13px", fontSize: 13, fontWeight: 600, cursor: "pointer", boxShadow: "var(--shadow-sm)" }}
+              >
+                ← Back
+              </button>
+            </div>
+            {openItem.img && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={openItem.img} alt="" style={{ width: "100%", height: 180, objectFit: "cover" }} />
+            )}
+            <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "baseline" }}>
+                <h3 style={{ fontFamily: "var(--font-display)", fontSize: 20, margin: 0, lineHeight: 1.2 }}>{openItem.name}</h3>
+                <span style={{ fontWeight: 700, flex: "none" }}>₱{openItem.price}</span>
+              </div>
+              {openItem.desc && <p style={{ fontSize: 13.5, color: "var(--text-muted)", margin: 0, lineHeight: 1.5 }}>{openItem.desc}</p>}
+              {openItem.tags && openItem.tags.length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {openItem.tags.map((t) => (
+                    <span key={t.id} style={{ fontSize: 12, padding: "3px 9px", borderRadius: 999, background: "var(--surface-card)", color: "var(--text-body)" }}>
+                      {t.emoji ? `${t.emoji} ` : ""}{t.label}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {(openItem.options ?? []).map((g) => (
+                <div key={g.id}>
+                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>
+                    {g.label}
+                    <span style={{ fontWeight: 500, color: "var(--text-subtle)" }}>{g.required ? "" : " · optional"}</span>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {g.choices.map((c) => (
+                      <div key={c.id} style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 13, color: "var(--text-body)", padding: "8px 11px", borderRadius: "var(--radius-md)", border: "1px solid var(--border-soft)" }}>
+                        <span>{c.label}</span>
+                        {c.priceDelta ? <span style={{ color: "var(--text-muted)" }}>+₱{c.priceDelta}</span> : null}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              <p style={{ fontSize: 11.5, color: "var(--text-subtle)", marginTop: 2 }}>Preview · guests order from the live menu.</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
