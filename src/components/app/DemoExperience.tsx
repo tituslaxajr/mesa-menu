@@ -4,7 +4,7 @@
 // so they stay in the visitor's browser and never touch the DB-backed /m/demo.
 // "Reset demo" clears those keys.
 import Link from "next/link";
-import { RotateCcw, ArrowRight, Smartphone } from "lucide-react";
+import { RotateCcw, ArrowRight, ArrowLeft, Smartphone } from "lucide-react";
 import { DashboardShell } from "./DashboardShell";
 import { studioKey, type StudioPart } from "@/lib/studio-store";
 import type { BrandKit, Cafe, MenuItem, PlanId, Promo } from "@/lib/data";
@@ -41,7 +41,7 @@ export function DemoExperience({
         style={{
           display: "flex",
           alignItems: "center",
-          justifyContent: "center",
+          justifyContent: "space-between",
           flexWrap: "wrap",
           gap: "8px 16px",
           padding: "10px 18px",
@@ -51,6 +51,12 @@ export function DemoExperience({
           fontSize: 13.5,
         }}
       >
+        <Link
+          href="/"
+          style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "var(--text-inverse)", fontWeight: 700, textDecoration: "none", flex: "none" }}
+        >
+          <ArrowLeft size={15} /> Back to site
+        </Link>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
           <Smartphone size={15} style={{ flex: "none", opacity: 0.85 }} />
           <strong style={{ fontWeight: 700 }}>Live demo.</strong>
