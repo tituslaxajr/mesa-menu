@@ -1786,7 +1786,7 @@ function PreviewPane({
           <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: ".05em", textTransform: "uppercase", color: "var(--text-muted)" }}>Live preview</span>
           <Button as="a" href={`/m/${cafe.slug}`} target="_blank" variant="ghost"><ExternalLink /> Open</Button>
         </div>
-        <LivePreview cafe={cafe} menu={items} categories={categories} theme={theme} brand={brand} plan={cafe.plan} width={300} height={600} />
+        <LivePreview cafe={cafe} menu={items} categories={categories} theme={theme} brand={brand} plan={cafe.plan} width={300} height={640} />
         <span style={{ fontSize: 12, color: "var(--text-muted)", textAlign: "center", maxWidth: 280 }}>{caption}</span>
       </aside>
 
@@ -1799,7 +1799,7 @@ function PreviewPane({
               <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: ".05em", textTransform: "uppercase", color: "var(--text-muted)" }}>Live preview</span>
               <IconButton label="Close preview" variant="ghost" onClick={onClose}><X /></IconButton>
             </div>
-            <LivePreview cafe={cafe} menu={items} categories={categories} theme={theme} brand={brand} plan={cafe.plan} width={300} height={600} />
+            <LivePreview cafe={cafe} menu={items} categories={categories} theme={theme} brand={brand} plan={cafe.plan} width={300} height={640} />
             <span style={{ fontSize: 12, color: "var(--text-muted)", textAlign: "center", maxWidth: 280 }}>{caption}</span>
           </aside>
         </div>

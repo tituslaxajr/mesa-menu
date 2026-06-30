@@ -42,12 +42,15 @@ export function LivePreview({ cafe, menu, categories, theme: theme0, brand: bran
   return (
     <div style={{ width, flex: "none", borderRadius: 40, background: "#1F140E", padding: 10, boxShadow: "var(--shadow-xl)" }}>
       <div
+        className="mesa-preview-screen"
         style={{
           position: "relative",
           borderRadius: 31,
           overflow: "hidden",
           height,
           overflowY: "auto",
+          overscrollBehavior: "contain",
+          scrollBehavior: "smooth",
           background: "var(--surface-page)",
           ...(themeVars(theme) as React.CSSProperties),
           ...(brandVars(brand) as React.CSSProperties),
@@ -71,7 +74,7 @@ export function LivePreview({ cafe, menu, categories, theme: theme0, brand: bran
         />
 
         {openItem && (
-          <div style={{ position: "absolute", inset: 0, zIndex: 5, background: "var(--surface-page)", color: "var(--text-strong)", overflowY: "auto", display: "flex", flexDirection: "column" }}>
+          <div className="mesa-preview-screen mesa-preview-sheet" style={{ position: "absolute", inset: 0, zIndex: 5, background: "var(--surface-page)", color: "var(--text-strong)", overflowY: "auto", overscrollBehavior: "contain", display: "flex", flexDirection: "column" }}>
             <div style={{ padding: 10 }}>
               <button
                 onClick={() => setOpenItem(null)}
