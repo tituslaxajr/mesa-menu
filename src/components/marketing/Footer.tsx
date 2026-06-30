@@ -20,6 +20,12 @@ export function Footer() {
             <a href="#pricing" style={{ fontSize: 13.5, color: "var(--text-muted)" }}>
               Pricing
             </a>
+            <Link href="/terms" style={{ fontSize: 13.5, color: "var(--text-muted)" }}>
+              Terms
+            </Link>
+            <Link href="/privacy" style={{ fontSize: 13.5, color: "var(--text-muted)" }}>
+              Privacy
+            </Link>
           </nav>
         </div>
         <span style={{ fontSize: 13.5, color: "var(--text-subtle)" }}>
