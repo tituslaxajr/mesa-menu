@@ -56,6 +56,7 @@ import { useLocalStore } from "@/lib/useLocalStore";
 import { studioKey } from "@/lib/studio-store";
 import { useStudioState, useAutosave, type SaveStatus } from "@/lib/studio-sync";
 import { saveMenu, saveBrand, saveCafeProfile, savePromos } from "@/lib/studio-actions";
+import { uploadCafeImage } from "@/lib/storage";
 import { useOrders, timeAgo, type Order, type OrdersApi, type OrderStatus } from "@/lib/orders-store";
 import { palette, hue, extractBrandColor, accentContrast, surfaceContrast, type ContrastLevel } from "@/lib/color";
 import { brandVars } from "@/lib/brand";
@@ -200,6 +201,8 @@ interface Props {
 }
 
 type DraftItem = MenuItem & { _new?: boolean };
+/** Upload an image and resolve to a stored src (Storage URL in db mode). */
+type UploadImage = (file: File, kind: "logo" | "cover" | "item") => Promise<string>;
 
 /* ── small primitives ─────────────────────────────────────────────── */
 function StatCard({ icon: Icon, value, label, delta }: { icon: LucideIcon; value: React.ReactNode; label: string; delta?: string }) {
@@ -232,11 +235,16 @@ function PageWrap({ children, max = 1180 }: { children: React.ReactNode; max?: n
   return <div className="mesa-dash-page" style={{ padding: "24px 28px 60px", maxWidth: max }}>{children}</div>;
 }
 
-function UploadZone({ onFile, height = 120, children }: { onFile: (dataUrl: string) => void; height?: number; children: React.ReactNode }) {
+function UploadZone({ onFile, upload, height = 120, children }: { onFile: (src: string) => void; upload?: (file: File) => Promise<string>; height?: number; children: React.ReactNode }) {
   const ref = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
+  const [busy, setBusy] = useState(false);
   const take = (file?: File) => {
-    if (file && file.type.startsWith("image/")) {
+    if (!file || !file.type.startsWith("image/")) return;
+    if (upload) {
+      setBusy(true);
+      upload(file).then(onFile).catch(() => {}).finally(() => setBusy(false));
+    } else {
       const fr = new FileReader();
       fr.onload = () => onFile(fr.result as string);
       fr.readAsDataURL(file);
@@ -244,14 +252,14 @@ function UploadZone({ onFile, height = 120, children }: { onFile: (dataUrl: stri
   };
   return (
     <div
-      onClick={() => ref.current?.click()}
+      onClick={() => { if (!busy) ref.current?.click(); }}
       onDragOver={(e) => { e.preventDefault(); setOver(true); }}
       onDragLeave={() => setOver(false)}
       onDrop={(e) => { e.preventDefault(); setOver(false); take(e.dataTransfer.files[0]); }}
-      style={{ cursor: "pointer", minHeight: height, border: `2px dashed ${over ? "var(--brand)" : "var(--border-default)"}`, background: over ? "var(--brand-soft)" : "var(--surface-sunken)", borderRadius: "var(--radius-lg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, textAlign: "center", padding: 18, transition: "all .15s" }}
+      style={{ cursor: busy ? "default" : "pointer", minHeight: height, border: `2px dashed ${over ? "var(--brand)" : "var(--border-default)"}`, background: over ? "var(--brand-soft)" : "var(--surface-sunken)", borderRadius: "var(--radius-lg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, textAlign: "center", padding: 18, transition: "all .15s", opacity: busy ? 0.7 : 1 }}
     >
       <input ref={ref} type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => take(e.target.files?.[0])} />
-      {children}
+      {busy ? <span style={{ fontSize: 13, color: "var(--text-muted)", fontFamily: "var(--font-sans)" }}>Uploading…</span> : children}
     </div>
   );
 }
@@ -400,7 +408,7 @@ function ManagerRow({ item, index, count, canReorder, onMove, onDuplicate, onTog
 
 const uid = (p: string) => p + Math.random().toString(36).slice(2, 7);
 
-function EditDrawer({ item, cats, customTags, onClose, onSave }: { item: DraftItem; cats: string[]; customTags: MenuTag[]; onClose: () => void; onSave: (d: DraftItem) => void }) {
+function EditDrawer({ item, cats, customTags, onClose, onSave, uploadImage }: { item: DraftItem; cats: string[]; customTags: MenuTag[]; onClose: () => void; onSave: (d: DraftItem) => void; uploadImage: UploadImage }) {
   const [draft, setDraft] = useState<DraftItem>(item);
   const set = <K extends keyof DraftItem>(k: K, v: DraftItem[K]) => setDraft((d) => ({ ...d, [k]: v }));
 
@@ -469,7 +477,7 @@ function EditDrawer({ item, cats, customTags, onClose, onSave }: { item: DraftIt
                 style={{ display: "none" }}
                 onChange={(e) => {
                   const f = e.target.files?.[0];
-                  if (f) { const fr = new FileReader(); fr.onload = () => set("img", fr.result as string); fr.readAsDataURL(f); }
+                  if (f) uploadImage(f, "item").then((src) => set("img", src)).catch(() => {});
                 }}
               />
               <span className="mesa-btn mesa-btn--secondary mesa-btn--sm"><ImageIcon /> Replace photo</span>
@@ -791,7 +799,7 @@ function Gated({ locked, tier, children }: { locked: boolean; tier: string; chil
   );
 }
 
-function BrandKitSubTab({ brand, setBrand, theme, caps }: { brand: BrandKit; setBrand: (f: (b: BrandKit) => BrandKit) => void; theme: ThemeKey; caps: BrandCaps }) {
+function BrandKitSubTab({ brand, setBrand, theme, caps, uploadImage }: { brand: BrandKit; setBrand: (f: (b: BrandKit) => BrandKit) => void; theme: ThemeKey; caps: BrandCaps; uploadImage: UploadImage }) {
   const set = (patch: Partial<BrandKit>) => setBrand((b) => ({ ...b, ...patch }));
   const [extracted, setExtracted] = useState<{ src: string; color: string | null; pairingId?: string } | null>(null);
 
@@ -825,7 +833,7 @@ function BrandKitSubTab({ brand, setBrand, theme, caps }: { brand: BrandKit; set
               : <ImageIcon size={26} style={{ color: "var(--text-subtle)" }} />}
           </div>
           <div style={{ flex: 1, minWidth: 200 }}>
-            <UploadZone height={80} onFile={(src) => set({ logo: src })}>
+            <UploadZone height={80} onFile={(src) => set({ logo: src })} upload={(f) => uploadImage(f, "logo")}>
               <UploadCloud size={22} style={{ color: "var(--brand)" }} />
               <div style={{ fontSize: 13, color: "var(--text-body)", fontWeight: 600 }}>Drop your logo or click to upload</div>
             </UploadZone>
@@ -1015,7 +1023,7 @@ function BrandKitSubTab({ brand, setBrand, theme, caps }: { brand: BrandKit; set
 
 function AppearanceTab(props: {
   theme: ThemeKey; setTheme: (t: ThemeKey) => void; brand: BrandKit; setBrand: (f: (b: BrandKit) => BrandKit) => void;
-  cafe: Cafe; items: MenuItem[]; categories: string[]; caps: BrandCaps; plan: PlanId;
+  cafe: Cafe; items: MenuItem[]; categories: string[]; caps: BrandCaps; plan: PlanId; uploadImage: UploadImage;
 }) {
   const [sub, setSub] = useState<"theme" | "brand">("theme");
   const subs: [("theme" | "brand"), string, LucideIcon][] = [["theme", "Menu theme", LayoutTemplate], ["brand", "Brand kit", Paintbrush]];
@@ -1035,7 +1043,7 @@ function AppearanceTab(props: {
         <div style={{ minWidth: 0 }}>
           {sub === "theme"
             ? <ThemeSubTab theme={props.theme} setTheme={props.setTheme} accent={props.brand.accent} caps={props.caps} />
-            : <BrandKitSubTab brand={props.brand} setBrand={props.setBrand} theme={props.theme} caps={props.caps} />}
+            : <BrandKitSubTab brand={props.brand} setBrand={props.setBrand} theme={props.theme} caps={props.caps} uploadImage={props.uploadImage} />}
         </div>
         <div style={{ position: "sticky", top: 90, display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
           <LivePreview cafe={props.cafe} menu={props.items} categories={props.categories} theme={props.theme} brand={props.brand} plan={props.plan} width={284} height={560} />
@@ -1837,6 +1845,17 @@ export function DashboardShell({
   useAutosave(dbSave, [cafe, theme], () => saveCafeProfile(cafeId!, cafe, theme), setSaveStatus);
   useAutosave(dbSave, promos, () => savePromos(cafeId!, promos), setSaveStatus);
 
+  // Upload images to Storage in DB mode; fall back to a local data URL in the
+  // /demo sandbox (anon can't write to Storage anyway).
+  const uploadImage = async (file: File, kind: "logo" | "cover" | "item"): Promise<string> => {
+    if (dbSave && cafeId) return uploadCafeImage(file, cafeId, kind);
+    return new Promise<string>((resolve) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result as string);
+      fr.readAsDataURL(file);
+    });
+  };
+
   const [orders, ordersApi] = useOrders(slug);
   // The live board only handles kitchen-channel orders; counter orders are
   // logged for analytics but never worked here.
@@ -1976,7 +1995,7 @@ export function DashboardShell({
 
   // Shared nav items (sidebar + mobile drawer). onPick closes the drawer.
   const navItems = (onPick: () => void) =>
-    NAV.map((n) => {
+    NAV.filter((n) => PHASE2_ORDERING || n.id !== "orders").map((n) => {
       const on = tab === n.id;
       const badge = n.id === "orders" && newOrders > 0 ? newOrders : 0;
       return (
@@ -2074,7 +2093,7 @@ export function DashboardShell({
         {tab === "orders" && <OrdersTab orders={kitchenOrders} api={ordersApi} items={items} slug={slug} />}
         {tab === "menu" && <MenuTab items={items} categories={categories} onMove={moveItem} onDuplicate={duplicateItem} onToggle={toggle} onCategorySoldOut={setCategorySoldOut} onAdd={addItem} onEdit={setEditing} />}
         {tab === "categories" && <CategoriesTab items={items} categories={categories} setCategories={setCategories} onDelete={deleteCategory} toast={toast} />}
-        {tab === "appearance" && <AppearanceTab theme={theme} setTheme={setTheme} brand={brand} setBrand={setBrand} cafe={cafe} items={items} categories={categories} caps={caps} plan={cafe.plan} />}
+        {tab === "appearance" && <AppearanceTab theme={theme} setTheme={setTheme} brand={brand} setBrand={setBrand} cafe={cafe} items={items} categories={categories} caps={caps} plan={cafe.plan} uploadImage={uploadImage} />}
         {tab === "qr" && <QRTab cafe={cafe} brand={brand} caps={caps} toast={toast} />}
         {tab === "promos" && <PromosTab promos={promos} setPromos={setPromos} toast={toast} />}
         {tab === "analytics" && <AnalyticsTab orders={orders} cafeName={cafe.name} />}
@@ -2087,7 +2106,7 @@ export function DashboardShell({
 
       {/* Mobile bottom tab bar — fast access to the daily-use screens */}
       <nav className="mesa-dash-bottombar" style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 8, background: "var(--surface-card)", borderTop: "1px solid var(--border-soft)", paddingBottom: "env(safe-area-inset-bottom)", boxShadow: "0 -2px 16px rgba(31,20,14,0.06)" }}>
-        {([{ id: "home", label: "Home", icon: LayoutDashboard }, { id: "orders", label: "Orders", icon: ClipboardList }, { id: "menu", label: "Menu", icon: Utensils }] as { id: TabId; label: string; icon: LucideIcon }[]).map((item) => {
+        {([{ id: "home", label: "Home", icon: LayoutDashboard }, ...(PHASE2_ORDERING ? [{ id: "orders", label: "Orders", icon: ClipboardList }] : []), { id: "menu", label: "Menu", icon: Utensils }] as { id: TabId; label: string; icon: LucideIcon }[]).map((item) => {
           const on = tab === item.id;
           const showBadge = item.id === "orders" && newOrders > 0;
           return (
@@ -2106,7 +2125,7 @@ export function DashboardShell({
         </button>
       </nav>
 
-      {editing && <EditDrawer item={editing} cats={categories} customTags={customTags} onClose={() => setEditing(null)} onSave={save} />}
+      {editing && <EditDrawer item={editing} cats={categories} customTags={customTags} onClose={() => setEditing(null)} onSave={save} uploadImage={uploadImage} />}
 
       {toastMsg && (
         <div className="mesa-anim-rise" style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", zIndex: 60, background: "var(--surface-inverse)", color: "var(--text-inverse)", padding: "12px 20px", borderRadius: 999, fontSize: 14, fontWeight: 500, boxShadow: "var(--shadow-lg)", display: "flex", alignItems: "center", gap: 8 }}>
