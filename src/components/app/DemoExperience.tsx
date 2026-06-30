@@ -102,6 +102,7 @@ export function DemoExperience({
         initialBrand={brand}
         initialPromos={promos}
         persistence="local"
+        demo
       />
     </div>
   );

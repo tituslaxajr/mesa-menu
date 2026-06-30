@@ -2,6 +2,7 @@
 import { useActionState, useState } from "react";
 import { Coffee } from "lucide-react";
 import { createCafe, type CafeFormState } from "@/lib/cafe-actions";
+import { PLANS, type PlanId } from "@/lib/data";
 
 const field: React.CSSProperties = {
   width: "100%",
@@ -33,6 +34,7 @@ export function OnboardingForm() {
   );
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
+  const [plan, setPlan] = useState<PlanId>("brew");
   const effectiveSlug = slug ? slugify(slug) : slugify(name);
 
   return (
@@ -106,6 +108,49 @@ export function OnboardingForm() {
               <span style={{ color: "var(--brand-active)", fontWeight: 600 }}>
                 /m/{effectiveSlug || "your-cafe"}
               </span>
+            </p>
+          </div>
+
+          <div>
+            <label style={label}>Your plan</label>
+            <input type="hidden" name="plan" value={plan} />
+            <div style={{ display: "grid", gap: 8 }}>
+              {PLANS.map((p) => {
+                const on = plan === p.id;
+                return (
+                  <button
+                    type="button"
+                    key={p.id}
+                    onClick={() => setPlan(p.id)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      textAlign: "left",
+                      width: "100%",
+                      padding: "12px 14px",
+                      borderRadius: "var(--radius-md)",
+                      cursor: "pointer",
+                      background: on ? "var(--brand-soft)" : "var(--surface-card)",
+                      border: on ? "2px solid var(--brand)" : "1px solid var(--border-default)",
+                      fontFamily: "var(--font-sans)",
+                    }}
+                  >
+                    <span style={{ marginTop: 1, width: 18, height: 18, borderRadius: 999, flex: "none", border: on ? "5px solid var(--brand)" : "2px solid var(--border-default)" }} />
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                        <span style={{ fontWeight: 700, color: "var(--text-strong)", fontSize: 14.5 }}>{p.name}</span>
+                        <span style={{ fontSize: 13, color: "var(--text-muted)" }}>₱{p.monthly}/mo</span>
+                        {p.popular && <span style={{ fontSize: 11, fontWeight: 700, color: "var(--brand-active)" }}>Popular</span>}
+                      </span>
+                      <span style={{ display: "block", fontSize: 12.5, color: "var(--text-muted)" }}>{p.tagline}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <p style={{ fontSize: 12.5, color: "var(--text-subtle)", marginTop: 6, fontFamily: "var(--font-sans)" }}>
+              Beta: pick any tier to try it — no payment. Your tier is set at sign-up.
             </p>
           </div>
 

@@ -198,6 +198,8 @@ interface Props {
   initialPromos?: Promo[];
   /** "db" persists edits to Supabase (real owner); "local" is the /demo sandbox. */
   persistence?: "db" | "local";
+  /** Demo showcase: restrict the nav to the items worth demoing. */
+  demo?: boolean;
 }
 
 type DraftItem = MenuItem & { _new?: boolean };
@@ -1482,10 +1484,14 @@ function AnalyticsTab({ orders, cafeName }: { orders: Order[]; cafeName: string 
 }
 
 /* ════ SUBSCRIPTION ════════════════════════════════════════════════ */
-function SubscriptionTab({ currentId, toast }: { currentId: string; toast: (m: string) => void }) {
+function SubscriptionTab({ currentId }: { currentId: string }) {
   return (
     <PageWrap max={1000}>
-      <SectionTitle>Choose your plan</SectionTitle>
+      <SectionTitle>Your plan</SectionTitle>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "0 0 16px", padding: "10px 14px", borderRadius: "var(--radius-md)", background: "var(--surface-muted)", color: "var(--text-body)", fontSize: 13.5, fontFamily: "var(--font-sans)" }}>
+        <Sparkles size={15} style={{ flex: "none", color: "var(--brand)" }} />
+        <span>Your tier was chosen at sign-up. During the beta, message us to change it.</span>
+      </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
         {PLANS.map((p) => {
           const current = p.id === currentId;
@@ -1505,9 +1511,9 @@ function SubscriptionTab({ currentId, toast }: { currentId: string; toast: (m: s
                   </div>
                 ))}
               </div>
-              <Button variant={current ? "secondary" : "primary"} block disabled={current} onClick={() => toast(`Switched to ${p.name}`)}>
-                {current ? "Your plan" : `Switch to ${p.name}`}
-              </Button>
+              {current
+                ? <Button variant="secondary" block disabled>Your plan</Button>
+                : <div style={{ textAlign: "center", fontSize: 13, color: "var(--text-subtle)", padding: "10px 0", fontFamily: "var(--font-sans)" }}>Not your current tier</div>}
             </div>
           );
         })}
@@ -1819,6 +1825,7 @@ export function DashboardShell({
   initialBrand,
   initialPromos,
   persistence = "local",
+  demo = false,
 }: Props) {
   const slug = cafe0.slug;
   // DB persistence requires the café uuid; otherwise fall back to the sandbox.
@@ -1872,6 +1879,13 @@ export function DashboardShell({
     const t = setTimeout(() => setToastMsg(""), 2000);
     return () => clearTimeout(t);
   }, [toastMsg]);
+
+  // Demo showcase shows only the tabs worth demoing; the live app shows all
+  // (minus Orders until live tracking ships).
+  const DEMO_TABS: TabId[] = ["home", "menu", "categories", "appearance", "promos", "qr"];
+  const allowedTabs: TabId[] = demo
+    ? DEMO_TABS
+    : NAV.map((n) => n.id).filter((id) => PHASE2_ORDERING || id !== "orders");
 
   // Alert (chime + desktop notification) when a NEW order arrives. Establish a
   // baseline of order ids on first load so we don't alert for existing ones.
@@ -1995,7 +2009,7 @@ export function DashboardShell({
 
   // Shared nav items (sidebar + mobile drawer). onPick closes the drawer.
   const navItems = (onPick: () => void) =>
-    NAV.filter((n) => PHASE2_ORDERING || n.id !== "orders").map((n) => {
+    NAV.filter((n) => allowedTabs.includes(n.id)).map((n) => {
       const on = tab === n.id;
       const badge = n.id === "orders" && newOrders > 0 ? newOrders : 0;
       return (
@@ -2097,7 +2111,7 @@ export function DashboardShell({
         {tab === "qr" && <QRTab cafe={cafe} brand={brand} caps={caps} toast={toast} />}
         {tab === "promos" && <PromosTab promos={promos} setPromos={setPromos} toast={toast} />}
         {tab === "analytics" && <AnalyticsTab orders={orders} cafeName={cafe.name} />}
-        {tab === "subscription" && <SubscriptionTab currentId={planId} toast={toast} />}
+        {tab === "subscription" && <SubscriptionTab currentId={planId} />}
         {tab === "settings" && <SettingsTab cafe={cafe} setCafe={setCafe} toast={toast} />}
       </div>
 

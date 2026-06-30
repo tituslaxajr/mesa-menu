@@ -9,7 +9,9 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { verifySession } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
-import { DIET_TAGS } from "@/lib/data";
+import { DIET_TAGS, type PlanId } from "@/lib/data";
+
+const PLAN_IDS: PlanId[] = ["starter", "brew", "roast"];
 
 const RESERVED = new Set([
   "demo", "demo-starter", "dashboard", "api", "m", "login", "signup", "admin", "new", "app", "www",
@@ -36,6 +38,8 @@ export async function createCafe(
   const user = await verifySession();
   const name = String(formData.get("name") ?? "").trim();
   const slug = slugify(String(formData.get("slug") ?? "") || name);
+  const planRaw = String(formData.get("plan") ?? "");
+  const plan: PlanId = (PLAN_IDS as string[]).includes(planRaw) ? (planRaw as PlanId) : "starter";
 
   if (!name) return { error: "Please enter your café's name." };
   if (!slug) return { error: "Please enter a link using letters and numbers." };
@@ -51,6 +55,11 @@ export async function createCafe(
     .maybeSingle();
   if (!mem) return { error: "No account is linked to your login. Try signing out and back in." };
   const accountId = (mem as { account_id: string }).account_id;
+
+  // Apply the chosen tier first — the RPC only allows it before any café exists,
+  // which enforces "tier is picked at registration, not switched later".
+  const planRes = await supabase.rpc("set_account_plan", { p_plan: plan });
+  if (planRes.error) return { error: planRes.error.message };
 
   const { data: cafe, error } = await supabase
     .from("cafes")
