@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ThemeLayout, themeVars } from "./menu-themes";
 import { brandVars, surfaceVars } from "@/lib/brand";
 import { capsFor, clampBrand, clampTheme, type BrandKit, type Cafe, type MenuItem, type PlanId, type ThemeKey } from "@/lib/data";
@@ -18,16 +18,23 @@ interface Props {
 
 /**
  * A live phone-frame preview of the guest menu, reflecting the current theme +
- * brand kit (accent, fonts, logo) and any menu edits. Tapping an item opens a
- * read-only detail view (photo, description, options, tags) — like the live
- * menu, minus ordering. Used in the dashboard's live-preview pane.
+ * brand kit (accent, fonts, logo) and any menu edits. Tapping an item swaps the
+ * frame to a read-only detail view (photo, description, options, tags) — like
+ * the live menu, minus ordering. Used in the dashboard's live-preview pane.
  */
 export function LivePreview({ cafe, menu, categories, theme: theme0, brand: brand0, plan, width = 300, height = 600 }: Props) {
   const [cat, setCat] = useState("All");
   const [openItem, setOpenItem] = useState<MenuItem | null>(null);
+  const screenRef = useRef<HTMLDivElement>(null);
   const caps = plan ? capsFor(plan) : null;
   const brand = caps ? clampBrand(brand0, caps) : brand0;
   const theme = caps ? clampTheme(theme0, caps) : theme0;
+
+  // Reset scroll to the top whenever we switch between the menu and an item
+  // detail, so the detail starts at the top (and the menu does too on Back).
+  useEffect(() => {
+    screenRef.current?.scrollTo({ top: 0 });
+  }, [openItem]);
 
   const groups = useMemo(() => {
     if (cat === "All") {
@@ -42,39 +49,22 @@ export function LivePreview({ cafe, menu, categories, theme: theme0, brand: bran
   return (
     <div style={{ width, flex: "none", borderRadius: 40, background: "#1F140E", padding: 10, boxShadow: "var(--shadow-xl)" }}>
       <div
+        ref={screenRef}
         className="mesa-preview-screen"
         style={{
-          position: "relative",
           borderRadius: 31,
           overflow: "hidden",
           height,
           overflowY: "auto",
           overscrollBehavior: "contain",
-          scrollBehavior: "smooth",
           background: "var(--surface-page)",
           ...(themeVars(theme) as React.CSSProperties),
           ...(brandVars(brand) as React.CSSProperties),
           ...(brand.surface && theme !== "bold" ? (surfaceVars(brand.surface) as React.CSSProperties) : {}),
         }}
       >
-        <ThemeLayout
-          theme={theme}
-          cafe={cafe}
-          logo={brand.logo}
-          whiteLabel={caps?.whiteLabel}
-          menu={menu}
-          groups={groups}
-          cats={categories}
-          cat={cat}
-          setCat={setCat}
-          onOpen={(m) => setOpenItem(m)}
-          q=""
-          setQ={() => {}}
-          showRails={cat === "All"}
-        />
-
-        {openItem && (
-          <div className="mesa-preview-screen mesa-preview-sheet" style={{ position: "absolute", inset: 0, zIndex: 5, background: "var(--surface-page)", color: "var(--text-strong)", overflowY: "auto", overscrollBehavior: "contain", display: "flex", flexDirection: "column" }}>
+        {openItem ? (
+          <div className="mesa-preview-sheet" style={{ minHeight: "100%", background: "var(--surface-page)", color: "var(--text-strong)", display: "flex", flexDirection: "column" }}>
             <div style={{ padding: 10 }}>
               <button
                 onClick={() => setOpenItem(null)}
@@ -121,6 +111,22 @@ export function LivePreview({ cafe, menu, categories, theme: theme0, brand: bran
               <p style={{ fontSize: 11.5, color: "var(--text-subtle)", marginTop: 2 }}>Preview · guests order from the live menu.</p>
             </div>
           </div>
+        ) : (
+          <ThemeLayout
+            theme={theme}
+            cafe={cafe}
+            logo={brand.logo}
+            whiteLabel={caps?.whiteLabel}
+            menu={menu}
+            groups={groups}
+            cats={categories}
+            cat={cat}
+            setCat={setCat}
+            onOpen={(m) => setOpenItem(m)}
+            q=""
+            setQ={() => {}}
+            showRails={cat === "All"}
+          />
         )}
       </div>
     </div>
