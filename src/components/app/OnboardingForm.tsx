@@ -27,14 +27,14 @@ const label: React.CSSProperties = {
 const slugify = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
 
-export function OnboardingForm() {
+export function OnboardingForm({ initialPlan }: { initialPlan?: PlanId } = {}) {
   const [state, formAction, pending] = useActionState<CafeFormState | undefined, FormData>(
     createCafe,
     undefined,
   );
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
-  const [plan, setPlan] = useState<PlanId>("brew");
+  const [plan, setPlan] = useState<PlanId>(initialPlan ?? "brew");
   const effectiveSlug = slug ? slugify(slug) : slugify(name);
 
   return (

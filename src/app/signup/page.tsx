@@ -3,6 +3,11 @@ import { AuthForm } from "@/components/app/AuthForm";
 
 export const metadata: Metadata = { title: "Sign up — Mesa" };
 
-export default function SignupPage() {
-  return <AuthForm mode="signup" />;
+export default async function SignupPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ plan?: string }>;
+}) {
+  const sp = await searchParams;
+  return <AuthForm mode="signup" presetPlan={sp.plan} />;
 }

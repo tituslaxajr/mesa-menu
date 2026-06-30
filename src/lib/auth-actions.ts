@@ -28,6 +28,8 @@ export async function signup(_prev: AuthState | undefined, formData: FormData): 
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const cafeName = String(formData.get("cafe_name") ?? "").trim();
+  const planRaw = String(formData.get("plan") ?? "");
+  const plan = ["starter", "brew", "roast"].includes(planRaw) ? planRaw : undefined;
   if (!email || !password) return { error: "Email and password are required." };
   if (password.length < 8) return { error: "Password must be at least 8 characters." };
 
@@ -35,7 +37,7 @@ export async function signup(_prev: AuthState | undefined, formData: FormData): 
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { cafe_name: cafeName } },
+    options: { data: { cafe_name: cafeName, ...(plan ? { plan } : {}) } },
   });
   if (error) return { error: error.message };
 

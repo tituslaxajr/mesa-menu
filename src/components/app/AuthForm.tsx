@@ -39,7 +39,7 @@ const label: React.CSSProperties = {
   fontFamily: "var(--font-sans)",
 };
 
-export function AuthForm({ mode, notice }: { mode: Mode; notice?: string }) {
+export function AuthForm({ mode, notice, presetPlan }: { mode: Mode; notice?: string; presetPlan?: string }) {
   const [state, formAction, pending] = useActionState<AuthState | undefined, FormData>(
     ACTIONS[mode],
     undefined,
@@ -73,6 +73,7 @@ export function AuthForm({ mode, notice }: { mode: Mode; notice?: string }) {
         )}
 
         <form action={formAction} style={{ display: "grid", gap: 14 }}>
+          {showCafe && presetPlan && <input type="hidden" name="plan" value={presetPlan} />}
           {showCafe && (
             <div>
               <label htmlFor="cafe_name" style={label}>Café name</label>

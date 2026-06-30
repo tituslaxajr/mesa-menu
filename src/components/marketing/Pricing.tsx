@@ -42,7 +42,7 @@ function PlanCard({ plan, annual }: { plan: Plan; annual: boolean }) {
       </p>
 
       <div style={{ margin: "22px 0" }}>
-        <Button as="a" href="#" variant={popular ? "primary" : "secondary"} size="lg" block>
+        <Button as="a" href={`/signup?plan=${plan.id}`} variant={popular ? "primary" : "secondary"} size="lg" block>
           {plan.cta}
         </Button>
       </div>
