@@ -49,6 +49,7 @@ import {
   Search,
   Copy,
   Smartphone,
+  MessageSquare,
   type LucideIcon,
 } from "lucide-react";
 import { Logo, Avatar, Button, IconButton, Input, Select, Switch, Badge, Card } from "@/components/ds";
@@ -57,13 +58,14 @@ import { studioKey } from "@/lib/studio-store";
 import { useStudioState, useAutosave, type SaveStatus } from "@/lib/studio-sync";
 import { saveMenu, saveBrand, saveCafeProfile, savePromos, setPlan } from "@/lib/studio-actions";
 import { uploadCafeImage } from "@/lib/storage";
-import { menuUrl, menuLabel } from "@/lib/site";
+import { menuUrl, menuLabel, feedbackMailto } from "@/lib/site";
 import { useOrders, timeAgo, type Order, type OrdersApi, type OrderStatus } from "@/lib/orders-store";
 import { palette, hue, extractBrandColor, accentContrast, surfaceContrast, type ContrastLevel } from "@/lib/color";
 import { brandVars } from "@/lib/brand";
 import { LivePreview } from "./LivePreview";
 import {
   THEMES,
+  MENU,
   ACCENT_PRESETS,
   SURFACE_PRESETS,
   PAIRINGS,
@@ -565,7 +567,7 @@ function EditDrawer({ item, cats, customTags, onClose, onSave, uploadImage }: { 
   );
 }
 
-function MenuTab({ items, categories, onMove, onDuplicate, onToggle, onCategorySoldOut, onAdd, onEdit }: { items: MenuItem[]; categories: string[]; onMove: (id: string, dir: -1 | 1) => void; onDuplicate: (id: string) => void; onToggle: (id: string) => void; onCategorySoldOut: (cat: string, soldOut: boolean) => void; onAdd: () => void; onEdit: (m: MenuItem) => void }) {
+function MenuTab({ items, categories, onMove, onDuplicate, onToggle, onCategorySoldOut, onAdd, onEdit, onLoadSample }: { items: MenuItem[]; categories: string[]; onMove: (id: string, dir: -1 | 1) => void; onDuplicate: (id: string) => void; onToggle: (id: string) => void; onCategorySoldOut: (cat: string, soldOut: boolean) => void; onAdd: () => void; onEdit: (m: MenuItem) => void; onLoadSample: () => void }) {
   const [q, setQ] = useState("");
   const query = q.trim().toLowerCase();
   const cats = categories.filter((c) => c !== "All");
@@ -581,7 +583,10 @@ function MenuTab({ items, categories, onMove, onDuplicate, onToggle, onCategoryS
             <span style={{ width: 52, height: 52, borderRadius: 14, background: "var(--brand-soft)", color: "var(--brand-active)", display: "grid", placeItems: "center", margin: "0 auto 14px" }}><Utensils size={26} /></span>
             <h3 style={{ fontFamily: "var(--font-display)", fontSize: 19, color: "var(--text-strong)" }}>Your menu is empty</h3>
             <p style={{ fontSize: 13.5, color: "var(--text-muted)", margin: "6px auto 18px", maxWidth: 340 }}>Add your first item — name, price, a photo, and any options or tags. It goes live on your QR menu instantly.</p>
-            <Button variant="primary" onClick={onAdd}><Plus /> Add your first item</Button>
+            <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+              <Button variant="primary" onClick={onAdd}><Plus /> Add your first item</Button>
+              <Button variant="secondary" onClick={onLoadSample}><Sparkles /> Start with a sample menu</Button>
+            </div>
           </div>
         </Card>
       </PageWrap>
@@ -1976,6 +1981,12 @@ export function DashboardShell({
     toast("Duplicated — edit the copy");
   };
   const addItem = () => setEditing({ id: "new-" + Date.now(), _new: true, name: "", price: 0, cat: categories.find((c) => c !== "All") || "Hot Coffee", desc: "", img: items[0]?.img || PLACEHOLDER_IMG });
+  // First-run helper: populate an empty café with a sample menu (auto-saves).
+  const loadSampleMenu = () => {
+    setCategories(["All", ...Array.from(new Set(MENU.map((m) => m.cat)))]);
+    setItems(MENU.map((m) => ({ ...m })));
+    toast("Sample menu added — edit or replace anything.");
+  };
   // Bulk sold-out toggle for a whole category (kitchen closed / ran out).
   const setCategorySoldOut = (cat: string, soldOut: boolean) => {
     setItems((arr) => arr.map((m) => (m.cat === cat ? { ...m, soldOut } : m)));
@@ -2043,7 +2054,10 @@ export function DashboardShell({
         <nav style={{ display: "flex", flexDirection: "column", gap: 3 }}>
           {navItems(() => {})}
         </nav>
-        <div style={{ marginTop: "auto", paddingTop: 14, borderTop: "1px solid var(--border-soft)", display: "flex", alignItems: "center", gap: 11 }}>
+        <a href={feedbackMailto} style={{ marginTop: "auto", display: "inline-flex", alignItems: "center", gap: 9, padding: "11px 14px", borderRadius: "var(--radius-md)", color: "var(--text-body)", fontSize: 14, fontWeight: 600, fontFamily: "var(--font-sans)", textDecoration: "none" }}>
+          <MessageSquare size={18} /> Send feedback
+        </a>
+        <div style={{ paddingTop: 14, borderTop: "1px solid var(--border-soft)", display: "flex", alignItems: "center", gap: 11 }}>
           {brand.logo
             // eslint-disable-next-line @next/next/no-img-element
             ? <img src={brand.logo} alt="" style={{ width: 30, height: 30, borderRadius: 8, objectFit: "cover" }} />
@@ -2068,7 +2082,10 @@ export function DashboardShell({
             <nav style={{ display: "flex", flexDirection: "column", gap: 3, overflowY: "auto" }}>
               {navItems(() => setNavOpen(false))}
             </nav>
-            <div style={{ marginTop: "auto", paddingTop: 14, borderTop: "1px solid var(--border-soft)", fontSize: 12, color: "var(--text-muted)" }}>
+            <a href={feedbackMailto} style={{ marginTop: "auto", display: "inline-flex", alignItems: "center", gap: 9, padding: "11px 14px", borderRadius: "var(--radius-md)", color: "var(--text-body)", fontSize: 14, fontWeight: 600, fontFamily: "var(--font-sans)", textDecoration: "none" }}>
+              <MessageSquare size={18} /> Send feedback
+            </a>
+            <div style={{ paddingTop: 14, borderTop: "1px solid var(--border-soft)", fontSize: 12, color: "var(--text-muted)" }}>
               {PLANS.find((p) => p.id === planId)?.name} plan
             </div>
           </aside>
@@ -2115,7 +2132,7 @@ export function DashboardShell({
 
         {tab === "home" && <HomeTab items={items} cafe={cafe} theme={theme} brand={brand} orders={orders} setTab={setTab} />}
         {tab === "orders" && <OrdersTab orders={kitchenOrders} api={ordersApi} items={items} slug={slug} />}
-        {tab === "menu" && <MenuTab items={items} categories={categories} onMove={moveItem} onDuplicate={duplicateItem} onToggle={toggle} onCategorySoldOut={setCategorySoldOut} onAdd={addItem} onEdit={setEditing} />}
+        {tab === "menu" && <MenuTab items={items} categories={categories} onMove={moveItem} onDuplicate={duplicateItem} onToggle={toggle} onCategorySoldOut={setCategorySoldOut} onAdd={addItem} onEdit={setEditing} onLoadSample={loadSampleMenu} />}
         {tab === "categories" && <CategoriesTab items={items} categories={categories} setCategories={setCategories} onDelete={deleteCategory} toast={toast} />}
         {tab === "appearance" && <AppearanceTab theme={theme} setTheme={setTheme} brand={brand} setBrand={setBrand} cafe={cafe} items={items} categories={categories} caps={caps} plan={cafe.plan} uploadImage={uploadImage} />}
         {tab === "qr" && <QRTab cafe={cafe} brand={brand} caps={caps} toast={toast} />}

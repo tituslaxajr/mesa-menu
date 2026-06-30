@@ -9,3 +9,7 @@ export const menuUrl = (slug: string) => `${SITE_URL}/m/${slug}`;
 
 /** Host + path for display, e.g. "menu.cortanatechsolutions.com/m/demo". */
 export const menuLabel = (slug: string) => `${SITE_URL.replace(/^https?:\/\//, "")}/m/${slug}`;
+
+/** Where beta feedback is sent. Override with NEXT_PUBLIC_FEEDBACK_EMAIL. */
+export const FEEDBACK_EMAIL = process.env.NEXT_PUBLIC_FEEDBACK_EMAIL || "inquiries@kapatidministry.org";
+export const feedbackMailto = `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent("Mesa beta feedback")}`;

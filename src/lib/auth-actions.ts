@@ -5,6 +5,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { SITE_URL } from "@/lib/site";
 
 export interface AuthState {
   error?: string;
@@ -41,6 +42,37 @@ export async function signup(_prev: AuthState | undefined, formData: FormData): 
   // If email confirmation is enabled, there's no session yet — send them to log
   // in after confirming. Otherwise they're signed in and go straight to setup.
   if (!data.session) redirect("/login?check-email=1");
+
+  revalidatePath("/", "layout");
+  redirect("/dashboard");
+}
+
+export async function requestPasswordReset(
+  _prev: AuthState | undefined,
+  formData: FormData,
+): Promise<AuthState> {
+  const email = String(formData.get("email") ?? "").trim();
+  if (!email) return { error: "Enter your email." };
+
+  const supabase = await createClient();
+  // Sends a recovery link to /auth/callback, which establishes a session and
+  // forwards to /reset-password. Never reveals whether the email exists.
+  await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${SITE_URL}/auth/callback?next=/reset-password`,
+  });
+  redirect("/forgot-password?sent=1");
+}
+
+export async function updatePassword(
+  _prev: AuthState | undefined,
+  formData: FormData,
+): Promise<AuthState> {
+  const password = String(formData.get("password") ?? "");
+  if (password.length < 8) return { error: "Password must be at least 8 characters." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) return { error: "Your reset link has expired. Request a new one from “Forgot password”." };
 
   revalidatePath("/", "layout");
   redirect("/dashboard");
