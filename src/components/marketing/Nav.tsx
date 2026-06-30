@@ -25,7 +25,7 @@ export function Nav() {
         style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, paddingTop: 14, paddingBottom: 14 }}
       >
         <Link href="/" aria-label="Mesa home" style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none" }}>
-          <Logo size="md" />
+          <Logo size="md" subtitle />
           <span style={{ fontSize: 12.5, color: "var(--text-subtle)", borderLeft: "1px solid var(--border-default)", paddingLeft: 12 }} className="mesa-nav__tagline">
             A better menu for every table.
           </span>

@@ -9,7 +9,7 @@ export function Footer() {
         style={{ paddingTop: 32, paddingBottom: 32, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
-          <Logo size="sm" />
+          <Logo size="md" subtitle />
           <nav style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
             <Link href="/m/demo" style={{ fontSize: 13.5, color: "var(--text-muted)" }}>
               See a live menu
