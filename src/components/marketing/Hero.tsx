@@ -40,12 +40,15 @@ export function Hero() {
           <Button as="a" href="#pricing" variant="primary" size="lg">
             <QrCode /> Start free for 14 days
           </Button>
-          <Button as="a" href="/m/demo" variant="secondary" size="lg">
-            <Play /> See a live menu
+          <Button as="a" href="/demo" variant="secondary" size="lg">
+            <Play /> See the live demo
           </Button>
         </div>
         <p style={{ marginTop: 16, color: "var(--text-subtle)", fontSize: 13.5 }}>
-          14-day free trial · no card required
+          14-day free trial · no card required ·{" "}
+          <a href="/m/demo" style={{ color: "var(--text-muted)", textDecoration: "underline" }}>
+            view just the guest menu
+          </a>
         </p>
       </div>
 
