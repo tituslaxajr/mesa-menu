@@ -3,9 +3,8 @@
 import React, { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { X, ArrowRight, CheckCircle2, Send, Clock, ChefHat, BellRing, Check, Tag } from "lucide-react";
 import { Badge, Button, IconButton, Input, Stepper } from "@/components/ds";
-import { DEFAULT_BRAND, capsFor, clampBrand, clampTheme, resolveOrderMode, normalizeTags, type BrandKit, type Cafe, type MenuItem as MenuItemType, type MenuTag, type OptionGroup, type PlanId, type Promo, type ThemeKey } from "@/lib/data";
+import { capsFor, clampBrand, clampTheme, resolveOrderMode, type BrandKit, type Cafe, type MenuItem as MenuItemType, type MenuTag, type OptionGroup, type PlanId, type Promo, type ThemeKey } from "@/lib/data";
 import { brandVars, surfaceVars } from "@/lib/brand";
-import { readStudioOverrides } from "@/lib/studio-store";
 import { placeOrder, useMyOrders, type Order } from "@/lib/orders-store";
 import { ThemeLayout, themeVars, HAS_TAB_BAR, TabBar } from "./menu-themes";
 
@@ -65,6 +64,10 @@ interface Props {
   cafe: Cafe;
   menu: MenuItemType[];
   categories: string[];
+  /** Owner's brand kit (from the DB). Clamped to the plan before it reaches diners. */
+  brand: BrandKit;
+  /** Promo banners (from the DB). The component shows the active, undismissed ones. */
+  promos: Promo[];
   /** Brew & Roast allow guest ordering; Starter is browse-only. */
   ordering: boolean;
   /** Café's plan — gates which branding actually reaches the diner. */
@@ -82,35 +85,12 @@ interface Props {
  * stepper, a running order tray, an order-review sheet, and toasts. On the
  * Starter (browse-only) tier the ordering controls are hidden.
  *
- * Server props are the starting point; on the client we merge any saved owner
- * edits from the Studio store (menu, café profile, categories, theme, brand kit)
- * so changes made in /dashboard show up here live (and across tabs).
+ * All content (menu, café profile, categories, theme, brand kit, promos) comes
+ * from the server, which reads the database — server data is authoritative.
  */
-export function MenuBrowser({ cafe: cafe0, menu: menu0, categories: categories0, ordering, plan, theme: theme0, themeOverridden }: Props) {
-  const [cafe, setCafe] = useState(cafe0);
-  const [menu, setMenu] = useState(menu0);
-  const [categories, setCategories] = useState(categories0);
-  const [theme, setTheme] = useState<ThemeKey>(theme0);
-  const [brand, setBrand] = useState<BrandKit>(DEFAULT_BRAND);
-  const [promos, setPromos] = useState<Promo[]>([]);
+export function MenuBrowser({ cafe, menu, categories, brand, promos, ordering, plan, theme, themeOverridden }: Props) {
   const [dismissedPromos, setDismissedPromos] = useState<string[]>([]);
   const caps = capsFor(plan);
-
-  // Merge Studio edits on mount, and keep in sync if another tab saves changes.
-  useEffect(() => {
-    const apply = () => {
-      const o = readStudioOverrides(cafe0.slug);
-      if (o.items) setMenu(o.items.map(normalizeTags));
-      if (o.cafe) setCafe(o.cafe);
-      if (o.categories) setCategories(o.categories);
-      if (o.brand) setBrand(o.brand);
-      if (o.promos) setPromos(o.promos);
-      if (!themeOverridden && o.theme) setTheme(o.theme);
-    };
-    apply();
-    window.addEventListener("storage", apply);
-    return () => window.removeEventListener("storage", apply);
-  }, [cafe0.slug, themeOverridden]);
 
   const [cat, setCat] = useState("All");
   const [q, setQ] = useState("");
@@ -132,7 +112,7 @@ export function MenuBrowser({ cafe: cafe0, menu: menu0, categories: categories0,
   }, []);
 
   // The guest's own placed orders, live as the owner advances them on the board.
-  const [myOrders, myOrdersApi] = useMyOrders(cafe0.slug);
+  const [myOrders, myOrdersApi] = useMyOrders(cafe.slug);
   const [statusOrderId, setStatusOrderId] = useState<string | null>(null);
   const [summaryOrder, setSummaryOrder] = useState<Order | null>(null);
   const liveOrder = myOrders[0] || null;
@@ -355,7 +335,7 @@ export function MenuBrowser({ cafe: cafe0, menu: menu0, categories: categories0,
             // BACKEND SEAM: this writes to the front-end orders store. Kitchen
             // orders surface on the owner board; counter orders are logged for
             // analytics and shown back to the guest as a summary to present.
-            const o = placeOrder(cafe0.slug, {
+            const o = placeOrder(cafe.slug, {
               // id is the composite cart key so option-variant lines stay distinct.
               lines: lines.map((l) => ({ id: l.key, name: l.name, price: l.unitPrice, qty: l.qty, options: l.optionLabels.length ? l.optionLabels : undefined })),
               total,

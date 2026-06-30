@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getCafe, getMenu, getCategories, getPlan, isThemeKey } from "@/lib/data";
+import { getPlan, isThemeKey } from "@/lib/data";
+import { getCafe, getCafeData } from "@/lib/queries";
 import { MenuBrowser } from "@/components/app/MenuBrowser";
 
 type Params = { slug: string };
@@ -12,7 +13,7 @@ export async function generateMetadata({
   params: Promise<Params>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const cafe = getCafe(slug);
+  const cafe = await getCafe(slug);
   if (!cafe) return { title: "Menu not found" };
   return {
     title: `${cafe.name} — Menu`,
@@ -29,11 +30,10 @@ export default async function CafeMenuPage({
 }) {
   const { slug } = await params;
   const { theme: themeParam } = await searchParams;
-  const cafe = getCafe(slug);
-  if (!cafe) notFound();
+  const data = await getCafeData(slug);
+  if (!data) notFound();
 
-  const menu = getMenu(slug);
-  const categories = getCategories(slug);
+  const { cafe, menu, categories, brand, promos } = data;
   const plan = getPlan(cafe.plan);
   // Owner's chosen theme, with an optional ?theme= preview override.
   const overridden = isThemeKey(themeParam);
@@ -44,6 +44,8 @@ export default async function CafeMenuPage({
       cafe={cafe}
       menu={menu}
       categories={categories}
+      brand={brand}
+      promos={promos}
       ordering={!!plan?.ordering}
       plan={cafe.plan}
       theme={theme}
