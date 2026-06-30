@@ -15,13 +15,17 @@ export default async function DashboardPage() {
   // Signed in but no café yet → first-run onboarding.
   if (!owner) redirect("/dashboard/new");
 
-  const { data, planId } = owner;
+  const { data, planId, cafeId } = owner;
   return (
     <DashboardShell
       cafe={data.cafe}
       menu={data.menu}
       categories={data.categories}
       planId={planId}
+      cafeId={cafeId}
+      initialBrand={data.brand}
+      initialPromos={data.promos}
+      persistence="db"
     />
   );
 }

@@ -54,6 +54,8 @@ import {
 import { Logo, Avatar, Button, IconButton, Input, Select, Switch, Badge, Card } from "@/components/ds";
 import { useLocalStore } from "@/lib/useLocalStore";
 import { studioKey } from "@/lib/studio-store";
+import { useStudioState, useAutosave, type SaveStatus } from "@/lib/studio-sync";
+import { saveMenu, saveBrand, saveCafeProfile, savePromos } from "@/lib/studio-actions";
 import { useOrders, timeAgo, type Order, type OrdersApi, type OrderStatus } from "@/lib/orders-store";
 import { palette, hue, extractBrandColor, accentContrast, surfaceContrast, type ContrastLevel } from "@/lib/color";
 import { brandVars } from "@/lib/brand";
@@ -188,6 +190,13 @@ interface Props {
   menu: MenuItem[];
   categories: string[];
   planId: string;
+  /** Owner's café uuid — required for DB persistence. */
+  cafeId?: string;
+  /** Saved brand kit / promos from the DB (db mode); fall back to defaults. */
+  initialBrand?: BrandKit;
+  initialPromos?: Promo[];
+  /** "db" persists edits to Supabase (real owner); "local" is the /demo sandbox. */
+  persistence?: "db" | "local";
 }
 
 type DraftItem = MenuItem & { _new?: boolean };
@@ -1793,21 +1802,41 @@ function PreviewPane({
   );
 }
 
-export function DashboardShell({ cafe: cafe0, menu, categories: categories0, planId }: Props) {
+export function DashboardShell({
+  cafe: cafe0,
+  menu,
+  categories: categories0,
+  planId,
+  cafeId,
+  initialBrand,
+  initialPromos,
+  persistence = "local",
+}: Props) {
   const slug = cafe0.slug;
+  // DB persistence requires the café uuid; otherwise fall back to the sandbox.
+  const persist: "db" | "local" = persistence === "db" && cafeId ? "db" : "local";
   const [tab, setTab] = useState<TabId>("home");
   const [navOpen, setNavOpen] = useState(false); // mobile nav drawer
   const [previewOpen, setPreviewOpen] = useState(false); // narrow-screen live-preview drawer
-  const [rawItems, setItems] = useLocalStore<MenuItem[]>(studioKey(slug, "items"), menu);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [rawItems, setItems] = useStudioState<MenuItem[]>(persist, studioKey(slug, "items"), menu);
   // Normalize on read so legacy string[] tags from older saved menus always
-  // render correctly, regardless of when useLocalStore hydrates. Writes go
-  // through setItems; a later save persists the new shape.
+  // render correctly, regardless of when state hydrates. Writes go through
+  // setItems; a later save persists the new shape.
   const items = useMemo(() => rawItems.map(normalizeTags), [rawItems]);
-  const [cafe, setCafe] = useLocalStore<Cafe>(studioKey(slug, "cafe"), cafe0);
-  const [brand, setBrand] = useLocalStore<BrandKit>(studioKey(slug, "brand"), DEFAULT_BRAND);
-  const [theme, setTheme] = useLocalStore<ThemeKey>(studioKey(slug, "theme"), cafe0.theme);
-  const [promos, setPromos] = useLocalStore<Promo[]>(studioKey(slug, "promos"), PROMOS);
-  const [categories, setCategories] = useLocalStore<string[]>(studioKey(slug, "categories"), categories0);
+  const [cafe, setCafe] = useStudioState<Cafe>(persist, studioKey(slug, "cafe"), cafe0);
+  const [brand, setBrand] = useStudioState<BrandKit>(persist, studioKey(slug, "brand"), initialBrand ?? DEFAULT_BRAND);
+  const [theme, setTheme] = useStudioState<ThemeKey>(persist, studioKey(slug, "theme"), cafe0.theme);
+  const [promos, setPromos] = useStudioState<Promo[]>(persist, studioKey(slug, "promos"), initialPromos ?? PROMOS);
+  const [categories, setCategories] = useStudioState<string[]>(persist, studioKey(slug, "categories"), categories0);
+
+  // DB mode: debounced auto-save of each concern to Supabase via Server Actions.
+  const dbSave = persist === "db" && !!cafeId;
+  useAutosave(dbSave, [categories, rawItems], () => saveMenu(cafeId!, categories, rawItems), setSaveStatus);
+  useAutosave(dbSave, brand, () => saveBrand(cafeId!, brand), setSaveStatus);
+  useAutosave(dbSave, [cafe, theme], () => saveCafeProfile(cafeId!, cafe, theme), setSaveStatus);
+  useAutosave(dbSave, promos, () => savePromos(cafeId!, promos), setSaveStatus);
+
   const [orders, ordersApi] = useOrders(slug);
   // The live board only handles kitchen-channel orders; counter orders are
   // logged for analytics but never worked here.
@@ -2027,6 +2056,12 @@ export function DashboardShell({ cafe: cafe0, menu, categories: categories0, pla
               <Button variant="secondary" onClick={addItem}>
                 <Plus /> Add item
               </Button>
+            )}
+            {dbSave && saveStatus !== "idle" && (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 500, color: saveStatus === "error" ? "var(--danger, #b42318)" : "var(--text-muted)", fontFamily: "var(--font-sans)" }}>
+                <span style={{ width: 7, height: 7, borderRadius: 999, flex: "none", background: saveStatus === "saving" ? "var(--brand)" : saveStatus === "error" ? "var(--danger, #b42318)" : "var(--sage-400, #6E8B5B)" }} />
+                {saveStatus === "saving" ? "Saving…" : saveStatus === "error" ? "Couldn’t save" : "Saved"}
+              </span>
             )}
             <span className="mesa-dash-preview-toggle">
               <Button variant="secondary" onClick={() => setPreviewOpen(true)}><Smartphone /> Preview</Button>

@@ -194,7 +194,7 @@ export const getCafeData = cache(async (slug: string): Promise<CafeData | null> 
  * it. Returns null when the owner has no café yet (→ onboarding).
  */
 export const getOwnerCafeData = cache(
-  async (): Promise<{ data: CafeData; planId: PlanId } | null> => {
+  async (): Promise<{ data: CafeData; planId: PlanId; cafeId: string } | null> => {
     const supabase = await createClient();
     const {
       data: { user },
@@ -238,6 +238,7 @@ export const getOwnerCafeData = cache(
 
     return {
       planId,
+      cafeId,
       data: {
         cafe: toCafe({ ...cafeRow, plan: planId } as CafeRow),
         categories: ["All", ...((cats.data ?? []).map((c) => c.name as string))],

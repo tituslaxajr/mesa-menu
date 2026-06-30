@@ -7,7 +7,7 @@ import Link from "next/link";
 import { RotateCcw, ArrowRight, Smartphone } from "lucide-react";
 import { DashboardShell } from "./DashboardShell";
 import { studioKey, type StudioPart } from "@/lib/studio-store";
-import type { Cafe, MenuItem, PlanId } from "@/lib/data";
+import type { BrandKit, Cafe, MenuItem, PlanId, Promo } from "@/lib/data";
 
 const PARTS: StudioPart[] = ["items", "cafe", "brand", "theme", "promos", "categories"];
 
@@ -16,11 +16,15 @@ export function DemoExperience({
   menu,
   categories,
   planId,
+  brand,
+  promos,
 }: {
   cafe: Cafe;
   menu: MenuItem[];
   categories: string[];
   planId: PlanId;
+  brand: BrandKit;
+  promos: Promo[];
 }) {
   const resetDemo = () => {
     const slug = cafe.slug;
@@ -90,7 +94,15 @@ export function DemoExperience({
         </span>
       </div>
 
-      <DashboardShell cafe={cafe} menu={menu} categories={categories} planId={planId} />
+      <DashboardShell
+        cafe={cafe}
+        menu={menu}
+        categories={categories}
+        planId={planId}
+        initialBrand={brand}
+        initialPromos={promos}
+        persistence="local"
+      />
     </div>
   );
 }

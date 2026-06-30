@@ -19,6 +19,8 @@ export default async function DemoPage() {
       menu={data.menu}
       categories={data.categories}
       planId={data.cafe.plan}
+      brand={data.brand}
+      promos={data.promos}
     />
   );
 }
