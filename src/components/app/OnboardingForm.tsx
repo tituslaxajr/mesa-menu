@@ -1,8 +1,14 @@
 "use client";
 import { useActionState, useState } from "react";
-import { Coffee } from "lucide-react";
+import { Coffee, Sparkles, FilePlus } from "lucide-react";
 import { createCafe, type CafeFormState } from "@/lib/cafe-actions";
 import { PLANS, type PlanId } from "@/lib/data";
+
+type StartMode = "sample" | "blank";
+const START_OPTIONS: { id: StartMode; icon: typeof Sparkles; label: string; desc: string }[] = [
+  { id: "sample", icon: Sparkles, label: "Sample menu", desc: "See a working menu instantly — 10 items you can edit or delete." },
+  { id: "blank", icon: FilePlus, label: "Start blank", desc: "Add your own items from scratch." },
+];
 
 const field: React.CSSProperties = {
   width: "100%",
@@ -35,6 +41,7 @@ export function OnboardingForm({ initialPlan }: { initialPlan?: PlanId } = {}) {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [plan, setPlan] = useState<PlanId>(initialPlan ?? "brew");
+  const [start, setStart] = useState<StartMode>("sample");
   const effectiveSlug = slug ? slugify(slug) : slugify(name);
 
   return (
@@ -152,6 +159,47 @@ export function OnboardingForm({ initialPlan }: { initialPlan?: PlanId } = {}) {
             <p style={{ fontSize: 12.5, color: "var(--text-subtle)", marginTop: 6, fontFamily: "var(--font-sans)" }}>
               Beta: pick any tier to try it — no payment. Your tier is set at sign-up.
             </p>
+          </div>
+
+          <div>
+            <label style={label}>Starting menu</label>
+            <input type="hidden" name="start" value={start} />
+            <div style={{ display: "grid", gap: 8 }}>
+              {START_OPTIONS.map((opt) => {
+                const on = start === opt.id;
+                return (
+                  <button
+                    type="button"
+                    key={opt.id}
+                    onClick={() => setStart(opt.id)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      textAlign: "left",
+                      width: "100%",
+                      padding: "12px 14px",
+                      borderRadius: "var(--radius-md)",
+                      cursor: "pointer",
+                      background: on ? "var(--brand-soft)" : "var(--surface-card)",
+                      border: on ? "2px solid var(--brand)" : "1px solid var(--border-default)",
+                      fontFamily: "var(--font-sans)",
+                    }}
+                  >
+                    <span style={{ width: 32, height: 32, borderRadius: 9, flex: "none", display: "grid", placeItems: "center", background: on ? "var(--brand)" : "var(--surface-muted)", color: on ? "var(--brand-on)" : "var(--text-muted)" }}>
+                      <opt.icon size={16} />
+                    </span>
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontWeight: 700, color: "var(--text-strong)", fontSize: 14.5 }}>{opt.label}</span>
+                        {opt.id === "sample" && <span style={{ fontSize: 11, fontWeight: 700, color: "var(--brand-active)" }}>Recommended</span>}
+                      </span>
+                      <span style={{ display: "block", fontSize: 12.5, color: "var(--text-muted)" }}>{opt.desc}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {state?.error && (

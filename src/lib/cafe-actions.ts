@@ -9,7 +9,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { verifySession } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
-import { DIET_TAGS, type PlanId } from "@/lib/data";
+import { DIET_TAGS, MENU, type PlanId } from "@/lib/data";
+import { saveMenu } from "@/lib/studio-actions";
 
 const PLAN_IDS: PlanId[] = ["starter", "brew", "roast"];
 
@@ -40,6 +41,7 @@ export async function createCafe(
   const slug = slugify(String(formData.get("slug") ?? "") || name);
   const planRaw = String(formData.get("plan") ?? "");
   const plan: PlanId = (PLAN_IDS as string[]).includes(planRaw) ? (planRaw as PlanId) : "starter";
+  const seedSample = String(formData.get("start") ?? "sample") !== "blank";
 
   if (!name) return { error: "Please enter your café's name." };
   if (!slug) return { error: "Please enter a link using letters and numbers." };
@@ -91,6 +93,15 @@ export async function createCafe(
       is_preset: true,
     })),
   );
+
+  // "Sample menu" (the default): seed a working starter menu so the QR link is
+  // useful the moment onboarding finishes. Non-fatal if it fails — the café is
+  // already created; the owner can still add items or retry via the empty-menu
+  // "Start with a sample menu" action in the dashboard.
+  if (seedSample) {
+    const sampleCategories = ["All", ...Array.from(new Set(MENU.map((m) => m.cat)))];
+    await saveMenu(cafeId, sampleCategories, MENU);
+  }
 
   revalidatePath("/dashboard");
   redirect("/dashboard");
