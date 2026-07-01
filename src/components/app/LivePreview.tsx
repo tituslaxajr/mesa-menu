@@ -58,6 +58,9 @@ export function LivePreview({ cafe, menu, categories, theme: theme0, brand: bran
           overflowY: "auto",
           overscrollBehavior: "contain",
           background: "var(--surface-page)",
+          // Re-declared (not just inherited from <body>) so descendant text
+          // without its own fontFamily picks up this café's body font.
+          fontFamily: "var(--font-sans)",
           ...(themeVars(theme) as React.CSSProperties),
           ...(brandVars(brand) as React.CSSProperties),
           ...(brand.surface && theme !== "bold" ? (surfaceVars(brand.surface) as React.CSSProperties) : {}),

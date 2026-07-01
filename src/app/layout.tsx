@@ -7,6 +7,16 @@ import {
   Space_Grotesk,
   Work_Sans,
   DM_Sans,
+  Fraunces,
+  Cormorant_Garamond,
+  Libre_Baskerville,
+  Abril_Fatface,
+  Poppins,
+  Bricolage_Grotesque,
+  Inter,
+  Nunito_Sans,
+  Karla,
+  Manrope,
 } from "next/font/google";
 import "./globals.css";
 import { SITE_URL } from "@/lib/site";
@@ -35,7 +45,25 @@ const spaceGrotesk = Space_Grotesk({ variable: "--font-space", subsets: ["latin"
 const workSans = Work_Sans({ variable: "--font-worksans", subsets: ["latin"], weight: ["400", "500", "600"], display: "swap" });
 const dmSans = DM_Sans({ variable: "--font-dmsans", subsets: ["latin"], weight: ["400", "500", "600"], display: "swap" });
 
-const BRAND_FONTS = [playfair, dmSerif, spaceGrotesk, workSans, dmSans]
+// Additional heading (display) fonts — widen the brand kit's font-pairing range.
+const fraunces = Fraunces({ variable: "--font-fraunces", subsets: ["latin"], weight: ["400", "500", "600"], style: ["normal", "italic"], display: "swap" });
+const cormorant = Cormorant_Garamond({ variable: "--font-cormorant", subsets: ["latin"], weight: ["400", "500", "600"], display: "swap" });
+const libreBaskerville = Libre_Baskerville({ variable: "--font-librebaskerville", subsets: ["latin"], weight: ["400", "700"], display: "swap" });
+const abrilFatface = Abril_Fatface({ variable: "--font-abril", subsets: ["latin"], weight: ["400"], display: "swap" });
+const poppins = Poppins({ variable: "--font-poppins", subsets: ["latin"], weight: ["400", "500", "600"], display: "swap" });
+const bricolage = Bricolage_Grotesque({ variable: "--font-bricolage", subsets: ["latin"], weight: ["400", "500", "600", "700"], display: "swap" });
+
+// Additional body (UI) fonts.
+const inter = Inter({ variable: "--font-inter", subsets: ["latin"], weight: ["400", "500", "600"], display: "swap" });
+const nunitoSans = Nunito_Sans({ variable: "--font-nunitosans", subsets: ["latin"], weight: ["400", "500", "600", "700"], display: "swap" });
+const karla = Karla({ variable: "--font-karla", subsets: ["latin"], weight: ["400", "500", "600"], display: "swap" });
+const manrope = Manrope({ variable: "--font-manrope", subsets: ["latin"], weight: ["400", "500", "600"], display: "swap" });
+
+const BRAND_FONTS = [
+  playfair, dmSerif, spaceGrotesk, workSans, dmSans,
+  fraunces, cormorant, libreBaskerville, abrilFatface, poppins, bricolage,
+  inter, nunitoSans, karla, manrope,
+]
   .map((f) => f.variable)
   .join(" ");
 

@@ -245,6 +245,10 @@ export function MenuBrowser({ cafe, menu, categories, brand, promos, ordering, p
         background: "var(--surface-page)",
         minHeight: "100dvh",
         position: "relative",
+        // Re-declared here (not just inherited from <body>) so descendant text
+        // without its own fontFamily picks up THIS café's body font, not the
+        // app-wide default — font-family inheritance freezes at first use.
+        fontFamily: "var(--font-sans)",
         ...(themeVars(effTheme) as React.CSSProperties),
         ...(brandVars(effBrand) as React.CSSProperties),
         // Custom page background — layered last so it overrides the theme. Bold

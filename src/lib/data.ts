@@ -358,6 +358,16 @@ export const FONT_VARS: Record<string, string> = {
   space: "var(--font-space)",
   worksans: "var(--font-worksans)",
   dmsans: "var(--font-dmsans)",
+  fraunces: "var(--font-fraunces)",
+  cormorant: "var(--font-cormorant)",
+  librebaskerville: "var(--font-librebaskerville)",
+  abril: "var(--font-abril)",
+  poppins: "var(--font-poppins)",
+  bricolage: "var(--font-bricolage)",
+  inter: "var(--font-inter)",
+  nunitosans: "var(--font-nunitosans)",
+  karla: "var(--font-karla)",
+  manrope: "var(--font-manrope)",
 };
 
 export interface FontOption {
@@ -369,12 +379,22 @@ export const HEADING_FONTS: FontOption[] = [
   { id: "newsreader", name: "Newsreader", kind: "Serif" },
   { id: "playfair", name: "Playfair Display", kind: "Serif" },
   { id: "dmserif", name: "DM Serif Display", kind: "Serif" },
+  { id: "fraunces", name: "Fraunces", kind: "Serif" },
+  { id: "cormorant", name: "Cormorant Garamond", kind: "Serif" },
+  { id: "librebaskerville", name: "Libre Baskerville", kind: "Serif" },
+  { id: "abril", name: "Abril Fatface", kind: "Serif" },
   { id: "space", name: "Space Grotesk", kind: "Sans" },
+  { id: "poppins", name: "Poppins", kind: "Sans" },
+  { id: "bricolage", name: "Bricolage Grotesque", kind: "Sans" },
 ];
 export const BODY_FONTS: FontOption[] = [
   { id: "hanken", name: "Hanken Grotesk" },
   { id: "worksans", name: "Work Sans" },
   { id: "dmsans", name: "DM Sans" },
+  { id: "inter", name: "Inter" },
+  { id: "nunitosans", name: "Nunito Sans" },
+  { id: "karla", name: "Karla" },
+  { id: "manrope", name: "Manrope" },
 ];
 
 export interface Pairing {
@@ -390,6 +410,12 @@ export const PAIRINGS: Pairing[] = [
   { id: "refined", name: "Refined", heading: "playfair", body: "worksans", mood: "cool", blurb: "Elegant & upscale" },
   { id: "statement", name: "Statement", heading: "dmserif", body: "dmsans", mood: "warm", blurb: "Editorial & punchy" },
   { id: "modern", name: "Modern", heading: "space", body: "worksans", mood: "cool", blurb: "Clean & contemporary" },
+  { id: "artisan", name: "Artisan", heading: "fraunces", body: "nunitosans", mood: "warm", blurb: "Cozy & handcrafted" },
+  { id: "boutique", name: "Boutique", heading: "cormorant", body: "karla", mood: "cool", blurb: "Refined & minimal" },
+  { id: "heritage", name: "Heritage", heading: "librebaskerville", body: "inter", mood: "warm", blurb: "Timeless & trustworthy" },
+  { id: "bakery", name: "Bakery", heading: "abril", body: "manrope", mood: "warm", blurb: "Bold & sweet" },
+  { id: "playground", name: "Playground", heading: "poppins", body: "nunitosans", mood: "warm", blurb: "Friendly & playful" },
+  { id: "studio", name: "Studio", heading: "bricolage", body: "inter", mood: "cool", blurb: "Modern & offbeat" },
 ];
 
 export interface BrandKit {
@@ -489,9 +515,11 @@ export function clampTheme(theme: ThemeKey, caps: BrandCaps): ThemeKey {
 
 /** Suggest a pairing from an extracted accent hue (for "match my brand image"). */
 export function pairingForHue(h: number): string {
-  if (h >= 40 && h < 170) return "modern"; // yellow-green / green → clean
-  if (h >= 170 && h < 320) return "refined"; // blue / purple → elegant
-  return "editorial"; // warm reds / oranges / browns
+  if (h >= 40 && h < 70) return "bakery"; // gold / yellow → bold & sweet
+  if (h >= 70 && h < 170) return "modern"; // green → clean
+  if (h >= 170 && h < 260) return "refined"; // blue → elegant
+  if (h >= 260 && h < 320) return "boutique"; // purple → refined & minimal
+  return "editorial"; // warm reds / oranges / browns / pinks
 }
 
 /** Category → Lucide icon name, used by the icon-chip themes (soft/playful). */
