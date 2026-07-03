@@ -349,8 +349,12 @@ export const ACCENT_PRESETS: AccentPreset[] = [
   { id: "charcoal", name: "Charcoal", base: "#3B3530" },
 ];
 
-/** Font id → CSS variable. Variables are loaded by next/font in layout.tsx. */
+/** Font id → CSS variable. Variables are loaded by next/font in layout.tsx.
+    The house faces lead with system fonts (Georgia / Segoe UI) and fall back
+    to loaded webfonts (Gelasio is metric-compatible with Georgia). */
 export const FONT_VARS: Record<string, string> = {
+  georgia: "Georgia, var(--font-gelasio), 'Times New Roman', serif",
+  segoe: "'Segoe UI', var(--font-hanken), ui-sans-serif, system-ui, sans-serif",
   newsreader: "var(--font-newsreader)",
   hanken: "var(--font-hanken)",
   playfair: "var(--font-playfair)",
@@ -376,6 +380,7 @@ export interface FontOption {
   kind?: "Serif" | "Sans";
 }
 export const HEADING_FONTS: FontOption[] = [
+  { id: "georgia", name: "Georgia", kind: "Serif" },
   { id: "newsreader", name: "Newsreader", kind: "Serif" },
   { id: "playfair", name: "Playfair Display", kind: "Serif" },
   { id: "dmserif", name: "DM Serif Display", kind: "Serif" },
@@ -388,6 +393,7 @@ export const HEADING_FONTS: FontOption[] = [
   { id: "bricolage", name: "Bricolage Grotesque", kind: "Sans" },
 ];
 export const BODY_FONTS: FontOption[] = [
+  { id: "segoe", name: "Segoe UI" },
   { id: "hanken", name: "Hanken Grotesk" },
   { id: "worksans", name: "Work Sans" },
   { id: "dmsans", name: "DM Sans" },
@@ -406,6 +412,7 @@ export interface Pairing {
   blurb: string;
 }
 export const PAIRINGS: Pairing[] = [
+  { id: "house", name: "House", heading: "georgia", body: "segoe", mood: "warm", blurb: "The Mesa look" },
   { id: "editorial", name: "Editorial", heading: "newsreader", body: "hanken", mood: "warm", blurb: "Classic & warm" },
   { id: "refined", name: "Refined", heading: "playfair", body: "worksans", mood: "cool", blurb: "Elegant & upscale" },
   { id: "statement", name: "Statement", heading: "dmserif", body: "dmsans", mood: "warm", blurb: "Editorial & punchy" },
@@ -438,9 +445,9 @@ export const DEFAULT_BRAND: BrandKit = {
   logo: null,
   accent: "#AE4A24",
   paletteId: "clay",
-  headingFont: "newsreader",
-  bodyFont: "hanken",
-  pairingId: "editorial",
+  headingFont: "georgia",
+  bodyFont: "segoe",
+  pairingId: "house",
   colorMode: "preset",
   surface: null,
   surfaceId: "none",
@@ -519,7 +526,7 @@ export function pairingForHue(h: number): string {
   if (h >= 70 && h < 170) return "modern"; // green → clean
   if (h >= 170 && h < 260) return "refined"; // blue → elegant
   if (h >= 260 && h < 320) return "boutique"; // purple → refined & minimal
-  return "editorial"; // warm reds / oranges / browns / pinks
+  return "house"; // warm reds / oranges / browns / pinks — the Mesa look
 }
 
 /** Category → Lucide icon name, used by the icon-chip themes (soft/playful). */

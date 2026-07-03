@@ -1,0 +1,750 @@
+/* ==========================================================================
+   Mesa — landing page ("One day at your café" scrollytelling)
+   The page background moves through a café day: pre-dawn espresso → morning
+   cream → honey merienda → dusk → night. Each chapter sets a phase on the
+   root; these vars restyle the shared ink/hairline colors.
+   ========================================================================== */
+
+.mesa-land {
+  --land-bg: var(--bean-950);
+  --land-ink: var(--cream);
+  --land-ink-muted: var(--bean-300);
+  --land-accent: var(--clay-300);
+  --land-hairline: rgba(251, 246, 238, 0.16);
+  background: var(--land-bg);
+  color: var(--land-ink);
+  transition: background-color 1s ease;
+  overflow-x: hidden;
+}
+.mesa-land[data-phase="morning"],
+.mesa-land[data-phase="noon"],
+.mesa-land[data-phase="merienda"] {
+  --land-ink: var(--bean-900);
+  --land-ink-muted: var(--bean-600);
+  --land-accent: var(--clay-600);
+  --land-hairline: var(--bean-200);
+}
+.mesa-land[data-phase="morning"]  { --land-bg: var(--cream); }
+.mesa-land[data-phase="noon"]     { --land-bg: var(--bean-50); }
+.mesa-land[data-phase="merienda"] { --land-bg: var(--honey-50); --land-hairline: #EFDDB8; }
+.mesa-land[data-phase="dusk"]     { --land-bg: var(--bean-800); }
+
+/* Phase-colored text eases along with the background (interactive elements
+   keep their own component transitions). */
+.mesa-land :is(h1, h2, h3, p, li, blockquote, figcaption) {
+  transition: color 0.7s ease;
+}
+
+/* ---------- fixed chrome ---------- */
+.mesa-land-chrome {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 26px;
+  pointer-events: none;
+}
+.mesa-land-chrome > * { pointer-events: auto; }
+.mesa-land-wordmark {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--land-ink);
+  text-decoration: none;
+  transition: color 0.7s ease;
+}
+.mesa-land-wordmark span { color: var(--land-accent); }
+.mesa-land-chrome-cta {
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--land-ink);
+  text-decoration: none;
+  border: 1px solid var(--land-hairline);
+  border-radius: var(--radius-pill);
+  padding: 9px 18px;
+  transition: color 0.7s ease, border-color 0.7s ease;
+  background: transparent;
+}
+.mesa-land-chrome-cta:hover { border-color: var(--land-accent); color: var(--land-accent); }
+
+/* the day clock */
+.mesa-land-clock {
+  position: fixed;
+  z-index: 40;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 22px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+  color: var(--land-ink);
+  border: 1px solid var(--land-hairline);
+  background: color-mix(in srgb, var(--land-bg) 82%, transparent);
+  backdrop-filter: blur(8px);
+  border-radius: var(--radius-pill);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  transition: color 0.7s ease, border-color 0.7s ease, background-color 0.7s ease;
+}
+.mesa-land-clock .mesa-land-clock-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--land-accent);
+  flex: none;
+}
+.mesa-land-clock .mesa-land-clock-label { color: var(--land-ink-muted); }
+
+/* ---------- chapters ---------- */
+.mesa-land-chapter {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 108px 24px;
+  box-sizing: border-box;
+  position: relative;
+}
+.mesa-land-inner { max-width: 720px; width: 100%; }
+.mesa-land-inner--wide { max-width: 980px; }
+.mesa-land-center { text-align: center; }
+.mesa-land-center .mesa-land-lede { margin-left: auto; margin-right: auto; }
+
+.mesa-land-stamp {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  color: var(--land-accent);
+  margin: 0 0 18px;
+  transition: color 0.7s ease;
+}
+.mesa-land h1,
+.mesa-land h2 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: var(--tracking-tight);
+  line-height: 1.06;
+  margin: 0;
+  text-wrap: balance;
+  color: var(--land-ink);
+}
+.mesa-land h1 { font-size: clamp(38px, 6.4vw, 72px); }
+.mesa-land h2 { font-size: clamp(30px, 4.6vw, 52px); }
+.mesa-land-em { font-style: italic; color: var(--land-accent); }
+.mesa-land-lede {
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--land-ink-muted);
+  max-width: 34em;
+  margin: 20px 0 0;
+}
+.mesa-land-lede strong { color: var(--land-ink); font-weight: 600; }
+
+.mesa-land-reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.mesa-land-reveal.is-in { opacity: 1; transform: none; }
+.mesa-land-reveal--d1 { transition-delay: 0.15s; }
+.mesa-land-reveal--d2 { transition-delay: 0.3s; }
+.mesa-land-reveal--d3 { transition-delay: 0.45s; }
+
+/* ---------- scene: the table tent ---------- */
+.mesa-land-tablescene {
+  position: relative;
+  display: grid;
+  place-items: center;
+  margin-top: 52px;
+}
+.mesa-land-ring {
+  position: absolute;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  border: 10px solid rgba(139, 90, 60, 0.28);
+  top: -34px;
+  left: calc(50% + 110px);
+  transform: rotate(-8deg);
+  filter: blur(1px);
+  pointer-events: none;
+}
+.mesa-land-tent {
+  display: block;
+  background: var(--cream);
+  color: var(--bean-900);
+  border-radius: 14px;
+  padding: 26px 30px 22px;
+  width: 218px;
+  text-align: center;
+  box-shadow: 0 30px 60px -18px rgba(0, 0, 0, 0.55);
+  transform: rotate(-2deg);
+  text-decoration: none;
+  transition: transform 0.3s ease;
+}
+.mesa-land-tent:hover { transform: rotate(0deg) scale(1.02); }
+.mesa-land-tent-cafe { font-family: var(--font-display); font-size: 19px; margin: 0 0 3px; }
+.mesa-land-tent-hint {
+  font-size: 11.5px;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--bean-600);
+  margin: 0 0 14px;
+}
+.mesa-land-tent img { width: 132px; height: 132px; border-radius: 6px; display: block; margin: 0 auto; }
+.mesa-land-tent-brand {
+  font-size: 11px;
+  color: var(--bean-400);
+  margin: 12px 0 0;
+  font-family: var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.mesa-land-scrollcue {
+  margin-top: 56px;
+  text-align: center;
+  color: var(--land-ink-muted);
+  font-size: 12.5px;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+}
+.mesa-land-scrollcue::after {
+  content: "";
+  display: block;
+  width: 1px;
+  height: 44px;
+  background: linear-gradient(var(--land-accent), transparent);
+  margin: 12px auto 0;
+  animation: mesa-land-drip 2.2s ease infinite;
+}
+@keyframes mesa-land-drip {
+  0% { transform: scaleY(0); transform-origin: top; }
+  55% { transform: scaleY(1); }
+  100% { opacity: 0; transform: scaleY(1); }
+}
+
+/* ---------- scene: the laminated menu ---------- */
+.mesa-land-oldmenu-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 56px;
+  align-items: center;
+}
+.mesa-land-oldmenu {
+  background: #f5efe2;
+  color: var(--bean-800);
+  border-radius: 4px;
+  padding: 26px 24px;
+  transform: rotate(2.5deg);
+  box-shadow: 0 24px 48px -16px rgba(31, 20, 14, 0.35);
+  position: relative;
+  font-family: var(--font-display);
+  max-width: 360px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+.mesa-land-oldmenu::before {
+  /* laminate shine */
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 4px;
+  background: linear-gradient(112deg, transparent 42%, rgba(255, 255, 255, 0.5) 47%, transparent 55%);
+  pointer-events: none;
+}
+.mesa-land-oldmenu h3 { margin: 0 0 4px; font-size: 24px; text-align: center; letter-spacing: 0.02em; font-weight: 500; }
+.mesa-land-oldmenu-est {
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bean-500);
+  margin: 0 0 18px;
+}
+.mesa-land-oldmenu ul { list-style: none; margin: 0; padding: 0; font-size: 15px; }
+.mesa-land-oldmenu li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 7px 0;
+  border-bottom: 1px dotted var(--bean-300);
+  gap: 12px;
+}
+.mesa-land-strike {
+  text-decoration: line-through;
+  text-decoration-color: var(--berry-500);
+  text-decoration-thickness: 2px;
+  color: var(--bean-500);
+  margin-right: 7px;
+}
+.mesa-land-sticker {
+  display: inline-block;
+  background: #fff9c2;
+  color: var(--clay-800);
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 12.5px;
+  padding: 2px 8px;
+  transform: rotate(-3deg);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.18);
+}
+.mesa-land-tape {
+  position: absolute;
+  width: 92px;
+  height: 26px;
+  background: rgba(255, 251, 235, 0.55);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-4deg);
+}
+.mesa-land-penned {
+  font-family: "Segoe Print", "Bradley Hand", cursive;
+  color: var(--clay-900);
+  font-size: 13.5px;
+}
+.mesa-land-stain {
+  position: absolute;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  border: 7px solid rgba(139, 90, 60, 0.18);
+  right: -18px;
+  bottom: 34px;
+  transform: rotate(14deg);
+  filter: blur(0.5px);
+  pointer-events: none;
+}
+
+.mesa-land-painlist { list-style: none; margin: 26px 0 0; padding: 0; display: grid; gap: 14px; }
+.mesa-land-painlist li {
+  display: flex;
+  gap: 14px;
+  align-items: baseline;
+  font-size: 16.5px;
+  line-height: 1.5;
+  color: var(--land-ink-muted);
+}
+.mesa-land-painlist li b { color: var(--land-ink); font-weight: 600; }
+.mesa-land-pain-x {
+  font-family: var(--font-mono);
+  color: var(--berry-500);
+  font-size: 14px;
+  flex: none;
+  background: var(--berry-50);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  transform: translateY(4px);
+}
+
+/* ---------- phone + studio duo ---------- */
+.mesa-land-duo {
+  display: flex;
+  gap: 44px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 52px;
+  flex-wrap: wrap;
+}
+.mesa-land-duo-col { display: flex; flex-direction: column; align-items: center; }
+.mesa-land-devicetag {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--land-ink-muted);
+  margin-top: 14px;
+  text-transform: uppercase;
+  transition: color 0.7s ease;
+}
+
+.mesa-land-phone {
+  width: 300px;
+  border-radius: 40px;
+  background: var(--bean-950);
+  padding: 10px;
+  box-shadow: 0 34px 70px -22px rgba(31, 20, 14, 0.5);
+  flex: none;
+}
+.mesa-land-screen {
+  background: var(--cream);
+  border-radius: 31px;
+  overflow: hidden;
+  min-height: 480px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  color: var(--bean-900);
+  text-align: left;
+}
+.mesa-land-p-head { padding: 18px 18px 10px; }
+.mesa-land-p-cafe { font-family: var(--font-display); font-size: 21px; margin: 0; color: var(--bean-900); }
+.mesa-land-p-sub { font-size: 11.5px; color: var(--text-subtle); margin: 3px 0 0; }
+.mesa-land-p-chips { display: flex; gap: 7px; padding: 10px 18px 12px; overflow: hidden; }
+.mesa-land-p-chip {
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--bean-100);
+  color: var(--bean-600);
+  white-space: nowrap;
+}
+.mesa-land-p-chip--on { background: var(--brand); color: var(--text-on-clay); }
+.mesa-land-p-body {
+  flex: 1;
+  overflow: hidden;
+  padding: 2px 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+}
+.mesa-land-p-item {
+  background: var(--white);
+  border-radius: 16px;
+  padding: 11px;
+  display: flex;
+  gap: 11px;
+  align-items: center;
+  box-shadow: var(--shadow-xs);
+  position: relative;
+  transition: filter 0.45s ease, opacity 0.45s ease;
+}
+.mesa-land-p-item img { width: 52px; height: 52px; border-radius: 12px; flex: none; object-fit: cover; }
+.mesa-land-p-item h4 { margin: 0; font-size: 14px; font-weight: 600; color: var(--bean-900); }
+.mesa-land-p-item p { margin: 2px 0 0; font-size: 11.5px; color: var(--text-subtle); transition: none; }
+.mesa-land-p-price {
+  margin-left: auto;
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--bean-800);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.mesa-land-p-badge {
+  position: absolute;
+  top: -7px;
+  right: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  background: var(--soldout);
+  color: var(--white);
+  border-radius: var(--radius-pill);
+  padding: 3px 9px;
+  opacity: 0;
+  transform: translateY(6px) scale(0.9);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+.mesa-land-p-item.is-soldout { filter: grayscale(1); opacity: 0.58; }
+.mesa-land-p-item.is-soldout .mesa-land-p-badge { opacity: 1; transform: none; }
+
+.mesa-land-p-promo {
+  background: var(--highlight-soft);
+  border: 1px solid #efddb8;
+  color: var(--honey-700);
+  border-radius: 14px;
+  padding: 10px 13px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+  display: none;
+}
+.mesa-land-p-promo.is-show { display: block; animation: mesa-land-slidein 0.45s ease; }
+@keyframes mesa-land-slidein {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* owner studio card */
+.mesa-land-studio {
+  width: 320px;
+  border-radius: 22px;
+  background: var(--bean-900);
+  color: var(--bean-50);
+  padding: 20px;
+  box-shadow: 0 30px 60px -22px rgba(31, 20, 14, 0.55);
+  flex: none;
+  box-sizing: border-box;
+  text-align: left;
+}
+.mesa-land-studio h4 {
+  margin: 0 0 2px;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--cream);
+}
+.mesa-land-s-sub { font-size: 11.5px; color: var(--bean-400); margin: 0 0 16px; transition: none; }
+.mesa-land-s-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(251, 246, 238, 0.06);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+.mesa-land-s-name { font-size: 14px; font-weight: 600; }
+.mesa-land-s-price { font-size: 12px; color: var(--bean-400); font-variant-numeric: tabular-nums; }
+.mesa-land-s-state {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+}
+.mesa-land-s-state--avail { background: var(--available-soft); color: var(--available); }
+.mesa-land-s-state--out { background: var(--soldout-soft); color: var(--soldout); }
+
+.mesa-land-bigtap {
+  width: 100%;
+  border: 0;
+  border-radius: 14px;
+  background: var(--clay-500);
+  color: var(--text-on-clay);
+  font-family: var(--font-sans);
+  font-size: 14.5px;
+  font-weight: 700;
+  padding: 14px;
+  margin-top: 6px;
+  cursor: pointer;
+  box-shadow: 0 0 0 0 rgba(200, 89, 46, 0.5);
+  animation: mesa-land-pulse 2s infinite;
+}
+.mesa-land-bigtap:hover { background: var(--clay-600); }
+.mesa-land-bigtap.is-done { animation: none; }
+@keyframes mesa-land-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(200, 89, 46, 0.45); }
+  70% { box-shadow: 0 0 0 16px rgba(200, 89, 46, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(200, 89, 46, 0); }
+}
+
+.mesa-land-aftermath {
+  text-align: center;
+  margin-top: 40px;
+  font-size: 17px;
+  color: var(--land-ink-muted);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.6s ease 0.25s, transform 0.6s ease 0.25s, color 0.7s ease;
+}
+.mesa-land-aftermath.is-show { opacity: 1; transform: none; }
+.mesa-land-aftermath b { color: var(--land-ink); }
+
+.mesa-land-switchrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(251, 246, 238, 0.06);
+  border-radius: 14px;
+  padding: 14px;
+}
+.mesa-land-sw-label { font-size: 13.5px; font-weight: 600; }
+.mesa-land-sw-sub { font-size: 11px; color: var(--bean-400); }
+.mesa-land-sw {
+  margin-left: auto;
+  width: 52px;
+  height: 30px;
+  border-radius: var(--radius-pill);
+  background: rgba(251, 246, 238, 0.18);
+  border: 0;
+  position: relative;
+  flex: none;
+  cursor: pointer;
+}
+.mesa-land-sw::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--cream);
+  transition: left 0.25s ease;
+}
+.mesa-land-sw[aria-checked="true"] { background: var(--available); }
+.mesa-land-sw[aria-checked="true"]::after { left: 25px; }
+
+/* ---------- closing analytics ---------- */
+.mesa-land-daycard {
+  margin: 48px auto 0;
+  max-width: 560px;
+  background: rgba(251, 246, 238, 0.05);
+  border: 1px solid var(--land-hairline);
+  border-radius: 20px;
+  padding: 30px;
+  transition: border-color 0.7s ease;
+}
+.mesa-land-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.mesa-land-stat-n {
+  font-family: var(--font-display);
+  font-size: 38px;
+  letter-spacing: var(--tracking-tight);
+  color: var(--land-ink);
+  font-variant-numeric: tabular-nums;
+  transition: color 0.7s ease;
+}
+.mesa-land-stat-n--text { font-size: 24px; padding-top: 10px; }
+.mesa-land-stat-l {
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--land-ink-muted);
+  font-family: var(--font-mono);
+  margin-top: 4px;
+  transition: color 0.7s ease;
+}
+.mesa-land-daycard-foot {
+  border-top: 1px solid var(--land-hairline);
+  margin-top: 24px;
+  padding-top: 18px;
+  font-size: 14.5px;
+  color: var(--land-ink-muted);
+  transition: color 0.7s ease, border-color 0.7s ease;
+}
+.mesa-land-daycard-foot b { color: var(--land-ink); }
+
+/* ---------- receipt pricing ---------- */
+.mesa-land-receipt {
+  background: #fffdf7;
+  color: var(--bean-900);
+  width: min(460px, 100%);
+  margin: 42px auto 0;
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  padding: 34px 30px 44px;
+  box-shadow: 0 30px 60px -20px rgba(31, 20, 14, 0.45);
+  position: relative;
+  box-sizing: border-box;
+  text-align: left;
+  /* perforated bottom edge */
+  -webkit-mask:
+    linear-gradient(#000 0 0) top / 100% calc(100% - 12px) no-repeat,
+    radial-gradient(circle at 8px 0, transparent 7px, #000 7.5px) bottom / 16px 12px repeat-x;
+  mask:
+    linear-gradient(#000 0 0) top / 100% calc(100% - 12px) no-repeat,
+    radial-gradient(circle at 8px 0, transparent 7px, #000 7.5px) bottom / 16px 12px repeat-x;
+}
+.mesa-land-receipt h3 {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.18em;
+  margin: 0 0 4px;
+  color: var(--bean-900);
+}
+.mesa-land-r-meta { text-align: center; font-size: 11px; color: var(--bean-600); margin: 0 0 18px; transition: none; }
+.mesa-land-r-sep { border: 0; border-top: 1px dashed var(--bean-300); margin: 14px 0; }
+.mesa-land-r-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 5px 0;
+  gap: 10px;
+}
+.mesa-land-r-name { font-weight: 700; }
+.mesa-land-r-amt { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mesa-land-r-amt small { font-size: 10.5px; color: var(--bean-500); }
+.mesa-land-r-desc { font-size: 11.5px; color: var(--bean-600); margin: 0 0 8px; line-height: 1.5; transition: none; }
+.mesa-land-r-features { list-style: none; margin: 0 0 10px; padding: 0; font-size: 11.5px; color: var(--bean-600); line-height: 1.7; }
+.mesa-land-r-features li { transition: none; }
+.mesa-land-r-pop {
+  display: inline-block;
+  background: var(--brand);
+  color: var(--text-on-clay);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 2px 8px;
+  border-radius: 3px;
+  margin-left: 8px;
+  vertical-align: 1px;
+}
+.mesa-land-r-cta {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+  border-radius: 10px;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 13.5px;
+  padding: 11px;
+  margin: 4px 0 14px;
+  background: var(--surface-sunken);
+  color: var(--bean-800);
+  border: 1px solid var(--border-default);
+}
+.mesa-land-r-cta--primary { background: var(--brand); color: var(--text-on-clay); border-color: var(--brand); }
+.mesa-land-r-cta:hover { filter: brightness(0.96); }
+.mesa-land-r-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 0 6px;
+  font-size: 11.5px;
+  color: var(--bean-600);
+}
+.mesa-land-r-total { font-weight: 700; font-size: 14px; }
+.mesa-land-r-note {
+  font-size: 11.5px;
+  color: var(--bean-600);
+  text-align: center;
+  margin: 16px 0 0;
+  line-height: 1.6;
+  transition: none;
+}
+.mesa-land-r-note b { color: var(--bean-900); }
+
+/* ---------- final CTA ---------- */
+.mesa-land-ctas { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 36px; }
+.mesa-land-fineprint {
+  text-align: center;
+  font-size: 13px;
+  color: var(--land-ink-muted);
+  margin-top: 18px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+  transition: color 0.7s ease;
+}
+.mesa-land-btn-ghost {
+  color: var(--land-ink);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 16px;
+  padding: 14px 28px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--land-hairline);
+  transition: color 0.3s ease, border-color 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+}
+.mesa-land-btn-ghost:hover { border-color: var(--land-accent); color: var(--land-accent); }
+
+/* ---------- responsive ---------- */
+@media (max-width: 780px) {
+  .mesa-land-oldmenu-wrap { grid-template-columns: 1fr; gap: 40px; }
+  .mesa-land-chapter { padding: 96px 18px; }
+  .mesa-land-ring { left: calc(50% + 70px); }
+}
+@media (max-width: 560px) {
+  .mesa-land-stats { grid-template-columns: 1fr; }
+  .mesa-land-clock { font-size: 11px; padding: 7px 12px; }
+  .mesa-land-duo { gap: 32px; }
+}

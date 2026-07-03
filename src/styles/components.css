@@ -209,7 +209,9 @@ textarea.mesa-input { height: auto; padding: 12px 14px; line-height: 1.5; resize
 .mesa-logo { display: inline-flex; align-items: center; gap: 0.34em; line-height: 1; color: var(--brand-ink); }
 .mesa-logo--stacked { flex-direction: column; align-items: flex-start; gap: 0.1em; }
 .mesa-logo--onbrand, .mesa-logo--ondark { color: currentColor; }
-.mesa-logo__word { font-family: var(--font-newsreader); font-weight: 600; letter-spacing: -0.005em; color: inherit; }
+/* Pinned to the house serif (not --font-display) so café brand-font overrides
+   on the live menu never restyle the Mesa logo itself. */
+.mesa-logo__word { font-family: Georgia, var(--font-gelasio), 'Times New Roman', serif; font-weight: 600; letter-spacing: -0.005em; color: inherit; }
 .mesa-logo__sub { font-family: var(--font-sans); font-size: 0.3em; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-muted); line-height: 1; }
 .mesa-logo--onbrand .mesa-logo__sub, .mesa-logo--ondark .mesa-logo__sub { color: currentColor; opacity: 0.78; }
 

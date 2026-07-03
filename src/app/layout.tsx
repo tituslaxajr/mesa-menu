@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import {
+  Gelasio,
   Newsreader,
   Hanken_Grotesk,
   Playfair_Display,
@@ -22,6 +23,17 @@ import "./globals.css";
 import { SITE_URL } from "@/lib/site";
 
 // Display serif — headlines, menu names, prices, warm italic accents.
+// Gelasio is metric-compatible with Georgia: devices that ship Georgia
+// (Windows/macOS/iOS) use it natively; everyone else gets the same look here.
+const gelasio = Gelasio({
+  variable: "--font-gelasio",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
+  display: "swap",
+});
+
+// Former display serif — still selectable in the owner's Brand kit.
 const newsreader = Newsreader({
   variable: "--font-newsreader",
   subsets: ["latin"],
@@ -30,7 +42,8 @@ const newsreader = Newsreader({
   display: "swap",
 });
 
-// UI / body sans — everything functional.
+// UI / body sans fallback — the system stack leads with Segoe UI; Hanken
+// covers platforms without it. Also selectable in the Brand kit.
 const hanken = Hanken_Grotesk({
   variable: "--font-hanken",
   subsets: ["latin"],
@@ -97,7 +110,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${newsreader.variable} ${hanken.variable} ${BRAND_FONTS}`}>
+    <html lang="en" className={`${gelasio.variable} ${newsreader.variable} ${hanken.variable} ${BRAND_FONTS}`}>
       <body>{children}</body>
     </html>
   );
