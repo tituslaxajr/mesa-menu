@@ -158,13 +158,13 @@ function Receipt() {
         </div>
       ))}
       <div className="mesa-land-r-line mesa-land-r-total">
-        <span>FIRST 14 DAYS</span>
+        <span>WHILE IN BETA</span>
         <span>₱0.00</span>
       </div>
       <p className="mesa-land-r-note">
-        <b>No card required to start.</b>
+        <b>Free for our beta cafés — no card.</b>
         <br />
-        Live the same afternoon you sign up.
+        Join now and lock in this pricing for launch.
         <br />
         Salamat po! ☕
       </p>
@@ -243,11 +243,14 @@ export function DayStory() {
     <div ref={rootRef} className="mesa-land" data-phase={clock.phase}>
       {/* fixed chrome */}
       <header className="mesa-land-chrome">
-        <Link href="/" className="mesa-land-wordmark" aria-label="Mesa home">
-          Mesa<span>.</span>
-        </Link>
+        <div className="mesa-land-brandgroup">
+          <Link href="/" className="mesa-land-wordmark" aria-label="Mesa home">
+            Mesa<span>.</span>
+          </Link>
+          <span className="mesa-land-beta">Beta</span>
+        </div>
         <Link href="/signup" className="mesa-land-chrome-cta">
-          Start free — 14 days
+          Try the beta — free
         </Link>
       </header>
 
@@ -630,20 +633,21 @@ export function DayStory() {
             </Reveal>
             <Reveal delay={2}>
               <p className="mesa-land-lede">
-                Set up tonight, live before tomorrow&apos;s first order. Or open the demo and hold
-                a Mesa menu in your hand — it&apos;s exactly what your guests would get.
+                Mesa is in beta and free to try right now — sign up, set up tonight, live before
+                tomorrow&apos;s first order. Or open the demo first and hold a Mesa menu in your
+                hand.
               </p>
             </Reveal>
             <Reveal delay={3}>
               <div className="mesa-land-ctas">
                 <Button as="a" href="/signup" variant="primary" size="lg">
-                  Start free for 14 days
+                  Try the beta — free
                 </Button>
                 <Link href="/demo" className="mesa-land-btn-ghost">
                   Open the live demo
                 </Link>
               </div>
-              <p className="mesa-land-fineprint">14-day trial · no card · cancel anytime</p>
+              <p className="mesa-land-fineprint">Free while in beta · no card · cancel anytime</p>
             </Reveal>
           </div>
         </section>

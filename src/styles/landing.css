@@ -57,6 +57,20 @@
   transition: color 0.7s ease;
 }
 .mesa-land-wordmark span { color: var(--land-accent); }
+.mesa-land-brandgroup { display: flex; align-items: center; gap: 10px; }
+.mesa-land-beta {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--land-accent);
+  border: 1px solid var(--land-accent);
+  border-radius: var(--radius-pill);
+  padding: 2px 8px;
+  line-height: 1.4;
+  transition: color 0.7s ease, border-color 0.7s ease;
+}
 .mesa-land-chrome-cta {
   font-size: 13.5px;
   font-weight: 600;

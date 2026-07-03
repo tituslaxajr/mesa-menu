@@ -20,6 +20,9 @@ export function Footer() {
             <a href="#pricing" style={{ fontSize: 13.5, color: "var(--text-muted)" }}>
               Pricing
             </a>
+            <Link href="/signup" style={{ fontSize: 13.5, color: "var(--text-muted)" }}>
+              Try the beta
+            </Link>
             <Link href="/terms" style={{ fontSize: 13.5, color: "var(--text-muted)" }}>
               Terms
             </Link>
@@ -29,7 +32,7 @@ export function Footer() {
           </nav>
         </div>
         <span style={{ fontSize: 13.5, color: "var(--text-subtle)" }}>
-          Made with care for small cafés in the Philippines · © 2026 Mesa
+          Mesa is in beta · Made with care for small cafés in the Philippines · © 2026
         </span>
       </div>
     </footer>
