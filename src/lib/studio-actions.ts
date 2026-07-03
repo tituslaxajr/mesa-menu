@@ -38,20 +38,25 @@ export async function saveCafeProfile(
 ): Promise<SaveResult> {
   await verifySession();
   const supabase = await createClient();
-  const { error } = await supabase
+  const base = {
+    name: cafe.name,
+    tagline: cafe.tagline,
+    intro: cafe.intro,
+    hours: cafe.hours,
+    theme,
+    order_mode: cafe.orderMode ?? null,
+    accepting_orders: cafe.acceptingOrders ?? true,
+  };
+  let { error } = await supabase
     .from("cafes")
-    .update({
-      name: cafe.name,
-      tagline: cafe.tagline,
-      intro: cafe.intro,
-      hours: cafe.hours,
-      open_min: cafe.openMin ?? null,
-      close_min: cafe.closeMin ?? null,
-      theme,
-      order_mode: cafe.orderMode ?? null,
-      accepting_orders: cafe.acceptingOrders ?? true,
-    })
+    .update({ ...base, open_min: cafe.openMin ?? null, close_min: cafe.closeMin ?? null })
     .eq("id", cafeId);
+  // Pre-migration-0010 DBs don't have the structured-hours columns — retry
+  // without them so profile saves keep working (hours text still saves, and
+  // the phase engine falls back to parsing it).
+  if (error && /open_min|close_min/.test(error.message)) {
+    ({ error } = await supabase.from("cafes").update(base).eq("id", cafeId));
+  }
   if (!error) revalidatePath(`/m/[slug]`, "page");
   return error ? { ok: false, error: error.message } : { ok: true };
 }

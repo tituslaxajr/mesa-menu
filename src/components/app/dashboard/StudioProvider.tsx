@@ -11,6 +11,7 @@ import { useStudioState, useAutosave, type SaveStatus } from "@/lib/studio-sync"
 import { saveMenu, saveBrand, saveCafeProfile, savePromos, setPlan } from "@/lib/studio-actions";
 import { uploadCafeImage } from "@/lib/storage";
 import { useOrders, type Order, type OrdersApi } from "@/lib/orders-store";
+import { logActivity } from "@/lib/activity";
 import {
   MENU,
   PLANS,
@@ -216,7 +217,11 @@ export function StudioProvider({
     }
   };
 
-  const toggle = (id: string) => setItems((arr) => arr.map((m) => (m.id === id ? { ...m, soldOut: !m.soldOut } : m)));
+  const toggle = (id: string) => {
+    const it = items.find((m) => m.id === id);
+    if (it) logActivity(slug, it.soldOut ? "restock" : "86", it.name); // feeds the Day Close recap
+    setItems((arr) => arr.map((m) => (m.id === id ? { ...m, soldOut: !m.soldOut } : m)));
+  };
   // Delete a category, reassigning its items to the first remaining category so
   // they never get orphaned (an item whose category isn't listed renders nowhere).
   const deleteCategory = (c: string) => {
@@ -260,10 +265,12 @@ export function StudioProvider({
   };
   // Bulk sold-out toggle for a whole category (kitchen closed / ran out).
   const setCategorySoldOut = (cat: string, soldOut: boolean) => {
+    logActivity(slug, soldOut ? "bulk86" : "bulkRestock", cat);
     setItems((arr) => arr.map((m) => (m.cat === cat ? { ...m, soldOut } : m)));
     toast(soldOut ? `“${cat}” marked sold out` : `“${cat}” back available`);
   };
   const save = (draft: DraftItem) => {
+    logActivity(slug, draft._new ? "add" : "edit", draft.name || "Untitled item");
     setItems((arr) => {
       const exists = arr.some((m) => m.id === draft.id);
       const clean: MenuItem = { ...draft, price: Number(draft.price) };

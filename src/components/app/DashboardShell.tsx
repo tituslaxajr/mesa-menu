@@ -19,7 +19,8 @@ import { Avatar, Button, IconButton } from "@/components/ds";
 import { feedbackMailto } from "@/lib/site";
 import { brandVars } from "@/lib/brand";
 import { useLocalStore } from "@/lib/useLocalStore";
-import { usePhase, hoursForCafe, minToLabel, type DayPhase } from "@/lib/day-phase";
+import { hoursForCafe, minToLabel, type DayPhase } from "@/lib/day-phase";
+import { usePhase } from "@/lib/use-phase";
 import { LivePreview } from "./LivePreview";
 import {
   PLANS,
@@ -35,6 +36,7 @@ import { StudioProvider, useStudio } from "./dashboard/StudioProvider";
 import { EditDrawer } from "./dashboard/EditDrawer";
 import { DayHome } from "./dashboard/DayHome";
 import { Backroom } from "./dashboard/Backroom";
+import { MenuPlace } from "./dashboard/MenuCanvas";
 import { HomeTab } from "./dashboard/tabs/HomeTab";
 import { OrdersTab } from "./dashboard/tabs/OrdersTab";
 import { MenuTab } from "./dashboard/tabs/MenuTab";
@@ -382,7 +384,7 @@ function ShellInner() {
                 onGo={(p, t) => { setPlace(p); setBackTab(t ?? null); }}
               />
             )}
-            {place === "menu" && renderTab("menu")}
+            {place === "menu" && <MenuPlace onGo={(p, t) => { setPlace(p); setBackTab(t); }} />}
             {place === "backroom" && (
               <Backroom tab={backTab} setTab={setBackTab} allowed={allowedTabs} renderTab={renderTab} />
             )}

@@ -23,6 +23,7 @@ import { computeSales, ordersInScope, summarize } from "@/lib/sales";
 import { minToLabel, hoursForCafe, PHASE_LABEL, type DayPhase } from "@/lib/day-phase";
 import { PHASE2_ORDERING, type MenuItem, type OrderMode, type Promo } from "@/lib/data";
 import { useStudio } from "./StudioProvider";
+import { DayRecap } from "./DayRecap";
 import { PageWrap, SectionTitle, StatCard, useNow, PLACEHOLDER_IMG, type TabId } from "./shared";
 
 const peso = (n: number) => `₱${n.toLocaleString("en-PH")}`;
@@ -134,6 +135,19 @@ export function DayHome({
 
   // First-run intro + local 6s undo for the 86 sheet.
   const [introSeen, setIntroSeen] = useLocalStore<boolean>("mesa.flags.arawIntroSeen", false);
+
+  // Day Close: auto-surface once per day when the café's real clock reaches
+  // closing (never while peeking via the chips); always reopenable by button.
+  const [recapOpen, setRecapOpen] = useState(false);
+  const [recapLastShown, setRecapLastShown] = useLocalStore<string>(`mesa.recap.${slug}.lastShown`, "");
+  const todayKey = new Date(now).toDateString();
+  useEffect(() => {
+    if (override !== "auto" || (phase !== "closing" && phase !== "closed")) return;
+    if (recapLastShown === todayKey) return;
+    setRecapLastShown(todayKey);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- once-a-day auto-open keyed on the phase transition
+    setRecapOpen(true);
+  }, [phase, override, recapLastShown, todayKey, setRecapLastShown]);
   const [justSixed, setJustSixed] = useState<MenuItem | null>(null);
   useEffect(() => {
     if (!justSixed) return;
@@ -308,6 +322,7 @@ export function DayHome({
         )}
       </div>
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <Button variant="primary" onClick={() => setRecapOpen(true)}><Moon /> Open Day Close</Button>
         <Button variant="secondary" onClick={() => onGo("backroom", "analytics")}><BarChart3 /> The Books — full report</Button>
       </div>
     </div>
@@ -364,6 +379,7 @@ export function DayHome({
         {introCard}
         {sections.map((s, i) => <React.Fragment key={i}>{s}</React.Fragment>)}
       </div>
+      {recapOpen && <DayRecap onClose={() => setRecapOpen(false)} />}
     </PageWrap>
   );
 }

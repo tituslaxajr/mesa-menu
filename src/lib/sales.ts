@@ -4,8 +4,16 @@ import { orderStatusText } from "@/components/app/dashboard/shared";
 export const DAY_MS = 86400000;
 export function dayStartOf(ts: number) { const d = new Date(ts); d.setHours(0, 0, 0, 0); return d.getTime(); }
 
+/**
+ * What counts as a sale. Counter-channel entries are a guest's cart summary
+ * shown at the till — nothing verifies they were actually ordered or paid, so
+ * they are logged for the owner's reference but NEVER counted as revenue.
+ * (Phase 2's staff-confirmed orders are the path to real recorded sales.)
+ */
+export const isSale = (o: Order) => o.status !== "cancelled" && o.channel !== "counter";
+
 export function computeSales(orders: Order[], now: number) {
-  const paid = orders.filter((o) => o.status !== "cancelled");
+  const paid = orders.filter(isSale);
   const today0 = dayStartOf(now);
   const weekStart = today0 - 6 * DAY_MS;
 
@@ -45,7 +53,9 @@ export function computeSales(orders: Order[], now: number) {
 // ── End-of-day report (CSV + printable) ─────────────────────────────
 export function ordersInScope(orders: Order[], scope: string, now: number): Order[] {
   const start = dayStartOf(now) - (scope === "7d" ? 6 * DAY_MS : 0);
-  return orders.filter((o) => o.placedAt >= start).slice().sort((a, b) => a.placedAt - b.placedAt);
+  // Counter carts are unverified (see isSale) — excluded from reports too;
+  // cancelled orders stay listed for the audit trail (totals already skip them).
+  return orders.filter((o) => o.channel !== "counter" && o.placedAt >= start).slice().sort((a, b) => a.placedAt - b.placedAt);
 }
 function lineText(o: Order): string {
   return o.lines.map((l) => `${l.qty}× ${l.name}${l.options && l.options.length ? ` (${l.options.join(", ")})` : ""}`).join("; ");
@@ -54,7 +64,7 @@ const fmtTime = (ts: number) => new Date(ts).toLocaleTimeString("en-PH", { hour:
 export const fmtDate = (ts: number) => new Date(ts).toLocaleDateString("en-PH", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
 
 export function summarize(list: Order[]) {
-  const paid = list.filter((o) => o.status !== "cancelled");
+  const paid = list.filter(isSale);
   const revenue = paid.reduce((s, o) => s + o.total, 0);
   const byItem = new Map<string, { name: string; qty: number; revenue: number }>();
   paid.forEach((o) => o.lines.forEach((l) => {

@@ -4,10 +4,8 @@
 // EMPHASIS only — every capability stays reachable in every phase, so a wrong
 // parse or odd schedule can never lock an owner out.
 //
-// No "use client" here on purpose: the parsing/compose helpers are also useful
-// server-side; the hooks below are only ever called from client components.
-
-import { useEffect, useState } from "react";
+// Pure module (no React) so server actions can compose/parse hours too.
+// The live `usePhase` hook lives in use-phase.ts (client-only).
 
 export type DayPhase = "prep" | "service" | "merienda" | "closing" | "closed";
 
@@ -117,20 +115,3 @@ export const PHASE_LABEL: Record<DayPhase, string> = {
   closed: "Closed",
 };
 
-/**
- * Live phase for a café, re-evaluated every minute.
- * SSR-safe: first render returns a phase computed from a fixed epoch-0 date on
- * the server and the real clock right after mount (same pattern as useNow —
- * the pre-mount value is only on screen for one frame).
- */
-export function usePhase(hours: CafeHours): DayPhase {
-  const [now, setNow] = useState(0);
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- seed real time on mount (intentional SSR-safe pattern, same as useNow)
-    setNow(Date.now());
-    const t = setInterval(() => setNow(Date.now()), 60000);
-    return () => clearInterval(t);
-  }, []);
-  // eslint-disable-next-line react-hooks/purity -- pre-mount fallback only; settles on the real clock one frame after mount
-  return phaseFor(new Date(now || Date.now()), hours);
-}

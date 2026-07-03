@@ -15,6 +15,7 @@ import {
 import { Button, Card } from "@/components/ds";
 import { menuUrl, menuLabel } from "@/lib/site";
 import { timeAgo, type Order } from "@/lib/orders-store";
+import { isSale } from "@/lib/sales";
 import { THEMES, type Cafe, type MenuItem, type ThemeKey, type BrandKit } from "@/lib/data";
 import { useNow, PageWrap, StatCard, SectionTitle, dpeso, orderBadge, type TabId } from "../shared";
 
@@ -25,7 +26,9 @@ export function HomeTab({ items, cafe, theme, brand, orders, setTab }: { items: 
   // "Today" = since local midnight. Re-ticks so time-ago labels stay fresh.
   const now = useNow(30000);
   const dayStart = (() => { const d = new Date(now); d.setHours(0, 0, 0, 0); return d.getTime(); })();
-  const todays = orders.filter((o) => o.placedAt >= dayStart && o.status !== "cancelled");
+  // isSale: counter carts are unverified summaries — shown in "Recent" below,
+  // never counted as revenue (Phase 2 confirmation is what records a sale).
+  const todays = orders.filter((o) => o.placedAt >= dayStart && isSale(o));
   const ordersToday = todays.length;
   const revenueToday = todays.reduce((s, o) => s + o.total, 0);
   const newToday = todays.filter((o) => o.status === "new").length;

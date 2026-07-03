@@ -298,6 +298,31 @@ export const MENU: MenuItem[] = [
   { id: "sourdough", cat: "Kitchen", name: "Sourdough & Eggs", price: 195, desc: "House sourdough, soft eggs, salted butter.", img: U("photo-1509440159596-0249088772ff"), tags: [dt("vegetarian"), dt("dairy"), dt("gluten")] },
 ];
 
+/**
+ * "Your menu in 60 seconds" — common PH café items for the Day One onboarding
+ * chip-picker. Tap what you sell, tweak prices inline; each becomes a real
+ * MenuItem. Photos borrow the sample-menu Unsplash set so the first preview
+ * doesn't look bare; owners replace them with their own.
+ */
+export const STARTER_CATALOG: { name: string; price: number; cat: string; img: string }[] = [
+  { name: "Flat White", price: 130, cat: "Hot Coffee", img: U("photo-1541167760496-1628856ab772") },
+  { name: "Cappuccino", price: 120, cat: "Hot Coffee", img: U("photo-1572442388796-11668a67e53d") },
+  { name: "Americano", price: 110, cat: "Hot Coffee", img: U("photo-1534687941688-651ccaafbff8") },
+  { name: "Kapeng Barako", price: 90, cat: "Hot Coffee", img: U("photo-1509440159596-0249088772ff") },
+  { name: "Spanish Latte", price: 140, cat: "Hot Coffee", img: U("photo-1517701550927-30cf4ba1dba5") },
+  { name: "Iced Spanish Latte", price: 150, cat: "Iced", img: U("photo-1461023058943-07fcbe16d735") },
+  { name: "Iced Ube Latte", price: 160, cat: "Iced", img: U("photo-1517701550927-30cf4ba1dba5") },
+  { name: "Cold Brew", price: 150, cat: "Iced", img: U("photo-1461023058943-07fcbe16d735") },
+  { name: "Iced Matcha Latte", price: 160, cat: "Iced", img: U("photo-1517701550927-30cf4ba1dba5") },
+  { name: "Butter Croissant", price: 95, cat: "Pastries", img: U("photo-1555507036-ab1f4038808a") },
+  { name: "Ube Cheese Pandesal", price: 45, cat: "Pastries", img: U("photo-1509440159596-0249088772ff") },
+  { name: "Brown Butter Cookie", price: 75, cat: "Pastries", img: U("photo-1499636136210-6f4ee915583e") },
+  { name: "Banana Bread", price: 85, cat: "Pastries", img: U("photo-1565958011703-44f9829ba187") },
+  { name: "Tapsilog", price: 165, cat: "Meals", img: U("photo-1606755962773-d324e0a13086") },
+  { name: "Pulled Pork Sandwich", price: 185, cat: "Meals", img: U("photo-1606755962773-d324e0a13086") },
+  { name: "Pasta Carbonara", price: 175, cat: "Meals", img: U("photo-1509440159596-0249088772ff") },
+];
+
 export const THEMES: MenuTheme[] = [
   { key: "warm", name: "Warm & Cozy", blurb: "Cover photo, bottom tab bar, best-sellers rail.", dark: false, swatch: ["#FBF6EE", "#AE4A24", "#3B2A21"] },
   { key: "minimal", name: "Clean & Minimal", blurb: "Centered logo, underline tabs, calm list.", dark: false, swatch: ["#FFFFFF", "#7A5230", "#2A1D16"] },
