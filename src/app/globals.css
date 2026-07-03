@@ -11,6 +11,7 @@
 @import url('../styles/tokens/base.css');
 @import url('../styles/components.css');
 @import url('../styles/landing.css');
+@import url('../styles/app-day.css');
 
 /* Smooth in-page anchor scrolling for the landing nav. */
 html { scroll-behavior: smooth; }

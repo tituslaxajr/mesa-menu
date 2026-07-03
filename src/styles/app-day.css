@@ -1,0 +1,33 @@
+/* ==========================================================================
+   Mesa — day-phase ambience for the owner app ("Araw")
+   The same idea as the landing page's scroll phases, driven by the real
+   clock instead of scroll position: the dashboard's surface follows the
+   café's day. Background-only and low-amplitude — text and component tokens
+   are untouched so AA contrast is preserved in every phase (all phase
+   surfaces stay on the light end of the bean ramp).
+   ========================================================================== */
+
+.mesa-dayroot {
+  --day-bg: var(--surface-page);
+  --day-accent: var(--brand);
+  --day-tint: transparent;
+  background: var(--day-bg);
+  transition: background-color 1s ease;
+}
+
+.mesa-dayroot[data-phase="prep"]     { --day-bg: var(--cream);    --day-tint: var(--clay-50); }
+.mesa-dayroot[data-phase="service"]  { --day-bg: var(--bean-50);  --day-tint: var(--bean-100); }
+.mesa-dayroot[data-phase="merienda"] { --day-bg: var(--honey-50); --day-tint: var(--honey-100); }
+.mesa-dayroot[data-phase="closing"]  { --day-bg: var(--bean-100); --day-tint: var(--bean-150); }
+.mesa-dayroot[data-phase="closed"]   { --day-bg: var(--bean-150); --day-tint: var(--bean-200); }
+
+/* The Day Close recap is the one deliberately dark surface (its own overlay,
+   cream ink — matches the landing's dusk chapter). */
+.mesa-dayclose-surface {
+  background: var(--bean-900);
+  color: var(--bean-50);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mesa-dayroot { transition: none; }
+}

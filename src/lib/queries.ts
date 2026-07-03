@@ -51,6 +51,8 @@ interface CafeRow {
   tagline: string;
   intro: string;
   hours: string;
+  open_min: number | null;
+  close_min: number | null;
   cover: string | null;
   theme: ThemeKey;
   order_mode: Cafe["orderMode"] | null;
@@ -65,6 +67,8 @@ function toCafe(r: CafeRow): Cafe {
     tagline: r.tagline,
     intro: r.intro,
     hours: r.hours,
+    openMin: r.open_min ?? undefined,
+    closeMin: r.close_min ?? undefined,
     cover: r.cover || IMG_PLACEHOLDER,
     plan: r.plan,
     theme: r.theme,
@@ -149,7 +153,7 @@ export const getCafe = cache(async (slug: string): Promise<Cafe | null> => {
   const { data } = await supabase
     .from("cafe_public")
     .select(
-      "id, slug, name, tagline, intro, hours, cover, theme, order_mode, accepting_orders, plan",
+      "id, slug, name, tagline, intro, hours, open_min, close_min, cover, theme, order_mode, accepting_orders, plan",
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -163,7 +167,7 @@ export const getCafeData = cache(async (slug: string): Promise<CafeData | null> 
   const { data: cafeRow } = await supabase
     .from("cafe_public")
     .select(
-      "id, slug, name, tagline, intro, hours, cover, theme, order_mode, accepting_orders, plan",
+      "id, slug, name, tagline, intro, hours, open_min, close_min, cover, theme, order_mode, accepting_orders, plan",
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -221,7 +225,7 @@ export const getOwnerCafeData = cache(
     // unpublished drafts are included). First location for now (1 for Brew).
     const { data: cafeRows } = await supabase
       .from("cafes")
-      .select("id, slug, name, tagline, intro, hours, cover, theme, order_mode, accepting_orders")
+      .select("id, slug, name, tagline, intro, hours, open_min, close_min, cover, theme, order_mode, accepting_orders")
       .eq("account_id", accountId)
       .order("position")
       .limit(1);

@@ -33,7 +33,7 @@ export async function saveBrand(cafeId: string, brand: BrandKit): Promise<SaveRe
 
 export async function saveCafeProfile(
   cafeId: string,
-  cafe: Pick<Cafe, "name" | "tagline" | "intro" | "hours" | "acceptingOrders" | "orderMode">,
+  cafe: Pick<Cafe, "name" | "tagline" | "intro" | "hours" | "openMin" | "closeMin" | "acceptingOrders" | "orderMode">,
   theme: ThemeKey,
 ): Promise<SaveResult> {
   await verifySession();
@@ -45,6 +45,8 @@ export async function saveCafeProfile(
       tagline: cafe.tagline,
       intro: cafe.intro,
       hours: cafe.hours,
+      open_min: cafe.openMin ?? null,
+      close_min: cafe.closeMin ?? null,
       theme,
       order_mode: cafe.orderMode ?? null,
       accepting_orders: cafe.acceptingOrders ?? true,

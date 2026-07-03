@@ -29,6 +29,11 @@ export interface Cafe {
   /** One warm sentence shown on logo-led themes (minimal/soft/playful). */
   intro: string;
   hours: string;
+  /** Structured opening hours (minutes since midnight) for the day-phase
+   *  engine. Optional — when unset, `hours` text is parsed best-effort
+   *  (src/lib/day-phase.ts) with a 7:00–21:00 fallback. */
+  openMin?: number;
+  closeMin?: number;
   cover: string;
   /** Which subscription tier the café is on (gates ordering, themes, etc.). */
   plan: PlanId;
