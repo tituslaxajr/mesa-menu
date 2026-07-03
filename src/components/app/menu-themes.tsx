@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { MenuItem, Tabs, Badge, IconButton, Logo, Avatar } from "@/components/ds";
 import { CAT_ICONS, type Cafe, type MenuItem as MenuItemType, type MenuTag, type ThemeKey } from "@/lib/data";
+import { hoursForCafe } from "@/lib/day-phase";
+import { usePhase } from "@/lib/use-phase";
 
 const peso = (n: number) => `₱${n}`;
 
@@ -96,10 +98,13 @@ export const ICON_STROKE: Record<ThemeKey, number> = {
   playful: 2.4, // chunky & fun
 };
 
-function OpenPill() {
+/** Honest open/closed pill driven by the café's real hours (was hardcoded "Open now"). */
+function OpenPill({ cafe }: { cafe: Cafe }) {
+  const phase = usePhase(hoursForCafe(cafe));
+  const open = phase !== "closed" && phase !== "prep";
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(110,139,91,0.95)", color: "#fff", fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 999 }}>
-      <CheckCircle2 size={13} /> Open now
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: open ? "rgba(110,139,91,0.95)" : "rgba(59,42,33,0.85)", color: "#fff", fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 999 }}>
+      {open ? <CheckCircle2 size={13} /> : <Clock size={13} />} {open ? "Open now" : "Closed now"}
     </span>
   );
 }
@@ -338,7 +343,7 @@ function LayoutWarm({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat, o
         </div>
         <div style={{ position: "absolute", left: 20, right: 20, bottom: 18, color: "#FBF6EE" }}>
           {logo && <div style={{ marginBottom: 10 }}><BrandMark logo={logo} size={46} radius={12} background="#fff" fallback={null} /></div>}
-          <div style={{ marginBottom: 8 }}><OpenPill /></div>
+          <div style={{ marginBottom: 8 }}><OpenPill cafe={cafe} /></div>
           <h1 style={{ fontFamily: "var(--font-display)", fontSize: 34, fontWeight: 500, color: "#fff", letterSpacing: "-0.01em", lineHeight: 1.05, margin: 0 }}>{cafe.name}</h1>
           <p style={{ fontSize: 13.5, opacity: 0.92, marginTop: 4 }}>{cafe.tagline}</p>
         </div>
@@ -479,7 +484,7 @@ function LayoutBold({ cafe, logo, whiteLabel, groups, cats, cat, setCat, onOpen,
         </div>
         <div style={{ position: "absolute", left: 0, right: 0, bottom: 24, textAlign: "center", padding: "0 28px", color: "#fff" }}>
           {logo && <div style={{ marginBottom: 14, display: "flex", justifyContent: "center" }}><BrandMark logo={logo} size={54} radius={14} background="#fff" fallback={null} /></div>}
-          <div style={{ marginBottom: 12, display: "flex", justifyContent: "center" }}><OpenPill /></div>
+          <div style={{ marginBottom: 12, display: "flex", justifyContent: "center" }}><OpenPill cafe={cafe} /></div>
           <h1 style={{ fontFamily: "var(--font-display)", fontSize: 42, fontWeight: 500, lineHeight: 1.0, letterSpacing: "-0.015em", textShadow: "0 2px 18px rgba(0,0,0,0.45)", margin: 0 }}>{cafe.name}</h1>
           <p style={{ fontSize: 14, opacity: 0.9, marginTop: 10 }}>{cafe.tagline}</p>
         </div>

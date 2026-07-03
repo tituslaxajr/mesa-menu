@@ -181,6 +181,27 @@ export function DayStory() {
   const [tapped, setTapped] = useState(false);
   const [promoOn, setPromoOn] = useState(false);
   const [statsIn, setStatsIn] = useState(false);
+  // Hold-to-confirm for the 12:05 interactive — the real gesture from the
+  // app's 86 sheet (350ms press, ring fills, releasing early cancels).
+  const [holding, setHolding] = useState(false);
+  const holdTimer = useRef<number | null>(null);
+  const holdStart = () => {
+    if (soldOut || holdTimer.current) return;
+    setHolding(true);
+    holdTimer.current = window.setTimeout(() => {
+      holdTimer.current = null;
+      setHolding(false);
+      setSoldOut(true);
+      setTapped(true);
+    }, 350);
+  };
+  const holdCancel = () => {
+    if (holdTimer.current) {
+      clearTimeout(holdTimer.current);
+      holdTimer.current = null;
+    }
+    setHolding(false);
+  };
 
   useEffect(() => {
     const root = rootRef.current;
@@ -435,8 +456,8 @@ export function DayStory() {
             </Reveal>
             <Reveal delay={2}>
               <p className="mesa-land-lede">
-                This part isn&apos;t a screenshot. That&apos;s your phone on the left. Tap the
-                button and watch every guest&apos;s menu update —{" "}
+                This part isn&apos;t a screenshot — it&apos;s the real gesture from the app.
+                Press and hold until the ring closes, and watch every guest&apos;s menu update —{" "}
                 <strong>while you&apos;re still holding the pan.</strong>
               </p>
             </Reveal>
@@ -444,8 +465,8 @@ export function DayStory() {
               <div className="mesa-land-duo">
                 <div className="mesa-land-duo-col">
                   <div className="mesa-land-studio">
-                    <h4 style={{ fontFamily: "var(--font-display)" }}>Mesa Studio</h4>
-                    <p className="mesa-land-s-sub">{DEMO_CAFE.name} · Menu manager</p>
+                    <h4 style={{ fontFamily: "var(--font-display)" }}>Today · Service</h4>
+                    <p className="mesa-land-s-sub">{DEMO_CAFE.name} · The 86 sheet</p>
                     <div className="mesa-land-s-row">
                       <div>
                         <div className="mesa-land-s-name">Flat White</div>
@@ -464,14 +485,23 @@ export function DayStory() {
                     </div>
                     <button
                       type="button"
-                      className={`mesa-land-bigtap ${tapped ? "is-done" : ""}`}
+                      className={`mesa-land-bigtap ${tapped ? "is-done" : ""} ${holding ? "is-holding" : ""}`}
                       style={soldOut ? { background: "var(--available)" } : undefined}
+                      onPointerDown={holdStart}
+                      onPointerUp={holdCancel}
+                      onPointerLeave={holdCancel}
+                      onPointerCancel={holdCancel}
+                      onContextMenu={(e) => e.preventDefault()}
                       onClick={() => {
-                        setSoldOut((s) => !s);
-                        setTapped(true);
+                        // Bringing it back is a plain tap; keyboard users get
+                        // click for both directions (hold is pointer-only).
+                        if (soldOut) { setSoldOut(false); setTapped(true); }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !soldOut) { setSoldOut(true); setTapped(true); }
                       }}
                     >
-                      {soldOut ? "Done — tap to bring it back" : "Tap: mark it sold out"}
+                      {soldOut ? "Done — tap to bring it back" : holding ? "Hold it…" : "Hold: mark it sold out"}
                     </button>
                   </div>
                   <p className="mesa-land-devicetag">Your phone — behind the counter</p>
@@ -505,16 +535,17 @@ export function DayStory() {
             </Reveal>
             <Reveal delay={2}>
               <p className="mesa-land-lede">
-                No new poster, no new post, no new print. Flip the switch and every table sees your
-                merienda deal — then flip it off when the rush is done.
+                Mesa already knows it&apos;s merienda — <strong>Today</strong> is holding the
+                promo up, waiting for the flick. No new poster, no new post, no new print — and
+                flip it off when the rush is done.
               </p>
             </Reveal>
             <Reveal delay={3}>
               <div className="mesa-land-duo">
                 <div className="mesa-land-duo-col">
                   <div className="mesa-land-studio">
-                    <h4 style={{ fontFamily: "var(--font-display)" }}>Mesa Studio</h4>
-                    <p className="mesa-land-s-sub">{DEMO_CAFE.name} · Promos</p>
+                    <h4 style={{ fontFamily: "var(--font-display)" }}>Today · Merienda</h4>
+                    <p className="mesa-land-s-sub">{DEMO_CAFE.name} · Tahimik? One flick.</p>
                     <div className="mesa-land-switchrow">
                       <div>
                         <div className="mesa-land-sw-label">Merienda deal, 3–5 PM</div>
@@ -561,11 +592,14 @@ export function DayStory() {
             <Reveal delay={2}>
               <p className="mesa-land-lede">
                 Guests build their order on their phone and show it at the counter — your staff
-                keys it into your own POS like always. Mesa quietly counts the day.
+                keys it into your own POS like always. And when you close, Mesa hands you a{" "}
+                <strong>Day Close</strong> recap: the day&apos;s story, ready to post. (Real
+                earnings appear once you let Mesa record confirmed sales.)
               </p>
             </Reveal>
             <Reveal delay={3}>
               <div className="mesa-land-daycard">
+                <p className="mesa-land-s-sub" style={{ marginBottom: 14 }}>🌙 Day Close · {DEMO_CAFE.name}</p>
                 <div className="mesa-land-stats">
                   <div>
                     <div className="mesa-land-stat-n">
@@ -641,13 +675,14 @@ export function DayStory() {
             <Reveal delay={3}>
               <div className="mesa-land-ctas">
                 <Button as="a" href="/signup" variant="primary" size="lg">
-                  Try the beta — free
+                  Start your Day 1 — free
                 </Button>
                 <Link href="/demo" className="mesa-land-btn-ghost">
                   Open the live demo
                 </Link>
               </div>
               <p className="mesa-land-fineprint">Free while in beta · no card · cancel anytime</p>
+              <p className="mesa-land-fineprint">That clock at the bottom? It&apos;s in the app too — your dashboard follows your café&apos;s day.</p>
             </Reveal>
           </div>
         </section>

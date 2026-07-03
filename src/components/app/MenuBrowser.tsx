@@ -6,6 +6,8 @@ import { Badge, Button, IconButton, Input, Stepper } from "@/components/ds";
 import { capsFor, clampBrand, clampTheme, resolveOrderMode, type BrandKit, type Cafe, type MenuItem as MenuItemType, type MenuTag, type OptionGroup, type PlanId, type Promo, type ThemeKey } from "@/lib/data";
 import { brandVars, surfaceVars } from "@/lib/brand";
 import { placeOrder, useMyOrders, type Order } from "@/lib/orders-store";
+import { hoursForCafe, minToLabel, MERIENDA_END } from "@/lib/day-phase";
+import { usePhase } from "@/lib/use-phase";
 import { ThemeLayout, themeVars, HAS_TAB_BAR, TabBar } from "./menu-themes";
 
 const peso = (n: number) => `₱${n}`;
@@ -228,6 +230,17 @@ export function MenuBrowser({ cafe, menu, categories, brand, promos, ordering, p
     ? <DietFilterBar tags={dietFilters} selected={diet} onToggle={toggleDiet} />
     : null;
   const activePromos = promos.filter((p) => p.active && !dismissedPromos.includes(p.id));
+  // "Ngayon" — a small honest time cue sourced from the café's hours: last
+  // orders near close, and when we reopen after close. Menu stays browsable
+  // around the clock; only the cue changes.
+  const cafeHours = hoursForCafe(cafe);
+  const dayPhase = usePhase(cafeHours);
+  const ngayon =
+    dayPhase === "closing"
+      ? `Last orders po — we close at ${minToLabel(cafeHours.closeMin).toLowerCase()}`
+      : dayPhase === "closed"
+        ? `Closed po ngayon — back at ${minToLabel(cafeHours.openMin).toLowerCase()}`
+        : null;
   // Effective order mode folds in the plan, the owner's chosen mode, and the
   // pause switch. "counter" = build a summary to show staff; "kitchen" = send
   // to the live board; "browse" = no ordering.
@@ -256,13 +269,25 @@ export function MenuBrowser({ cafe, menu, categories, brand, promos, ordering, p
         ...(effBrand.surface && effTheme !== "bold" ? (surfaceVars(effBrand.surface) as React.CSSProperties) : {}),
       }}
     >
-      {activePromos.length > 0 && (
+      {(activePromos.length > 0 || ngayon) && (
         <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "10px 14px 0" }}>
+          {ngayon && (
+            <div style={{ display: "flex", alignItems: "center", gap: 10, background: "var(--surface-muted)", color: "var(--text-muted)", borderRadius: "var(--radius-md)", padding: "9px 12px", fontFamily: "var(--font-sans)", fontSize: 12.5, fontWeight: 600 }}>
+              <Clock size={14} style={{ flex: "none" }} /> {ngayon}
+            </div>
+          )}
           {activePromos.map((p) => (
             <div key={p.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, background: PROMO_BG[p.tone], color: PROMO_FG[p.tone], borderRadius: "var(--radius-md)", padding: "10px 12px", fontFamily: "var(--font-sans)" }}>
               <Tag size={16} style={{ flex: "none", marginTop: 1 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 700, fontSize: 13.5 }}>{p.title}</div>
+                <div style={{ fontWeight: 700, fontSize: 13.5 }}>
+                  {p.title}
+                  {dayPhase === "merienda" && (
+                    <span style={{ fontWeight: 600, fontSize: 11.5, marginLeft: 8, opacity: 0.85 }}>
+                      merienda ngayon · till {minToLabel(MERIENDA_END).toLowerCase()}
+                    </span>
+                  )}
+                </div>
                 <div style={{ fontSize: 12.5, opacity: 0.92 }}>{p.desc}</div>
               </div>
               <button onClick={() => setDismissedPromos((d) => [...d, p.id])} aria-label="Dismiss promo" style={{ flex: "none", border: 0, background: "transparent", cursor: "pointer", color: "inherit", opacity: 0.6, display: "grid", placeItems: "center" }}><X size={15} /></button>

@@ -20,8 +20,8 @@ export interface CafeHours {
 export const DEFAULT_HOURS: CafeHours = { openMin: 7 * 60, closeMin: 21 * 60 };
 
 /** Merienda window (PH afternoon lull): 2:30 – 5:30 PM. */
-const MERIENDA_START = 14 * 60 + 30;
-const MERIENDA_END = 17 * 60 + 30;
+export const MERIENDA_START = 14 * 60 + 30;
+export const MERIENDA_END = 17 * 60 + 30;
 /** Prep starts this long before open; closing starts this long before close. */
 const PREP_LEAD = 90;
 const CLOSING_LEAD = 60;
