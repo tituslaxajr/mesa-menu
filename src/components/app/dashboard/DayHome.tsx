@@ -20,6 +20,7 @@ import {
 import { Button, Card, Switch, Badge } from "@/components/ds";
 import { useLocalStore } from "@/lib/useLocalStore";
 import { computeSales, ordersInScope, summarize } from "@/lib/sales";
+import { timeAgo } from "@/lib/orders-store";
 import { minToLabel, hoursForCafe, PHASE_LABEL, type DayPhase } from "@/lib/day-phase";
 import { PHASE2_ORDERING, type MenuItem, type OrderMode, type Promo } from "@/lib/data";
 import { useStudio } from "./StudioProvider";
@@ -119,7 +120,7 @@ export function DayHome({
   setOverride: (v: DayPhase | "auto") => void;
   onGo: (place: "menu" | "backroom", tab?: TabId) => void;
 }) {
-  const { items, toggle, promos, setPromos, cafe, setCafe, orders, toast, slug } = useStudio();
+  const { items, toggle, promos, setPromos, cafe, setCafe, orders, toast, slug, recording, pendingOrders, confirmPending } = useStudio();
   const now = useNow(30000);
   const sales = computeSales(orders, now);
   const hours = hoursForCafe(cafe);
@@ -338,18 +339,43 @@ export function DayHome({
     </Card>
   );
 
+  // Phase 2 "Record sales with Mesa": guest-submitted counter orders waiting
+  // for the staff tap that turns them into recorded sales.
+  const pendingStrip = recording ? (
+    <Card variant="flat" padded style={{ border: pendingOrders.length ? "2px solid var(--brand)" : undefined }}>
+      <SectionTitle right={pendingOrders.length ? <Badge variant="highlight">{pendingOrders.length} waiting</Badge> : undefined}>At the counter</SectionTitle>
+      {pendingOrders.length ? (
+        <>
+          <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>The guest shows you a code — tap the match to record the sale. Unconfirmed orders quietly expire and never count.</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+            {pendingOrders.map((p) => (
+              <button key={p.id} onClick={() => confirmPending(p.id)} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3, minWidth: 132, padding: "12px 15px", borderRadius: "var(--radius-lg)", border: "1.5px solid var(--brand)", background: "var(--brand-soft)", cursor: "pointer", fontFamily: "var(--font-sans)", textAlign: "left" }}>
+                <span style={{ fontFamily: "var(--font-display)", fontSize: 24, fontWeight: 600, color: "var(--brand-active)", letterSpacing: ".04em", lineHeight: 1 }}>{p.code}</span>
+                <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text-strong)" }}>{peso(p.total)} · {p.lines.reduce((s, l) => s + l.qty, 0)} items{p.table ? ` · T${p.table}` : ""}</span>
+                <span style={{ fontSize: 11.5, color: "var(--text-muted)" }}>{timeAgo(p.placedAt, now)} · tap to record</span>
+              </button>
+            ))}
+          </div>
+        </>
+      ) : (
+        <p style={{ fontSize: 13, color: "var(--text-muted)" }}>No orders waiting. Guests build a cart, tap &ldquo;Send to counter&rdquo;, and show you their code here.</p>
+      )}
+    </Card>
+  ) : null;
+
   /* ---- phase → card order (defaults, never walls) ---- */
   const sections: React.ReactNode[] = (() => {
+    const queueFirst = pendingOrders.length ? [pendingStrip] : [];
     switch (phase) {
       case "prep":
-        return [leftovers, <PromoFlicks key="pf" promos={promos} setPromos={setPromos} toast={toast} title="Running today" />, liveCard];
+        return [...queueFirst, leftovers, <PromoFlicks key="pf" promos={promos} setPromos={setPromos} toast={toast} title="Running today" />, liveCard];
       case "service":
-        return [sheet86(), statsRow, <PromoFlicks key="pf" promos={promos} setPromos={setPromos} toast={toast} />, pauseCard];
+        return [pendingStrip, sheet86(), statsRow, <PromoFlicks key="pf" promos={promos} setPromos={setPromos} toast={toast} />, pauseCard];
       case "merienda":
-        return [meriendaPrompt, <PromoFlicks key="pf" promos={promos} setPromos={setPromos} toast={toast} />, statsRow, sheet86(true)];
+        return [...queueFirst, meriendaPrompt, <PromoFlicks key="pf" promos={promos} setPromos={setPromos} toast={toast} />, statsRow, sheet86(true)];
       case "closing":
       case "closed":
-        return [closingCard, tomorrowPrep, <PromoFlicks key="pf" promos={promos} setPromos={setPromos} toast={toast} title="Still running — flick off?" />, liveCard];
+        return [...queueFirst, closingCard, tomorrowPrep, <PromoFlicks key="pf" promos={promos} setPromos={setPromos} toast={toast} title="Still running — flick off?" />, liveCard];
     }
   })();
 

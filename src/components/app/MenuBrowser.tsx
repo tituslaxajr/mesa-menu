@@ -6,6 +6,7 @@ import { Badge, Button, IconButton, Input, Stepper } from "@/components/ds";
 import { capsFor, clampBrand, clampTheme, resolveOrderMode, type BrandKit, type Cafe, type MenuItem as MenuItemType, type MenuTag, type OptionGroup, type PlanId, type Promo, type ThemeKey } from "@/lib/data";
 import { brandVars, surfaceVars } from "@/lib/brand";
 import { placeOrder, useMyOrders, type Order } from "@/lib/orders-store";
+import { submitCounterOrder } from "@/lib/order-actions";
 import { hoursForCafe, minToLabel, MERIENDA_END } from "@/lib/day-phase";
 import { usePhase } from "@/lib/use-phase";
 import { ThemeLayout, themeVars, HAS_TAB_BAR, TabBar } from "./menu-themes";
@@ -360,17 +361,31 @@ export function MenuBrowser({ cafe, menu, categories, brand, promos, ordering, p
           counter={counterMode}
           onTable={setTable}
           onClose={() => setShowOrder(false)}
-          onPlace={(note) => {
+          onPlace={async (note) => {
+            // id is the composite cart key so option-variant lines stay distinct.
+            const lineDtos = lines.map((l) => ({ id: l.key, name: l.name, price: l.unitPrice, qty: l.qty, options: l.optionLabels.length ? l.optionLabels : undefined }));
+            // Phase 2 cafés ("Record sales with Mesa"): send the order to the
+            // café's pending queue first, so the code on the guest's summary
+            // is the same one staff confirms in Today. If the submit fails
+            // (offline, rate limit), fall back to the Phase 1 local summary —
+            // staff keys it into their POS as usual, nothing is recorded.
+            let serverCode: string | undefined;
+            if (counterMode && cafe.recordSales) {
+              try {
+                const r = await submitCounterOrder(cafe.slug, { table, note, lines: lineDtos });
+                if (r.ok) serverCode = r.code;
+              } catch { /* fall back to local summary */ }
+            }
             // BACKEND SEAM: this writes to the front-end orders store. Kitchen
             // orders surface on the owner board; counter orders are logged for
-            // analytics and shown back to the guest as a summary to present.
+            // the guest's own summary to present at the till.
             const o = placeOrder(cafe.slug, {
-              // id is the composite cart key so option-variant lines stay distinct.
-              lines: lines.map((l) => ({ id: l.key, name: l.name, price: l.unitPrice, qty: l.qty, options: l.optionLabels.length ? l.optionLabels : undefined })),
+              lines: lineDtos,
               total,
               table,
               note,
               channel: counterMode ? "counter" : "kitchen",
+              code: serverCode,
             });
             setShowOrder(false);
             setOrder({});

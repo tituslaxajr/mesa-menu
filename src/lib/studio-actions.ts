@@ -33,7 +33,7 @@ export async function saveBrand(cafeId: string, brand: BrandKit): Promise<SaveRe
 
 export async function saveCafeProfile(
   cafeId: string,
-  cafe: Pick<Cafe, "name" | "tagline" | "intro" | "hours" | "openMin" | "closeMin" | "acceptingOrders" | "orderMode">,
+  cafe: Pick<Cafe, "name" | "tagline" | "intro" | "hours" | "openMin" | "closeMin" | "acceptingOrders" | "orderMode" | "recordSales">,
   theme: ThemeKey,
 ): Promise<SaveResult> {
   await verifySession();
@@ -49,12 +49,12 @@ export async function saveCafeProfile(
   };
   let { error } = await supabase
     .from("cafes")
-    .update({ ...base, open_min: cafe.openMin ?? null, close_min: cafe.closeMin ?? null })
+    .update({ ...base, open_min: cafe.openMin ?? null, close_min: cafe.closeMin ?? null, record_sales: cafe.recordSales ?? false })
     .eq("id", cafeId);
-  // Pre-migration-0010 DBs don't have the structured-hours columns — retry
-  // without them so profile saves keep working (hours text still saves, and
-  // the phase engine falls back to parsing it).
-  if (error && /open_min|close_min/.test(error.message)) {
+  // Pre-migration DBs (0010 hours / 0011 record_sales) miss the new columns —
+  // retry without them so profile saves keep working (hours text still saves,
+  // and the phase engine falls back to parsing it).
+  if (error && /open_min|close_min|record_sales/.test(error.message)) {
     ({ error } = await supabase.from("cafes").update(base).eq("id", cafeId));
   }
   if (!error) revalidatePath(`/m/[slug]`, "page");

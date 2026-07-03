@@ -45,6 +45,12 @@ export interface Order {
   channel?: OrderChannel;
   placedAt: number; // epoch ms
   completedAt?: number; // epoch ms, set when status becomes completed/cancelled
+  /**
+   * True for orders sourced from the DB after staff confirmed them (Phase 2
+   * "Record sales with Mesa"). A recorded counter order IS a verified sale —
+   * unlike a local counter summary, which never counts (see sales.ts isSale).
+   */
+  recorded?: boolean;
 }
 
 const EVENT = "mesa:orders";
@@ -85,6 +91,9 @@ export interface NewOrder {
   table?: string;
   note?: string;
   channel?: OrderChannel;
+  /** Use this code instead of generating one (e.g. the server's code after a
+   *  Phase 2 submit, so the guest's summary matches the owner's queue). */
+  code?: string;
 }
 
 /** Finished orders older than this are pruned on the next write (bounds
@@ -99,7 +108,7 @@ export function placeOrder(slug: string, input: NewOrder): Order {
   const counter = input.channel === "counter";
   const order: Order = {
     id: Math.random().toString(36).slice(2, 10),
-    code: shortCode(),
+    code: input.code || shortCode(),
     table: input.table?.trim() || undefined,
     lines: input.lines,
     total: input.total,

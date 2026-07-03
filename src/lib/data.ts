@@ -48,6 +48,12 @@ export interface Cafe {
    * When false, the menu is browse-only regardless of orderMode.
    */
   acceptingOrders?: boolean;
+  /**
+   * Phase 2 opt-in: guests submit counter orders to a pending queue; staff
+   * confirms the code at the till → recorded sale. Off = Phase 1 (local
+   * show-at-counter summary, nothing recorded). Brew+ only.
+   */
+  recordSales?: boolean;
 }
 
 /** One selectable choice within an OptionGroup (e.g. "Large", "Oat milk"). */

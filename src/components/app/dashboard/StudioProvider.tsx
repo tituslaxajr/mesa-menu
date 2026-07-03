@@ -11,6 +11,7 @@ import { useStudioState, useAutosave, type SaveStatus } from "@/lib/studio-sync"
 import { saveMenu, saveBrand, saveCafeProfile, savePromos, setPlan } from "@/lib/studio-actions";
 import { uploadCafeImage } from "@/lib/storage";
 import { useOrders, type Order, type OrdersApi } from "@/lib/orders-store";
+import { getCounterQueue, getRecordedOrders, confirmOrder, type PendingOrder } from "@/lib/order-actions";
 import { logActivity } from "@/lib/activity";
 import {
   MENU,
@@ -72,6 +73,12 @@ export interface StudioContextValue {
   ordersApi: OrdersApi;
   kitchenOrders: Order[];
   newOrders: number;
+  /** Phase 2 "Record sales with Mesa" is live for this café (db mode + opt-in). */
+  recording: boolean;
+  /** Guest-submitted counter orders awaiting staff confirmation. */
+  pendingOrders: PendingOrder[];
+  /** Staff taps the guest's code → the order becomes a recorded sale. */
+  confirmPending: (orderId: string) => Promise<void>;
   soundOn: boolean;
   toggleSound: () => void;
   caps: BrandCaps;
@@ -203,6 +210,62 @@ export function StudioProvider({
     }
   }, [orders]);
 
+  // ── Phase 2: "Record sales with Mesa" ──────────────────────────────
+  // When the café records sales (db mode + opt-in), the source of truth for
+  // analytics/recaps becomes the DB's confirmed orders, and a pending queue
+  // of guest-submitted counter orders awaits staff confirmation (10s poll —
+  // Realtime can replace this at the same seam later).
+  const recording = dbSave && !!cafe.recordSales;
+  const [dbOrders, setDbOrders] = useState<Order[] | null>(null);
+  const [pendingOrders, setPendingOrders] = useState<PendingOrder[]>([]);
+  const seenPending = useRef<Set<string>>(new Set());
+  const pendingPrimed = useRef(false);
+  useEffect(() => {
+    if (!(recording && cafeId)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- clear stale queue/sales when recording toggles off (rare, owner-initiated)
+      setPendingOrders([]);
+      setDbOrders(null);
+      return;
+    }
+    let stop = false;
+    const tick = async () => {
+      try {
+        const [rec, queue] = await Promise.all([getRecordedOrders(cafeId), getCounterQueue(cafeId)]);
+        if (stop) return;
+        setDbOrders(rec);
+        setPendingOrders(queue);
+        // Chime once per genuinely-new pending order; primed on the first
+        // load so a page refresh never re-chimes the existing queue.
+        const fresh = queue.filter((q) => !seenPending.current.has(q.id));
+        queue.forEach((q) => seenPending.current.add(q.id));
+        if (pendingPrimed.current && fresh.length && soundOnRef.current) {
+          playChime();
+          setToastMsg(fresh.length === 1 ? `Order ${fresh[0].code} is waiting at the counter` : `${fresh.length} orders waiting at the counter`);
+        }
+        pendingPrimed.current = true;
+      } catch {
+        /* transient network/auth hiccup — the next poll retries */
+      }
+    };
+    void tick();
+    const t = setInterval(() => void tick(), 10000);
+    return () => { stop = true; clearInterval(t); };
+  }, [recording, cafeId]);
+
+  const confirmPending = async (orderId: string) => {
+    const r = await confirmOrder(orderId);
+    if (r.ok) {
+      setPendingOrders((arr) => arr.filter((o) => o.id !== orderId));
+      if (cafeId) getRecordedOrders(cafeId).then(setDbOrders).catch(() => {});
+      toast("Recorded — it's in today's sales");
+    } else {
+      toast("Couldn't confirm — it may have expired");
+    }
+  };
+
+  // What the rest of the dashboard treats as "the orders".
+  const effectiveOrders = recording && dbOrders ? dbOrders : orders;
+
   const toggleSound = () => {
     const next = !soundOn;
     setSoundOn(next);
@@ -310,10 +373,13 @@ export function StudioProvider({
     categories,
     setCategories,
     uploadImage,
-    orders,
+    orders: effectiveOrders,
     ordersApi,
     kitchenOrders,
     newOrders,
+    recording,
+    pendingOrders,
+    confirmPending,
     soundOn,
     toggleSound,
     caps,

@@ -5,12 +5,14 @@ export const DAY_MS = 86400000;
 export function dayStartOf(ts: number) { const d = new Date(ts); d.setHours(0, 0, 0, 0); return d.getTime(); }
 
 /**
- * What counts as a sale. Counter-channel entries are a guest's cart summary
- * shown at the till — nothing verifies they were actually ordered or paid, so
- * they are logged for the owner's reference but NEVER counted as revenue.
- * (Phase 2's staff-confirmed orders are the path to real recorded sales.)
+ * What counts as a sale. LOCAL counter-channel entries are a guest's cart
+ * summary shown at the till — nothing verifies they were actually ordered or
+ * paid, so they're logged for reference but NEVER counted as revenue.
+ * Phase 2's staff-confirmed orders arrive with `recorded: true` (from the DB
+ * after the confirm gate) — those ARE verified sales, counter channel or not.
  */
-export const isSale = (o: Order) => o.status !== "cancelled" && o.channel !== "counter";
+export const isSale = (o: Order) =>
+  o.status !== "cancelled" && (o.channel !== "counter" || o.recorded === true);
 
 export function computeSales(orders: Order[], now: number) {
   const paid = orders.filter(isSale);
@@ -53,9 +55,10 @@ export function computeSales(orders: Order[], now: number) {
 // ── End-of-day report (CSV + printable) ─────────────────────────────
 export function ordersInScope(orders: Order[], scope: string, now: number): Order[] {
   const start = dayStartOf(now) - (scope === "7d" ? 6 * DAY_MS : 0);
-  // Counter carts are unverified (see isSale) — excluded from reports too;
-  // cancelled orders stay listed for the audit trail (totals already skip them).
-  return orders.filter((o) => o.channel !== "counter" && o.placedAt >= start).slice().sort((a, b) => a.placedAt - b.placedAt);
+  // Unverified local counter carts are excluded from reports too (recorded =
+  // staff-confirmed ones stay in); cancelled orders stay listed for the audit
+  // trail (totals already skip them).
+  return orders.filter((o) => (o.channel !== "counter" || o.recorded === true) && o.placedAt >= start).slice().sort((a, b) => a.placedAt - b.placedAt);
 }
 function lineText(o: Order): string {
   return o.lines.map((l) => `${l.qty}× ${l.name}${l.options && l.options.length ? ` (${l.options.join(", ")})` : ""}`).join("; ");

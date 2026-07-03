@@ -54,6 +54,8 @@ interface CafeRow {
   /** Absent until migration 0010 is applied (selects use `*`). */
   open_min?: number | null;
   close_min?: number | null;
+  /** Absent until migration 0011 is applied (selects use `*`). */
+  record_sales?: boolean | null;
   cover: string | null;
   theme: ThemeKey;
   order_mode: Cafe["orderMode"] | null;
@@ -75,6 +77,7 @@ function toCafe(r: CafeRow): Cafe {
     theme: r.theme,
     orderMode: r.order_mode ?? undefined,
     acceptingOrders: r.accepting_orders,
+    recordSales: r.record_sales ?? undefined,
   };
 }
 

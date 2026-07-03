@@ -5,7 +5,7 @@ import {
   Check,
 } from "lucide-react";
 import { Button, Input, Switch, Badge, Card } from "@/components/ds";
-import { type Cafe, type OrderMode, PHASE2_ORDERING } from "@/lib/data";
+import { PLANS, type Cafe, type OrderMode, PHASE2_ORDERING } from "@/lib/data";
 import { hoursForCafe, hoursDisplay } from "@/lib/day-phase";
 import { PageWrap, SectionTitle } from "../shared";
 
@@ -34,6 +34,8 @@ export function SettingsTab({ cafe, setCafe, toast, classicHome, onClassicHome }
   const accepting = cafe.acceptingOrders !== false;
   let currentMode: OrderMode = cafe.orderMode ?? "counter";
   if (currentMode === "kitchen" && !PHASE2_ORDERING) currentMode = "counter";
+  // Phase 2 recording needs an ordering plan (Brew/Roast).
+  const canRecord = !!PLANS.find((p) => p.id === cafe.plan)?.ordering;
   return (
     <PageWrap max={620}>
       <Card variant="flat" padded>
@@ -86,6 +88,26 @@ export function SettingsTab({ cafe, setCafe, toast, classicHome, onClassicHome }
           <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--border-soft)" }}>
             <Switch checked={accepting} tone="brand" onChange={(v) => { set("acceptingOrders", v); toast(v ? "Ordering resumed" : "Ordering paused"); }} label="Currently accepting orders" />
             {!accepting && <p style={{ fontSize: 12.5, color: "var(--text-muted)", marginTop: 8 }}>Paused — guests can browse but not order right now.</p>}
+          </div>
+        )}
+        {currentMode === "counter" && (
+          <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--border-soft)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <Switch
+                checked={!!cafe.recordSales && canRecord}
+                tone="brand"
+                onChange={(v) => {
+                  if (!canRecord) { toast("Recording sales needs an ordering plan (Brew or Roast)"); return; }
+                  set("recordSales", v);
+                  toast(v ? "Recording sales — confirm guest codes in Today" : "Back to summary-only counter orders");
+                }}
+                label="Record sales with Mesa"
+              />
+              {!canRecord && <Badge variant="neutral">Brew+</Badge>}
+            </div>
+            <p style={{ fontSize: 12.5, color: "var(--text-muted)", marginTop: 8 }}>
+              Guests send their order to the counter with a short code; your staff taps the matching code in <strong>Today</strong> to confirm it — only confirmed orders count in your sales and Day Close. Off: guests just show a summary and nothing is recorded.
+            </p>
           </div>
         )}
       </Card>
