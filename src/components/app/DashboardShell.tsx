@@ -2,24 +2,24 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  LayoutDashboard,
   Utensils,
   Plus,
   X,
   ExternalLink,
   Check,
-  ClipboardList,
   Bell,
   BellOff,
-  Menu as MenuIcon,
   Smartphone,
   MessageSquare,
+  Sun,
+  Boxes,
   type LucideIcon,
 } from "lucide-react";
 import { Avatar, Button, IconButton } from "@/components/ds";
 import { feedbackMailto } from "@/lib/site";
 import { brandVars } from "@/lib/brand";
-import { usePhase, hoursForCafe } from "@/lib/day-phase";
+import { useLocalStore } from "@/lib/useLocalStore";
+import { usePhase, hoursForCafe, minToLabel, type DayPhase } from "@/lib/day-phase";
 import { LivePreview } from "./LivePreview";
 import {
   PLANS,
@@ -33,6 +33,8 @@ import {
 import { Brandmark, NAV, type TabId } from "./dashboard/shared";
 import { StudioProvider, useStudio } from "./dashboard/StudioProvider";
 import { EditDrawer } from "./dashboard/EditDrawer";
+import { DayHome } from "./dashboard/DayHome";
+import { Backroom } from "./dashboard/Backroom";
 import { HomeTab } from "./dashboard/tabs/HomeTab";
 import { OrdersTab } from "./dashboard/tabs/OrdersTab";
 import { MenuTab } from "./dashboard/tabs/MenuTab";
@@ -128,6 +130,14 @@ export function DashboardShell(props: Props) {
   );
 }
 
+/** The three Araw places. Today is time-aware; Menu and Backroom are not. */
+type Place = "today" | "menu" | "backroom";
+const PLACES: { id: Place; label: string; icon: LucideIcon }[] = [
+  { id: "today", label: "Today", icon: Sun },
+  { id: "menu", label: "Menu", icon: Utensils },
+  { id: "backroom", label: "Backroom", icon: Boxes },
+];
+
 function ShellInner() {
   const {
     slug,
@@ -170,12 +180,21 @@ function ShellInner() {
     customTags,
   } = useStudio();
 
-  const [tab, setTab] = useState<TabId>("home");
-  const [navOpen, setNavOpen] = useState(false); // mobile nav drawer
+  // Araw is the default experience; "classic" restores the old 10-tab layout
+  // wholesale (Settings → "Use classic dashboard").
+  const [classicHome, setClassicHome] = useLocalStore<boolean>("mesa.flags.classicHome", false);
+  const [tab, setTab] = useState<TabId>("home"); // classic mode
+  const [place, setPlace] = useState<Place>("today"); // araw mode
+  const [backTab, setBackTab] = useState<TabId | null>(null);
+  const [navOpen, setNavOpen] = useState(false); // mobile nav drawer (classic)
   const [previewOpen, setPreviewOpen] = useState(false); // narrow-screen live-preview drawer
 
-  // The café's day phase drives the shell's ambient surface (app-day.css).
-  const phase = usePhase(hoursForCafe(cafe));
+  // The café's day phase drives the shell's ambient surface (app-day.css) and
+  // which Today cards lead. The override chip lets owners peek at any mode.
+  const hours = hoursForCafe(cafe);
+  const autoPhase = usePhase(hours);
+  const [override, setOverride] = useLocalStore<DayPhase | "auto">(`mesa.phase.${slug}.override`, "auto");
+  const phase = override === "auto" ? autoPhase : override;
 
   // Lock background scroll while the mobile nav drawer is open.
   useEffect(() => {
@@ -186,36 +205,85 @@ function ShellInner() {
   }, [navOpen]);
 
   const soldOut = items.filter((i) => i.soldOut).length;
-  const meta: Record<TabId, { t: string; s: string }> = {
+  const tabMeta: Record<TabId, { t: string; s: string }> = {
     home: { t: `Good morning, ${cafe.name}.`, s: "Here's what's happening with your menu today." },
     orders: { t: "Orders", s: newOrders ? `${newOrders} new · live from your tables` : "Live orders from your tables." },
     menu: { t: "Menu", s: `${items.length} items · ${soldOut} sold out today` },
-    categories: { t: "Categories", s: "Organise your menu into sections." },
-    appearance: { t: "Appearance", s: "The look of your menu — theme, logo, colours and fonts." },
-    qr: { t: "QR code", s: "Print it and put it on every table." },
-    promos: { t: "Promos", s: "Highlight specials and limited offers." },
-    analytics: { t: "Analytics", s: "How your menu is performing." },
-    subscription: { t: "Subscription", s: "Your Mesa plan and billing." },
-    settings: { t: "Settings", s: "Your café profile and menu display." },
+    categories: { t: "Menu sections", s: "Organise your menu into sections." },
+    appearance: { t: "Look studio", s: "The look of your menu — theme, logo, colours and fonts." },
+    qr: { t: "Print shop", s: "Print it and put it on every table." },
+    promos: { t: "Promos library", s: "Highlight specials and limited offers." },
+    analytics: { t: "The Books", s: "How your café is doing." },
+    subscription: { t: "Plan", s: "Your Mesa plan and billing." },
+    settings: { t: "Café settings", s: "Your café profile and menu display." },
+  };
+  const dayMeta: Record<DayPhase, { t: string; s: string }> = {
+    prep: { t: "Magandang umaga.", s: `Doors open at ${minToLabel(hours.openMin).toLowerCase()} — set the day before the first scan.` },
+    service: { t: "Mid-service.", s: "One tap keeps the menu honest — no reprints, no “wala na po”." },
+    merienda: { t: "Merienda lull.", s: "Quiet hour. A good time to flick a promo on." },
+    closing: { t: "Closing up.", s: "Mesa counts the day with you." },
+    closed: { t: "Sarado na.", s: `The books are closed. See you before ${minToLabel(hours.openMin).toLowerCase()}.` },
+  };
+  const meta = classicHome
+    ? tabMeta[tab]
+    : place === "today"
+      ? dayMeta[phase]
+      : place === "menu"
+        ? tabMeta.menu
+        : backTab
+          ? tabMeta[backTab]
+          : { t: "Backroom", s: "Reports, printing, look, plan — the weekly things." };
+
+  // One renderer for every legacy tab — used by classic mode directly and by
+  // the Backroom (and Menu place) in araw mode.
+  const renderTab = (t: TabId): React.ReactNode => {
+    switch (t) {
+      case "home": return <HomeTab items={items} cafe={cafe} theme={theme} brand={brand} orders={orders} setTab={setTab} />;
+      case "orders": return <OrdersTab orders={kitchenOrders} api={ordersApi} items={items} slug={slug} />;
+      case "menu": return <MenuTab items={items} categories={categories} onMove={moveItem} onDuplicate={duplicateItem} onToggle={toggle} onCategorySoldOut={setCategorySoldOut} onAdd={addItem} onEdit={setEditing} onLoadSample={loadSampleMenu} />;
+      case "categories": return <CategoriesTab items={items} categories={categories} setCategories={setCategories} onDelete={deleteCategory} toast={toast} />;
+      case "appearance": return <AppearanceTab theme={theme} setTheme={setTheme} brand={brand} setBrand={setBrand} cafe={cafe} items={items} categories={categories} caps={caps} plan={cafe.plan} uploadImage={uploadImage} />;
+      case "qr": return <QRTab cafe={cafe} brand={brand} caps={caps} toast={toast} />;
+      case "promos": return <PromosTab promos={promos} setPromos={setPromos} toast={toast} />;
+      case "analytics": return <AnalyticsTab orders={orders} cafeName={cafe.name} />;
+      case "subscription": return <SubscriptionTab currentId={planId} onSwitch={onSwitchPlan} />;
+      case "settings": return <SettingsTab cafe={cafe} setCafe={setCafe} toast={toast} classicHome={classicHome} onClassicHome={setClassicHome} />;
+    }
   };
 
-  // Shared nav items (sidebar + mobile drawer). onPick closes the drawer.
+  const ordersSurfaceOn = classicHome ? tab === "orders" : backTab === "orders" && place === "backroom";
+  const menuSurfaceOn = classicHome ? tab === "menu" : place === "menu";
+
+  // Shared nav items — classic renders the legacy tab list, araw the 3 places.
   const navItems = (onPick: () => void) =>
-    NAV.filter((n) => allowedTabs.includes(n.id)).map((n) => {
-      const on = tab === n.id;
-      const badge = n.id === "orders" && newOrders > 0 ? newOrders : 0;
-      return (
-        <button key={n.id} onClick={() => { setTab(n.id); onPick(); }} style={{ display: "flex", alignItems: "center", gap: 11, minHeight: 44, padding: "11px 14px", borderRadius: "var(--radius-md)", border: 0, cursor: "pointer", fontFamily: "var(--font-sans)", fontSize: 14.5, fontWeight: 600, textAlign: "left", background: on ? "var(--brand)" : "transparent", color: on ? "var(--brand-on)" : "var(--text-body)" }}>
-          <n.icon size={18} /> {n.label}
-          {badge > 0 && (
-            <span style={{ marginLeft: "auto", minWidth: 20, height: 20, padding: "0 6px", borderRadius: 999, display: "grid", placeItems: "center", fontSize: 12, fontWeight: 700, background: on ? "var(--brand-on)" : "var(--brand)", color: on ? "var(--brand)" : "var(--brand-on)" }}>{badge}</span>
-          )}
-        </button>
-      );
-    });
+    classicHome
+      ? NAV.filter((n) => allowedTabs.includes(n.id)).map((n) => {
+          const on = tab === n.id;
+          const badge = n.id === "orders" && newOrders > 0 ? newOrders : 0;
+          return (
+            <button key={n.id} onClick={() => { setTab(n.id); onPick(); }} style={{ display: "flex", alignItems: "center", gap: 11, minHeight: 44, padding: "11px 14px", borderRadius: "var(--radius-md)", border: 0, cursor: "pointer", fontFamily: "var(--font-sans)", fontSize: 14.5, fontWeight: 600, textAlign: "left", background: on ? "var(--brand)" : "transparent", color: on ? "var(--brand-on)" : "var(--text-body)" }}>
+              <n.icon size={18} /> {n.label}
+              {badge > 0 && (
+                <span style={{ marginLeft: "auto", minWidth: 20, height: 20, padding: "0 6px", borderRadius: 999, display: "grid", placeItems: "center", fontSize: 12, fontWeight: 700, background: on ? "var(--brand-on)" : "var(--brand)", color: on ? "var(--brand)" : "var(--brand-on)" }}>{badge}</span>
+              )}
+            </button>
+          );
+        })
+      : PLACES.map((p) => {
+          const on = place === p.id;
+          const badge = p.id === "today" && PHASE2_ORDERING && newOrders > 0 ? newOrders : 0;
+          return (
+            <button key={p.id} onClick={() => { setPlace(p.id); if (p.id !== "backroom") setBackTab(null); onPick(); }} style={{ display: "flex", alignItems: "center", gap: 11, minHeight: 44, padding: "11px 14px", borderRadius: "var(--radius-md)", border: 0, cursor: "pointer", fontFamily: "var(--font-sans)", fontSize: 14.5, fontWeight: 600, textAlign: "left", background: on ? "var(--brand)" : "transparent", color: on ? "var(--brand-on)" : "var(--text-body)" }}>
+              <p.icon size={18} /> {p.label}
+              {badge > 0 && (
+                <span style={{ marginLeft: "auto", minWidth: 20, height: 20, padding: "0 6px", borderRadius: 999, display: "grid", placeItems: "center", fontSize: 12, fontWeight: 700, background: on ? "var(--brand-on)" : "var(--brand)", color: on ? "var(--brand)" : "var(--brand-on)" }}>{badge}</span>
+              )}
+            </button>
+          );
+        });
 
   return (
-    <div className="mesa-dayroot" data-phase={phase} style={{ display: "flex", minHeight: "100dvh", ...(brandVars(brand) as React.CSSProperties) }}>
+    <div className="mesa-dayroot" data-phase={classicHome ? undefined : phase} style={{ display: "flex", minHeight: "100dvh", ...(brandVars(brand) as React.CSSProperties) }}>
       {/* Sidebar (desktop) */}
       <aside className="mesa-dash-sidebar" style={{ width: 236, flex: "none", background: "var(--surface-card)", borderRight: "1px solid var(--border-soft)", display: "flex", flexDirection: "column", padding: "20px 14px", position: "sticky", top: 0, height: "100dvh" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "4px 8px 20px" }}>
@@ -275,16 +343,16 @@ function ShellInner() {
 
         <div className="mesa-dash-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "18px 28px", borderBottom: "1px solid var(--border-soft)", background: "color-mix(in oklab, var(--day-bg, var(--surface-page)) 82%, transparent)", backdropFilter: "blur(8px)", position: "sticky", top: 0, zIndex: 6 }}>
           <div style={{ minWidth: 0 }}>
-            <h1 style={{ fontFamily: "var(--font-display)", fontSize: 26, fontWeight: 500, color: "var(--text-strong)", lineHeight: 1.1 }}>{meta[tab].t}</h1>
-            <p style={{ fontSize: 13.5, color: "var(--text-muted)", marginTop: 2 }}>{meta[tab].s}</p>
+            <h1 style={{ fontFamily: "var(--font-display)", fontSize: 26, fontWeight: 500, color: "var(--text-strong)", lineHeight: 1.1 }}>{meta.t}</h1>
+            <p style={{ fontSize: 13.5, color: "var(--text-muted)", marginTop: 2 }}>{meta.s}</p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12, flex: "none" }}>
-            {tab === "orders" && (
+            {ordersSurfaceOn && (
               <Button variant={soundOn ? "secondary" : "ghost"} onClick={toggleSound} aria-pressed={soundOn} title={soundOn ? "New-order chime is on" : "New-order chime is off"}>
                 {soundOn ? <Bell /> : <BellOff />} {soundOn ? "Alerts on" : "Alerts off"}
               </Button>
             )}
-            {tab === "menu" && (
+            {menuSurfaceOn && (
               <Button variant="secondary" onClick={addItem}>
                 <Plus /> Add item
               </Button>
@@ -302,16 +370,24 @@ function ShellInner() {
           </div>
         </div>
 
-        {tab === "home" && <HomeTab items={items} cafe={cafe} theme={theme} brand={brand} orders={orders} setTab={setTab} />}
-        {tab === "orders" && <OrdersTab orders={kitchenOrders} api={ordersApi} items={items} slug={slug} />}
-        {tab === "menu" && <MenuTab items={items} categories={categories} onMove={moveItem} onDuplicate={duplicateItem} onToggle={toggle} onCategorySoldOut={setCategorySoldOut} onAdd={addItem} onEdit={setEditing} onLoadSample={loadSampleMenu} />}
-        {tab === "categories" && <CategoriesTab items={items} categories={categories} setCategories={setCategories} onDelete={deleteCategory} toast={toast} />}
-        {tab === "appearance" && <AppearanceTab theme={theme} setTheme={setTheme} brand={brand} setBrand={setBrand} cafe={cafe} items={items} categories={categories} caps={caps} plan={cafe.plan} uploadImage={uploadImage} />}
-        {tab === "qr" && <QRTab cafe={cafe} brand={brand} caps={caps} toast={toast} />}
-        {tab === "promos" && <PromosTab promos={promos} setPromos={setPromos} toast={toast} />}
-        {tab === "analytics" && <AnalyticsTab orders={orders} cafeName={cafe.name} />}
-        {tab === "subscription" && <SubscriptionTab currentId={planId} onSwitch={onSwitchPlan} />}
-        {tab === "settings" && <SettingsTab cafe={cafe} setCafe={setCafe} toast={toast} />}
+        {classicHome ? (
+          renderTab(tab)
+        ) : (
+          <>
+            {place === "today" && (
+              <DayHome
+                phase={phase}
+                override={override}
+                setOverride={setOverride}
+                onGo={(p, t) => { setPlace(p); setBackTab(t ?? null); }}
+              />
+            )}
+            {place === "menu" && renderTab("menu")}
+            {place === "backroom" && (
+              <Backroom tab={backTab} setTab={setBackTab} allowed={allowedTabs} renderTab={renderTab} />
+            )}
+          </>
+        )}
       </div>
 
       {/* Live guest-menu preview — right column on wide screens, drawer on narrow */}
@@ -319,23 +395,37 @@ function ShellInner() {
 
       {/* Mobile bottom tab bar — fast access to the daily-use screens */}
       <nav className="mesa-dash-bottombar" style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 8, background: "var(--surface-card)", borderTop: "1px solid var(--border-soft)", paddingBottom: "env(safe-area-inset-bottom)", boxShadow: "0 -2px 16px rgba(31,20,14,0.06)" }}>
-        {([{ id: "home", label: "Home", icon: LayoutDashboard }, ...(PHASE2_ORDERING ? [{ id: "orders", label: "Orders", icon: ClipboardList }] : []), { id: "menu", label: "Menu", icon: Utensils }] as { id: TabId; label: string; icon: LucideIcon }[]).map((item) => {
-          const on = tab === item.id;
-          const showBadge = item.id === "orders" && newOrders > 0;
-          return (
-            <button key={item.id} onClick={() => setTab(item.id)} style={{ flex: 1, border: 0, background: "transparent", cursor: "pointer", padding: "8px 4px", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, color: on ? "var(--brand)" : "var(--text-muted)", fontFamily: "var(--font-sans)" }}>
-              <span style={{ position: "relative", display: "grid", placeItems: "center" }}>
-                <item.icon size={21} />
-                {showBadge && <span style={{ position: "absolute", top: -3, right: -7, minWidth: 8, height: 8, borderRadius: 999, background: "var(--brand)", border: "1.5px solid var(--surface-card)" }} />}
-              </span>
-              <span style={{ fontSize: 11, fontWeight: 600 }}>{item.label}</span>
+        {classicHome ? (
+          <>
+            {([{ id: "home", label: "Home", icon: Sun }, { id: "menu", label: "Menu", icon: Utensils }] as { id: TabId; label: string; icon: LucideIcon }[]).map((item) => {
+              const on = tab === item.id;
+              return (
+                <button key={item.id} onClick={() => setTab(item.id)} style={{ flex: 1, border: 0, background: "transparent", cursor: "pointer", padding: "8px 4px", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, color: on ? "var(--brand)" : "var(--text-muted)", fontFamily: "var(--font-sans)" }}>
+                  <item.icon size={21} />
+                  <span style={{ fontSize: 11, fontWeight: 600 }}>{item.label}</span>
+                </button>
+              );
+            })}
+            <button onClick={() => setNavOpen(true)} style={{ flex: 1, border: 0, background: "transparent", cursor: "pointer", padding: "8px 4px", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, color: !["home", "menu"].includes(tab) ? "var(--brand)" : "var(--text-muted)", fontFamily: "var(--font-sans)" }}>
+              <Boxes size={21} />
+              <span style={{ fontSize: 11, fontWeight: 600 }}>More</span>
             </button>
-          );
-        })}
-        <button onClick={() => setNavOpen(true)} style={{ flex: 1, border: 0, background: "transparent", cursor: "pointer", padding: "8px 4px", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, color: !["home", "orders", "menu"].includes(tab) ? "var(--brand)" : "var(--text-muted)", fontFamily: "var(--font-sans)" }}>
-          <MenuIcon size={21} />
-          <span style={{ fontSize: 11, fontWeight: 600 }}>More</span>
-        </button>
+          </>
+        ) : (
+          PLACES.map((p) => {
+            const on = place === p.id;
+            const showBadge = p.id === "today" && PHASE2_ORDERING && newOrders > 0;
+            return (
+              <button key={p.id} onClick={() => { setPlace(p.id); if (p.id !== "backroom") setBackTab(null); }} style={{ flex: 1, border: 0, background: "transparent", cursor: "pointer", padding: "8px 4px", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, color: on ? "var(--brand)" : "var(--text-muted)", fontFamily: "var(--font-sans)" }}>
+                <span style={{ position: "relative", display: "grid", placeItems: "center" }}>
+                  <p.icon size={21} />
+                  {showBadge && <span style={{ position: "absolute", top: -3, right: -7, minWidth: 8, height: 8, borderRadius: 999, background: "var(--brand)", border: "1.5px solid var(--surface-card)" }} />}
+                </span>
+                <span style={{ fontSize: 11, fontWeight: 600 }}>{p.label}</span>
+              </button>
+            );
+          })
+        )}
       </nav>
 
       {editing && <EditDrawer item={editing} cats={categories} customTags={customTags} onClose={() => setEditing(null)} onSave={save} uploadImage={uploadImage} />}

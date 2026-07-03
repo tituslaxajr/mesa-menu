@@ -28,6 +28,67 @@
   color: var(--bean-50);
 }
 
+/* ---------- Today: phase switcher chips ---------- */
+.mesa-phase-chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.mesa-phase-chip {
+  border: 1px solid var(--border-default);
+  background: var(--surface-card);
+  color: var(--text-muted);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+}
+.mesa-phase-chip.is-on { background: var(--brand); border-color: var(--brand); color: var(--brand-on); }
+
+/* ---------- Today: the 86 sheet (hold-to-confirm sold-out tiles) ----------
+   Press-and-hold 350ms: a clay ring grows inward while held; releasing early
+   cancels. Deliberate enough that a wet-thumb graze during rush never 86's
+   an item by accident. Sold-out tiles read exactly like the diner's view. */
+.mesa-86-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px; }
+.mesa-86-tile {
+  position: relative;
+  border: 1px solid var(--border-soft);
+  background: var(--surface-card);
+  border-radius: var(--radius-lg);
+  padding: 0 0 9px;
+  cursor: pointer;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  font-family: var(--font-sans);
+  transition: transform .15s ease;
+}
+.mesa-86-tile img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; pointer-events: none; }
+.mesa-86-name {
+  font-size: 12.5px; font-weight: 600; color: var(--text-strong);
+  padding: 0 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mesa-86-ring {
+  position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+  border: 0 solid color-mix(in oklab, var(--clay-600) 88%, transparent);
+  transition: border-width .12s ease;
+}
+.mesa-86-tile.is-holding { transform: scale(.97); }
+.mesa-86-tile.is-holding .mesa-86-ring { border-width: 12px; transition: border-width .35s linear; }
+.mesa-86-tile.is-out img { filter: grayscale(.65) sepia(.18); opacity: .5; }
+.mesa-86-stamp {
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%) rotate(-6deg);
+  background: var(--soldout-soft); color: var(--soldout); border: 1.5px solid var(--soldout);
+  font-weight: 800; font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 6px; white-space: nowrap;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mesa-dayroot { transition: none; }
+  .mesa-86-tile.is-holding { transform: none; }
+  .mesa-86-tile.is-holding .mesa-86-ring { transition: none; border-width: 12px; }
 }

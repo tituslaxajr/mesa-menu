@@ -51,8 +51,9 @@ interface CafeRow {
   tagline: string;
   intro: string;
   hours: string;
-  open_min: number | null;
-  close_min: number | null;
+  /** Absent until migration 0010 is applied (selects use `*`). */
+  open_min?: number | null;
+  close_min?: number | null;
   cover: string | null;
   theme: ThemeKey;
   order_mode: Cafe["orderMode"] | null;
@@ -152,9 +153,10 @@ export const getCafe = cache(async (slug: string): Promise<Cafe | null> => {
   const supabase = await createClient();
   const { data } = await supabase
     .from("cafe_public")
-    .select(
-      "id, slug, name, tagline, intro, hours, open_min, close_min, cover, theme, order_mode, accepting_orders, plan",
-    )
+    // `*` on purpose: cafe_public is a curated projection, and this keeps the
+    // app working whether or not migration 0010 (open_min/close_min) has been
+    // applied yet — missing columns simply read as undefined.
+    .select("*")
     .eq("slug", slug)
     .maybeSingle();
   return data ? toCafe(data as CafeRow) : null;
@@ -166,9 +168,10 @@ export const getCafeData = cache(async (slug: string): Promise<CafeData | null> 
 
   const { data: cafeRow } = await supabase
     .from("cafe_public")
-    .select(
-      "id, slug, name, tagline, intro, hours, open_min, close_min, cover, theme, order_mode, accepting_orders, plan",
-    )
+    // `*` on purpose: cafe_public is a curated projection, and this keeps the
+    // app working whether or not migration 0010 (open_min/close_min) has been
+    // applied yet — missing columns simply read as undefined.
+    .select("*")
     .eq("slug", slug)
     .maybeSingle();
   if (!cafeRow) return null;
@@ -225,7 +228,7 @@ export const getOwnerCafeData = cache(
     // unpublished drafts are included). First location for now (1 for Brew).
     const { data: cafeRows } = await supabase
       .from("cafes")
-      .select("id, slug, name, tagline, intro, hours, open_min, close_min, cover, theme, order_mode, accepting_orders")
+      .select("*") // tolerant of pre-0010 DBs (see cafe_public note above)
       .eq("account_id", accountId)
       .order("position")
       .limit(1);
