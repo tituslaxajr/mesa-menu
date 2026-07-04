@@ -335,17 +335,21 @@ function LayoutWarm({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat, o
   return (
     <>
       <div style={{ position: "relative" }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={cafe.cover} alt="" style={{ width: "100%", height: 224, objectFit: "cover", display: "block" }} />
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(31,20,14,0.3) 0%, rgba(31,20,14,0) 38%, rgba(31,20,14,0.82) 100%)" }} />
+        {cafe.cover
+          // eslint-disable-next-line @next/next/no-img-element
+          ? <img src={cafe.cover} alt="" style={{ width: "100%", height: 224, objectFit: "cover", display: "block" }} />
+          : <div style={{ width: "100%", height: 224, background: "linear-gradient(135deg, var(--brand), var(--brand-active))" }} />}
+        {/* Two-stop scrim: a top wash keeps the Share button legible, a deeper
+            bottom band guarantees the name/tagline read over any photo. */}
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(31,20,14,0.36) 0%, rgba(31,20,14,0) 40%, rgba(31,20,14,0.9) 100%)" }} />
         <div style={{ position: "absolute", top: 16, right: 16 }}>
           <IconButton label="Share" variant="soft"><Share2 /></IconButton>
         </div>
         <div style={{ position: "absolute", left: 20, right: 20, bottom: 18, color: "#FBF6EE" }}>
           {logo && <div style={{ marginBottom: 10 }}><BrandMark logo={logo} size={46} radius={12} background="#fff" fallback={null} /></div>}
           <div style={{ marginBottom: 8 }}><OpenPill cafe={cafe} /></div>
-          <h1 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(26px, 8vw, 34px)", fontWeight: 500, color: "#fff", letterSpacing: "-0.01em", lineHeight: 1.05, margin: 0, overflowWrap: "anywhere" }}>{cafe.name}</h1>
-          <p style={{ fontSize: 13.5, opacity: 0.92, marginTop: 4 }}>{cafe.tagline}</p>
+          <h1 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(26px, 8vw, 34px)", fontWeight: 500, color: "#fff", letterSpacing: "-0.01em", lineHeight: 1.05, margin: 0, overflowWrap: "anywhere", textShadow: "0 1px 18px rgba(0,0,0,0.55)" }}>{cafe.name}</h1>
+          <p style={{ fontSize: 13.5, opacity: 0.95, marginTop: 4, textShadow: "0 1px 10px rgba(0,0,0,0.5)" }}>{cafe.tagline}</p>
         </div>
       </div>
 
@@ -476,8 +480,10 @@ function LayoutBold({ cafe, logo, whiteLabel, groups, cats, cat, setCat, onOpen,
   return (
     <>
       <div style={{ position: "relative" }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={cafe.cover} alt="" style={{ width: "100%", height: 330, objectFit: "cover", display: "block" }} />
+        {cafe.cover
+          // eslint-disable-next-line @next/next/no-img-element
+          ? <img src={cafe.cover} alt="" style={{ width: "100%", height: 330, objectFit: "cover", display: "block" }} />
+          : <div style={{ width: "100%", height: 330, background: "linear-gradient(135deg, var(--bean-800), var(--bean-950))" }} />}
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(15,9,6,0.55) 0%, rgba(15,9,6,0.12) 30%, rgba(15,9,6,0.6) 64%, var(--bean-950) 100%)" }} />
         <div style={{ position: "absolute", top: 16, left: 16, right: 16, display: "flex", justifyContent: "flex-end" }}>
           <IconButton label="Share" variant="soft"><Share2 /></IconButton>
@@ -485,8 +491,8 @@ function LayoutBold({ cafe, logo, whiteLabel, groups, cats, cat, setCat, onOpen,
         <div style={{ position: "absolute", left: 0, right: 0, bottom: 24, textAlign: "center", padding: "0 28px", color: "#fff" }}>
           {logo && <div style={{ marginBottom: 14, display: "flex", justifyContent: "center" }}><BrandMark logo={logo} size={54} radius={14} background="#fff" fallback={null} /></div>}
           <div style={{ marginBottom: 12, display: "flex", justifyContent: "center" }}><OpenPill cafe={cafe} /></div>
-          <h1 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(30px, 10vw, 42px)", fontWeight: 500, lineHeight: 1.0, letterSpacing: "-0.015em", textShadow: "0 2px 18px rgba(0,0,0,0.45)", margin: 0, overflowWrap: "anywhere" }}>{cafe.name}</h1>
-          <p style={{ fontSize: 14, opacity: 0.9, marginTop: 10 }}>{cafe.tagline}</p>
+          <h1 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(30px, 10vw, 42px)", fontWeight: 500, lineHeight: 1.0, letterSpacing: "-0.015em", textShadow: "0 2px 18px rgba(0,0,0,0.5)", margin: 0, overflowWrap: "anywhere" }}>{cafe.name}</h1>
+          <p style={{ fontSize: 14, opacity: 0.92, marginTop: 10, textShadow: "0 1px 12px rgba(0,0,0,0.55)" }}>{cafe.tagline}</p>
         </div>
       </div>
 
@@ -516,7 +522,7 @@ function LayoutBold({ cafe, logo, whiteLabel, groups, cats, cat, setCat, onOpen,
                 <button key={m.id} onClick={() => onOpen(m)} style={{ position: "relative", textAlign: "left", border: 0, padding: 0, borderRadius: "var(--radius-xl)", overflow: "hidden", cursor: "pointer", height: 176, background: "var(--bean-900)" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={m.img} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", filter: m.soldOut ? "grayscale(0.85) brightness(0.7)" : "none" }} />
-                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(15,9,6,0.92) 8%, rgba(15,9,6,0.2) 56%, rgba(15,9,6,0.04) 100%)" }} />
+                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(15,9,6,0.94) 14%, rgba(15,9,6,0.48) 46%, rgba(15,9,6,0.06) 100%)" }} />
                   {(m.badge || m.soldOut) && (
                     <div style={{ position: "absolute", top: 14, left: 14 }}>
                       {m.soldOut ? <Badge variant="soldout" size="sm">Sold out</Badge> : <Badge variant="highlight" size="sm">{m.badge}</Badge>}
@@ -525,8 +531,8 @@ function LayoutBold({ cafe, logo, whiteLabel, groups, cats, cat, setCat, onOpen,
                   <div style={{ position: "absolute", left: 18, right: 18, bottom: 16, color: "#fff" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12 }}>
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 500, lineHeight: 1.1 }}>{m.name}</div>
-                        <div style={{ fontSize: 13, opacity: 0.9, marginTop: 4, lineHeight: 1.4 }}>{m.desc}</div>
+                        <div style={{ fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 500, lineHeight: 1.1, textShadow: "0 1px 14px rgba(0,0,0,0.6)" }}>{m.name}</div>
+                        <div style={{ fontSize: 13, opacity: 0.92, marginTop: 4, lineHeight: 1.4, textShadow: "0 1px 10px rgba(0,0,0,0.55)" }}>{m.desc}</div>
                         <DietChips tags={m.tags} light />
                       </div>
                       <span style={{ fontFamily: "var(--font-display)", fontSize: 19, whiteSpace: "nowrap", background: "var(--brand)", color: "var(--brand-on)", padding: "5px 13px", borderRadius: 999 }}>{peso(m.price)}</span>

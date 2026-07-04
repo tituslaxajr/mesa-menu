@@ -262,7 +262,7 @@ function ShellInner() {
       case "orders": return <OrdersTab orders={kitchenOrders} api={ordersApi} items={items} slug={slug} />;
       case "menu": return <MenuTab items={items} categories={categories} onMove={moveItem} onDuplicate={duplicateItem} onToggle={toggle} onCategorySoldOut={setCategorySoldOut} onAdd={addItem} onEdit={setEditing} onLoadSample={loadSampleMenu} />;
       case "categories": return <CategoriesTab items={items} categories={categories} setCategories={setCategories} onDelete={deleteCategory} toast={toast} />;
-      case "appearance": return <AppearanceTab theme={theme} setTheme={setTheme} brand={brand} setBrand={setBrand} cafe={cafe} items={items} categories={categories} caps={caps} plan={cafe.plan} uploadImage={uploadImage} />;
+      case "appearance": return <AppearanceTab theme={theme} setTheme={setTheme} brand={brand} setBrand={setBrand} cafe={cafe} setCafe={setCafe} items={items} categories={categories} caps={caps} plan={cafe.plan} uploadImage={uploadImage} />;
       case "qr": return <QRTab cafe={cafe} brand={brand} caps={caps} toast={toast} />;
       case "promos": return <PromosTab promos={promos} setPromos={setPromos} toast={toast} />;
       case "analytics": return <AnalyticsTab orders={orders} cafeName={cafe.name} />;

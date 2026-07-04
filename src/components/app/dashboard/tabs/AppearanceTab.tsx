@@ -141,7 +141,7 @@ function Gated({ locked, tier, children }: { locked: boolean; tier: string; chil
   );
 }
 
-function BrandKitSubTab({ brand, setBrand, theme, caps, uploadImage }: { brand: BrandKit; setBrand: (f: (b: BrandKit) => BrandKit) => void; theme: ThemeKey; caps: BrandCaps; uploadImage: UploadImage }) {
+function BrandKitSubTab({ brand, setBrand, cafe, setCafe, theme, caps, uploadImage }: { brand: BrandKit; setBrand: (f: (b: BrandKit) => BrandKit) => void; cafe: Cafe; setCafe: (f: (c: Cafe) => Cafe) => void; theme: ThemeKey; caps: BrandCaps; uploadImage: UploadImage }) {
   const set = (patch: Partial<BrandKit>) => setBrand((b) => ({ ...b, ...patch }));
   const [extracted, setExtracted] = useState<{ src: string; color: string | null; pairingId?: string } | null>(null);
 
@@ -181,6 +181,35 @@ function BrandKitSubTab({ brand, setBrand, theme, caps, uploadImage }: { brand: 
             </UploadZone>
           </div>
           {brand.logo && <Button variant="ghost" onClick={() => set({ logo: null })}><Trash2 /> Remove</Button>}
+        </div>
+      </Card>
+
+      {/* COVER PHOTO */}
+      <Card variant="flat" padded>
+        <SectionTitle>Cover photo</SectionTitle>
+        <div style={{ fontSize: 12.5, color: "var(--text-subtle)", marginTop: -8, marginBottom: 14 }}>
+          The header image behind your café name. Shown on the <strong>Warm</strong> and <strong>Bold</strong> themes.
+        </div>
+        {theme !== "warm" && theme !== "bold" && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: "var(--text-muted)", background: "var(--surface-muted)", borderRadius: "var(--radius-md)", padding: "10px 12px", marginBottom: 14 }}>
+            <CircleAlert size={15} style={{ flex: "none" }} /> Your current theme doesn&apos;t use a cover photo — switch to Warm or Bold to show it.
+          </div>
+        )}
+        <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
+          <div style={{ width: 132, height: 84, borderRadius: "var(--radius-md)", background: "var(--surface-sunken)", display: "grid", placeItems: "center", flex: "none", overflow: "hidden", border: "1px solid var(--border-soft)" }}>
+            {cafe.cover
+              // eslint-disable-next-line @next/next/no-img-element
+              ? <img src={cafe.cover} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              : <ImageIcon size={24} style={{ color: "var(--text-subtle)" }} />}
+          </div>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <UploadZone height={84} onFile={(src) => setCafe((c) => ({ ...c, cover: src }))} upload={(f) => uploadImage(f, "cover")}>
+              <UploadCloud size={22} style={{ color: "var(--brand)" }} />
+              <div style={{ fontSize: 13, color: "var(--text-body)", fontWeight: 600 }}>Drop a cover photo or click to upload</div>
+              <div style={{ fontSize: 11.5, color: "var(--text-subtle)", marginTop: 2 }}>A wide landscape shot works best (about 3:2)</div>
+            </UploadZone>
+          </div>
+          {cafe.cover && <Button variant="ghost" onClick={() => setCafe((c) => ({ ...c, cover: "" }))}><Trash2 /> Remove</Button>}
         </div>
       </Card>
 
@@ -365,7 +394,7 @@ function BrandKitSubTab({ brand, setBrand, theme, caps, uploadImage }: { brand: 
 
 export function AppearanceTab(props: {
   theme: ThemeKey; setTheme: (t: ThemeKey) => void; brand: BrandKit; setBrand: (f: (b: BrandKit) => BrandKit) => void;
-  cafe: Cafe; items: MenuItem[]; categories: string[]; caps: BrandCaps; plan: PlanId; uploadImage: UploadImage;
+  cafe: Cafe; setCafe: (f: (c: Cafe) => Cafe) => void; items: MenuItem[]; categories: string[]; caps: BrandCaps; plan: PlanId; uploadImage: UploadImage;
 }) {
   const [sub, setSub] = useState<"theme" | "brand">("theme");
   const subs: [("theme" | "brand"), string, LucideIcon][] = [["theme", "Menu theme", LayoutTemplate], ["brand", "Brand kit", Paintbrush]];
@@ -384,7 +413,7 @@ export function AppearanceTab(props: {
       <div style={{ maxWidth: 720, minWidth: 0 }}>
         {sub === "theme"
           ? <ThemeSubTab theme={props.theme} setTheme={props.setTheme} accent={props.brand.accent} caps={props.caps} />
-          : <BrandKitSubTab brand={props.brand} setBrand={props.setBrand} theme={props.theme} caps={props.caps} uploadImage={props.uploadImage} />}
+          : <BrandKitSubTab brand={props.brand} setBrand={props.setBrand} cafe={props.cafe} setCafe={props.setCafe} theme={props.theme} caps={props.caps} uploadImage={props.uploadImage} />}
       </div>
     </div>
   );

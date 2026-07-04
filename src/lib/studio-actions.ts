@@ -33,7 +33,7 @@ export async function saveBrand(cafeId: string, brand: BrandKit): Promise<SaveRe
 
 export async function saveCafeProfile(
   cafeId: string,
-  cafe: Pick<Cafe, "name" | "tagline" | "intro" | "hours" | "openMin" | "closeMin" | "acceptingOrders" | "orderMode" | "recordSales">,
+  cafe: Pick<Cafe, "name" | "tagline" | "intro" | "hours" | "cover" | "openMin" | "closeMin" | "acceptingOrders" | "orderMode" | "recordSales">,
   theme: ThemeKey,
 ): Promise<SaveResult> {
   await verifySession();
@@ -43,6 +43,9 @@ export async function saveCafeProfile(
     tagline: cafe.tagline,
     intro: cafe.intro,
     hours: cafe.hours,
+    // Empty string (owner removed the cover) persists as NULL so the public
+    // menu falls back to its placeholder instead of a broken <img>.
+    cover: cafe.cover || null,
     theme,
     order_mode: cafe.orderMode ?? null,
     accepting_orders: cafe.acceptingOrders ?? true,
