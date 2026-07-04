@@ -339,9 +339,12 @@ function LayoutWarm({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat, o
           // eslint-disable-next-line @next/next/no-img-element
           ? <img src={cafe.cover} alt="" style={{ width: "100%", height: 224, objectFit: "cover", display: "block" }} />
           : <div style={{ width: "100%", height: 224, background: "linear-gradient(135deg, var(--brand), var(--brand-active))" }} />}
-        {/* Two-stop scrim: a top wash keeps the Share button legible, a deeper
-            bottom band guarantees the name/tagline read over any photo. */}
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(31,20,14,0.36) 0%, rgba(31,20,14,0) 40%, rgba(31,20,14,0.9) 100%)" }} />
+        {/* A light top wash keeps the Share button legible on any photo. The
+            name/tagline get their own scrim below, sized to just their zone
+            and blurred, so they read clearly regardless of what's in the shot
+            (not just a global fade that may still be busy near the text). */}
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(31,20,14,0.34) 0%, rgba(31,20,14,0) 32%)" }} />
+        <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: "62%", background: "linear-gradient(to top, rgba(20,13,9,0.92) 0%, rgba(20,13,9,0.7) 48%, rgba(20,13,9,0) 100%)", backdropFilter: "blur(3px)" }} />
         <div style={{ position: "absolute", top: 16, right: 16 }}>
           <IconButton label="Share" variant="soft"><Share2 /></IconButton>
         </div>
@@ -484,7 +487,11 @@ function LayoutBold({ cafe, logo, whiteLabel, groups, cats, cat, setCat, onOpen,
           // eslint-disable-next-line @next/next/no-img-element
           ? <img src={cafe.cover} alt="" style={{ width: "100%", height: 330, objectFit: "cover", display: "block" }} />
           : <div style={{ width: "100%", height: 330, background: "linear-gradient(135deg, var(--bean-800), var(--bean-950))" }} />}
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(15,9,6,0.55) 0%, rgba(15,9,6,0.12) 30%, rgba(15,9,6,0.6) 64%, var(--bean-950) 100%)" }} />
+        {/* Same split as Warm: a light top wash for the Share button, plus a
+            dedicated blurred scrim sized to the name/tagline zone so they
+            stay legible no matter what's in the photo there. */}
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(15,9,6,0.5) 0%, rgba(15,9,6,0) 26%)" }} />
+        <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: "60%", background: "linear-gradient(to top, var(--bean-950) 0%, rgba(15,9,6,0.88) 42%, rgba(15,9,6,0) 100%)", backdropFilter: "blur(3px)" }} />
         <div style={{ position: "absolute", top: 16, left: 16, right: 16, display: "flex", justifyContent: "flex-end" }}>
           <IconButton label="Share" variant="soft"><Share2 /></IconButton>
         </div>
@@ -522,7 +529,9 @@ function LayoutBold({ cafe, logo, whiteLabel, groups, cats, cat, setCat, onOpen,
                 <button key={m.id} onClick={() => onOpen(m)} style={{ position: "relative", textAlign: "left", border: 0, padding: 0, borderRadius: "var(--radius-xl)", overflow: "hidden", cursor: "pointer", height: 176, background: "var(--bean-900)" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={m.img} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", filter: m.soldOut ? "grayscale(0.85) brightness(0.7)" : "none" }} />
-                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(15,9,6,0.94) 14%, rgba(15,9,6,0.48) 46%, rgba(15,9,6,0.06) 100%)" }} />
+                  {/* Scrim scoped to the name/description zone (not the whole
+                      card), blurred, so any food photo stays legible under text. */}
+                  <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: "62%", background: "linear-gradient(to top, rgba(15,9,6,0.95) 0%, rgba(15,9,6,0.55) 55%, rgba(15,9,6,0) 100%)", backdropFilter: "blur(2.5px)" }} />
                   {(m.badge || m.soldOut) && (
                     <div style={{ position: "absolute", top: 14, left: 14 }}>
                       {m.soldOut ? <Badge variant="soldout" size="sm">Sold out</Badge> : <Badge variant="highlight" size="sm">{m.badge}</Badge>}
