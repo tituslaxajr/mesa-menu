@@ -87,6 +87,12 @@
   padding: 2px 8px; border-radius: 6px; white-space: nowrap;
 }
 
+/* Narrow phones (iPhone-SE class): tighten the 86-sheet grid so tiles stay
+   legible at 3-up instead of 2 cramped columns. */
+@media (max-width: 380px) {
+  .mesa-86-grid { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mesa-dayroot { transition: none; }
   .mesa-86-tile.is-holding { transform: none; }

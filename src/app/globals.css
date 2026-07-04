@@ -83,3 +83,11 @@ html { scroll-behavior: smooth; }
   .mesa-dash-page      { padding-left: 16px !important; padding-right: 16px !important; padding-bottom: 88px !important; }
   .mesa-dash-2col      { grid-template-columns: minmax(0, 1fr) !important; }
 }
+
+/* Ultra-narrow phones (≤380px): reclaim side gutter so cards keep their own
+   breathing room, and let the header title/actions wrap instead of overflowing. */
+@media (max-width: 380px) {
+  .mesa-dash-page   { padding-left: 12px !important; padding-right: 12px !important; }
+  .mesa-dash-header { gap: 8px !important; padding-left: 12px !important; padding-right: 12px !important; }
+  .mesa-container   { padding-left: 14px; padding-right: 14px; }
+}

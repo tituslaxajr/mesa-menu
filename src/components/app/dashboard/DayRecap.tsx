@@ -125,7 +125,7 @@ export function DayRecap({ onClose }: { onClose: () => void }) {
   const ordersN = useCountUp(hasSales ? sales.ordersToday : 0);
   const revenueN = useCountUp(hasSales ? sales.revenueToday : 0, 1100);
 
-  const big: React.CSSProperties = { fontFamily: "var(--font-display)", fontSize: "clamp(44px, 12vw, 76px)", fontWeight: 500, lineHeight: 1.05 };
+  const big: React.CSSProperties = { fontFamily: "var(--font-display)", fontSize: "clamp(44px, 12vw, 76px)", fontWeight: 500, lineHeight: 1.05, overflowWrap: "anywhere" };
   const sub: React.CSSProperties = { fontSize: 15, opacity: 0.7, marginTop: 10, lineHeight: 1.6 };
 
   const cards: React.ReactNode[] = [];

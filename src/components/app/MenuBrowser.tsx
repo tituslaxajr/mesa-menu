@@ -641,8 +641,8 @@ function ItemSheet({
 
       <div style={{ padding: "18px 20px 20px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
-          <h2 id={titleId} style={{ fontFamily: "var(--font-display)", fontSize: 26, fontWeight: 500, color: "var(--text-strong)" }}>{item.name}</h2>
-          <span style={{ fontFamily: "var(--font-display)", fontSize: 22, color: "var(--text-strong)", whiteSpace: "nowrap" }}>{peso(item.price)}</span>
+          <h2 id={titleId} style={{ fontFamily: "var(--font-display)", fontSize: "clamp(21px, 6vw, 26px)", fontWeight: 500, color: "var(--text-strong)", minWidth: 0, overflowWrap: "anywhere" }}>{item.name}</h2>
+          <span style={{ fontFamily: "var(--font-display)", fontSize: 22, color: "var(--text-strong)", whiteSpace: "nowrap", flex: "none" }}>{peso(item.price)}</span>
         </div>
         {totalForItem > 0 && (
           <div style={{ marginTop: 8 }}>
@@ -711,7 +711,7 @@ function OrderSheet({
     <Sheet onClose={onClose} labelledBy="order-sheet-title">
       <div style={{ padding: "20px 20px 24px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-          <h2 id="order-sheet-title" style={{ fontFamily: "var(--font-display)", fontSize: 24, fontWeight: 500, color: "var(--text-strong)" }}>Your order</h2>
+          <h2 id="order-sheet-title" style={{ fontFamily: "var(--font-display)", fontSize: "clamp(20px, 5.5vw, 24px)", fontWeight: 500, color: "var(--text-strong)" }}>Your order</h2>
           <IconButton label="Close" variant="ghost" onClick={onClose}>
             <X />
           </IconButton>
@@ -729,7 +729,7 @@ function OrderSheet({
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: "var(--font-display)", fontSize: 16, color: "var(--text-strong)" }}>{l.name}</div>
                 {l.optionLabels.length > 0 && (
-                  <div style={{ fontSize: 12, color: "var(--text-subtle)", marginTop: 1, lineHeight: 1.35 }}>{l.optionLabels.join(" · ")}</div>
+                  <div style={{ fontSize: 12, color: "var(--text-subtle)", marginTop: 1, lineHeight: 1.35, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{l.optionLabels.join(" · ")}</div>
                 )}
                 <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 1 }}>
                   {peso(l.unitPrice)} × {l.qty}
@@ -751,7 +751,7 @@ function OrderSheet({
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "16px 0 18px" }}>
           <span style={{ fontWeight: 600, color: "var(--text-strong)", fontSize: 16 }}>Total</span>
-          <span style={{ fontFamily: "var(--font-display)", fontSize: 24, color: "var(--text-strong)" }}>{peso(total)}</span>
+          <span style={{ fontFamily: "var(--font-display)", fontSize: "clamp(20px, 5.5vw, 24px)", color: "var(--text-strong)" }}>{peso(total)}</span>
         </div>
         <Button variant="primary" size="lg" block onClick={() => onPlace(note)}>
           <Send /> {counter ? "Create order summary" : "Place order"}
@@ -779,14 +779,14 @@ function CounterSummarySheet({ order, onClose }: { order: Order; onClose: () => 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 20, padding: "16px", background: "var(--surface-muted)", borderRadius: "var(--radius-md)", marginBottom: 16 }}>
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-subtle)" }}>Order</div>
-            <div style={{ fontFamily: "var(--font-display)", fontSize: 38, fontWeight: 600, color: "var(--text-strong)", lineHeight: 1.05, letterSpacing: "0.02em" }}>#{order.code}</div>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: "clamp(30px, 10vw, 38px)", fontWeight: 600, color: "var(--text-strong)", lineHeight: 1.05, letterSpacing: "0.02em" }}>#{order.code}</div>
           </div>
           {order.table && (
             <>
               <span style={{ width: 1, alignSelf: "stretch", background: "var(--border-soft)" }} />
               <div style={{ textAlign: "center" }}>
                 <div style={{ fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-subtle)" }}>Table</div>
-                <div style={{ fontFamily: "var(--font-display)", fontSize: 38, fontWeight: 600, color: "var(--text-strong)", lineHeight: 1.05 }}>{order.table}</div>
+                <div style={{ fontFamily: "var(--font-display)", fontSize: "clamp(30px, 10vw, 38px)", fontWeight: 600, color: "var(--text-strong)", lineHeight: 1.05 }}>{order.table}</div>
               </div>
             </>
           )}
@@ -798,7 +798,7 @@ function CounterSummarySheet({ order, onClose }: { order: Order; onClose: () => 
               <span style={{ minWidth: 0 }}>
                 <span style={{ fontWeight: 600, color: "var(--text-strong)" }}>{l.qty}×</span> {l.name}
                 {l.options && l.options.length > 0 && (
-                  <span style={{ display: "block", fontSize: 12, color: "var(--text-subtle)", marginLeft: 22, lineHeight: 1.35 }}>{l.options.join(" · ")}</span>
+                  <span style={{ display: "-webkit-box", fontSize: 12, color: "var(--text-subtle)", marginLeft: 22, lineHeight: 1.35, overflow: "hidden", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{l.options.join(" · ")}</span>
                 )}
               </span>
               <span style={{ color: "var(--text-muted)", flex: "none" }}>{peso(l.price * l.qty)}</span>
@@ -806,7 +806,7 @@ function CounterSummarySheet({ order, onClose }: { order: Order; onClose: () => 
           ))}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0" }}>
             <span style={{ fontWeight: 600, color: "var(--text-strong)", fontSize: 16 }}>Total</span>
-            <span style={{ fontFamily: "var(--font-display)", fontSize: 24, color: "var(--text-strong)" }}>{peso(order.total)}</span>
+            <span style={{ fontFamily: "var(--font-display)", fontSize: "clamp(20px, 5.5vw, 24px)", color: "var(--text-strong)" }}>{peso(order.total)}</span>
           </div>
         </div>
 
@@ -921,7 +921,7 @@ function OrderStatusSheet({ order, onClose, onDismiss }: { order: Order; onClose
               <span style={{ minWidth: 0 }}>
                 <span style={{ fontWeight: 600, color: "var(--text-strong)" }}>{l.qty}×</span> {l.name}
                 {l.options && l.options.length > 0 && (
-                  <span style={{ display: "block", fontSize: 12, color: "var(--text-subtle)", marginLeft: 22, lineHeight: 1.35 }}>{l.options.join(" · ")}</span>
+                  <span style={{ display: "-webkit-box", fontSize: 12, color: "var(--text-subtle)", marginLeft: 22, lineHeight: 1.35, overflow: "hidden", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{l.options.join(" · ")}</span>
                 )}
               </span>
               <span style={{ color: "var(--text-muted)", flex: "none" }}>{peso(l.price * l.qty)}</span>
@@ -948,7 +948,7 @@ function OrderStatusSheet({ order, onClose, onDismiss }: { order: Order; onClose
 /* ── Dietary filter bar (rendered above the menu sections) ────────── */
 function DietFilterBar({ tags, selected, onToggle }: { tags: MenuTag[]; selected: string[]; onToggle: (id: string) => void }) {
   return (
-    <div style={{ display: "flex", gap: 8, overflowX: "auto", padding: "16px 0 2px", scrollbarWidth: "none" }} role="group" aria-label="Filter by dietary tag">
+    <div style={{ display: "flex", gap: 8, overflowX: "auto", padding: "16px 0 2px", scrollbarWidth: "none", scrollSnapType: "x proximity", WebkitOverflowScrolling: "touch" }} role="group" aria-label="Filter by dietary tag">
       {tags.map((t) => {
         const on = selected.includes(t.id);
         return (

@@ -68,7 +68,7 @@ function OrderCard({ order, now, api }: { order: Order; now: number; api: Orders
             <span style={{ minWidth: 0 }}>
               <span style={{ fontWeight: 600, color: "var(--text-strong)" }}>{l.qty}×</span> {l.name}
               {l.options && l.options.length > 0 && (
-                <span style={{ display: "block", fontSize: 12, color: "var(--text-subtle)", marginLeft: 20, lineHeight: 1.35 }}>{l.options.join(" · ")}</span>
+                <span style={{ display: "-webkit-box", fontSize: 12, color: "var(--text-subtle)", marginLeft: 20, lineHeight: 1.35, overflow: "hidden", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{l.options.join(" · ")}</span>
               )}
             </span>
             <span style={{ color: "var(--text-muted)", flex: "none" }}>{dpeso(l.price * l.qty)}</span>
@@ -76,7 +76,7 @@ function OrderCard({ order, now, api }: { order: Order; now: number; api: Orders
         ))}
       </div>
       {order.note && (
-        <div style={{ fontSize: 12.5, color: "var(--honey-700)", background: "var(--honey-50)", borderRadius: "var(--radius-sm)", padding: "6px 9px", marginBottom: 10 }}>
+        <div style={{ fontSize: 12.5, color: "var(--honey-700)", background: "var(--honey-50)", borderRadius: "var(--radius-sm)", padding: "6px 9px", marginBottom: 10, overflowWrap: "anywhere" }}>
           “{order.note}”
         </div>
       )}

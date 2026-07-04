@@ -90,7 +90,7 @@ function PromoFlicks({ promos, setPromos, toast, title = "Promos", emptyHint }: 
           <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-strong)" }}>{p.title}</div>
-              <div style={{ fontSize: 12.5, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.desc} · {p.period}</div>
+              <div style={{ fontSize: 12.5, color: "var(--text-muted)", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", lineHeight: 1.4 }}>{p.desc} · {p.period}</div>
             </div>
             <Switch
               checked={p.active}
@@ -307,17 +307,17 @@ export function DayHome({
         <span style={{ fontFamily: "var(--font-display)", fontSize: 19, fontWeight: 500 }}>The day, counted.</span>
       </div>
       <div style={{ display: "flex", gap: 26, flexWrap: "wrap", marginBottom: 16 }}>
-        <div>
-          <div style={{ fontFamily: "var(--font-display)", fontSize: 34, fontWeight: 500, lineHeight: 1 }}>{sales.ordersToday}</div>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: "clamp(26px, 7vw, 34px)", fontWeight: 500, lineHeight: 1 }}>{sales.ordersToday}</div>
           <div style={{ fontSize: 12.5, opacity: 0.75, marginTop: 5 }}>orders today</div>
         </div>
-        <div>
-          <div style={{ fontFamily: "var(--font-display)", fontSize: 34, fontWeight: 500, lineHeight: 1 }}>{peso(sales.revenueToday)}</div>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: "clamp(26px, 7vw, 34px)", fontWeight: 500, lineHeight: 1, overflowWrap: "anywhere" }}>{peso(sales.revenueToday)}</div>
           <div style={{ fontSize: 12.5, opacity: 0.75, marginTop: 5 }}>revenue</div>
         </div>
         {todayTop && (
-          <div>
-            <div style={{ fontFamily: "var(--font-display)", fontSize: 34, fontWeight: 500, lineHeight: 1 }}>{todayTop.name}</div>
+          <div style={{ minWidth: 0, flex: "1 1 140px" }}>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: "clamp(26px, 7vw, 34px)", fontWeight: 500, lineHeight: 1.05, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflowWrap: "anywhere" }}>{todayTop.name}</div>
             <div style={{ fontSize: 12.5, opacity: 0.75, marginTop: 5 }}>best seller · {todayTop.qty} sold</div>
           </div>
         )}
@@ -349,7 +349,7 @@ export function DayHome({
           <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>The guest shows you a code — tap the match to record the sale. Unconfirmed orders quietly expire and never count.</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
             {pendingOrders.map((p) => (
-              <button key={p.id} onClick={() => confirmPending(p.id)} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3, minWidth: 132, padding: "12px 15px", borderRadius: "var(--radius-lg)", border: "1.5px solid var(--brand)", background: "var(--brand-soft)", cursor: "pointer", fontFamily: "var(--font-sans)", textAlign: "left" }}>
+              <button key={p.id} onClick={() => confirmPending(p.id)} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3, minWidth: "min(132px, 100%)", padding: "12px 15px", borderRadius: "var(--radius-lg)", border: "1.5px solid var(--brand)", background: "var(--brand-soft)", cursor: "pointer", fontFamily: "var(--font-sans)", textAlign: "left" }}>
                 <span style={{ fontFamily: "var(--font-display)", fontSize: 24, fontWeight: 600, color: "var(--brand-active)", letterSpacing: ".04em", lineHeight: 1 }}>{p.code}</span>
                 <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text-strong)" }}>{peso(p.total)} · {p.lines.reduce((s, l) => s + l.qty, 0)} items{p.table ? ` · T${p.table}` : ""}</span>
                 <span style={{ fontSize: 11.5, color: "var(--text-muted)" }}>{timeAgo(p.placedAt, now)} · tap to record</span>

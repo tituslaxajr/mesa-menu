@@ -186,7 +186,7 @@ function CatIconRow({
 }) {
   const list = cats.filter((c) => c !== "All");
   return (
-    <div style={{ display: "flex", gap: 12, overflowX: "auto", padding: "2px 0", scrollbarWidth: "none" }}>
+    <div style={{ display: "flex", gap: 12, overflowX: "auto", padding: "2px 0", scrollbarWidth: "none", scrollSnapType: "x proximity", WebkitOverflowScrolling: "touch" }}>
       {list.map((c) => {
         const on = cat === c;
         const Icon = ICON_BY_NAME[CAT_ICONS[c]] || Utensils;
@@ -194,7 +194,7 @@ function CatIconRow({
           <button
             key={c}
             onClick={() => setCat(on ? "All" : c)}
-            style={{ flex: "none", border: 0, cursor: "pointer", background: "transparent", display: "flex", flexDirection: "column", alignItems: "center", gap: 7, width: 70 }}
+            style={{ flex: "none", border: 0, cursor: "pointer", background: "transparent", display: "flex", flexDirection: "column", alignItems: "center", gap: 7, width: 70, scrollSnapAlign: "start" }}
           >
             <span
               style={{
@@ -344,7 +344,7 @@ function LayoutWarm({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat, o
         <div style={{ position: "absolute", left: 20, right: 20, bottom: 18, color: "#FBF6EE" }}>
           {logo && <div style={{ marginBottom: 10 }}><BrandMark logo={logo} size={46} radius={12} background="#fff" fallback={null} /></div>}
           <div style={{ marginBottom: 8 }}><OpenPill cafe={cafe} /></div>
-          <h1 style={{ fontFamily: "var(--font-display)", fontSize: 34, fontWeight: 500, color: "#fff", letterSpacing: "-0.01em", lineHeight: 1.05, margin: 0 }}>{cafe.name}</h1>
+          <h1 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(26px, 8vw, 34px)", fontWeight: 500, color: "#fff", letterSpacing: "-0.01em", lineHeight: 1.05, margin: 0, overflowWrap: "anywhere" }}>{cafe.name}</h1>
           <p style={{ fontSize: 13.5, opacity: 0.92, marginTop: 4 }}>{cafe.tagline}</p>
         </div>
       </div>
@@ -365,9 +365,9 @@ function LayoutWarm({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat, o
         {showRails && best.length > 0 && (
           <section style={{ marginTop: 18 }}>
             <h2 style={{ fontFamily: "var(--font-display)", fontSize: 21, fontWeight: 500, color: "var(--text-strong)", padding: "0 20px", marginBottom: 14 }}>Best sellers</h2>
-            <div style={{ display: "flex", gap: 14, overflowX: "auto", padding: "2px 20px 8px", scrollbarWidth: "none" }}>
+            <div style={{ display: "flex", gap: 14, overflowX: "auto", padding: "2px 20px 8px", scrollbarWidth: "none", scrollSnapType: "x proximity", WebkitOverflowScrolling: "touch" }}>
               {best.map((m) => (
-                <button key={m.id} onClick={() => onOpen(m)} style={{ flex: "none", width: 168, textAlign: "left", border: 0, background: "var(--surface-card)", borderRadius: "var(--radius-lg)", overflow: "hidden", cursor: "pointer", boxShadow: "var(--shadow-sm)" }}>
+                <button key={m.id} onClick={() => onOpen(m)} style={{ flex: "none", width: "min(168px, 44vw)", textAlign: "left", border: 0, background: "var(--surface-card)", borderRadius: "var(--radius-lg)", overflow: "hidden", cursor: "pointer", boxShadow: "var(--shadow-sm)", scrollSnapAlign: "start" }}>
                   <div style={{ position: "relative" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={m.img} alt="" style={{ width: "100%", height: 116, objectFit: "cover", display: "block" }} />
@@ -406,7 +406,7 @@ function LayoutMinimal({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
           <BrandMark logo={logo} size={60} fallback={<Avatar name={cafe.name} size="lg" />} />
         </div>
-        <h1 style={{ fontFamily: "var(--font-display)", fontSize: 31, fontWeight: 500, color: "var(--text-strong)", letterSpacing: "-0.01em" }}>{cafe.name}</h1>
+        <h1 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(25px, 7.5vw, 31px)", fontWeight: 500, color: "var(--text-strong)", letterSpacing: "-0.01em", overflowWrap: "anywhere" }}>{cafe.name}</h1>
         <p style={{ color: "var(--text-muted)", fontSize: 14.5, marginTop: 8, lineHeight: 1.5, maxWidth: 340, marginInline: "auto" }}>{cafe.intro}</p>
         <div style={{ display: "inline-flex", alignItems: "center", gap: 7, marginTop: 14, fontSize: 12.5, color: "var(--text-subtle)" }}>
           <span style={{ width: 7, height: 7, borderRadius: 999, background: "var(--available)" }} /> {cafe.hours}
@@ -485,17 +485,17 @@ function LayoutBold({ cafe, logo, whiteLabel, groups, cats, cat, setCat, onOpen,
         <div style={{ position: "absolute", left: 0, right: 0, bottom: 24, textAlign: "center", padding: "0 28px", color: "#fff" }}>
           {logo && <div style={{ marginBottom: 14, display: "flex", justifyContent: "center" }}><BrandMark logo={logo} size={54} radius={14} background="#fff" fallback={null} /></div>}
           <div style={{ marginBottom: 12, display: "flex", justifyContent: "center" }}><OpenPill cafe={cafe} /></div>
-          <h1 style={{ fontFamily: "var(--font-display)", fontSize: 42, fontWeight: 500, lineHeight: 1.0, letterSpacing: "-0.015em", textShadow: "0 2px 18px rgba(0,0,0,0.45)", margin: 0 }}>{cafe.name}</h1>
+          <h1 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(30px, 10vw, 42px)", fontWeight: 500, lineHeight: 1.0, letterSpacing: "-0.015em", textShadow: "0 2px 18px rgba(0,0,0,0.45)", margin: 0, overflowWrap: "anywhere" }}>{cafe.name}</h1>
           <p style={{ fontSize: 14, opacity: 0.9, marginTop: 10 }}>{cafe.tagline}</p>
         </div>
       </div>
 
       <div style={{ position: "sticky", top: 0, zIndex: 10, background: "color-mix(in oklab, var(--bean-950) 88%, transparent)", backdropFilter: "blur(10px)", padding: "14px 0" }}>
-        <div style={{ display: "flex", gap: 8, overflowX: "auto", padding: "0 18px", scrollbarWidth: "none" }}>
+        <div style={{ display: "flex", gap: 8, overflowX: "auto", padding: "0 18px", scrollbarWidth: "none", scrollSnapType: "x proximity", WebkitOverflowScrolling: "touch" }}>
           {cats.map((c) => {
             const on = cat === c;
             return (
-              <button key={c} onClick={() => setCat(c)} style={{ flex: "none", border: "1.5px solid", borderColor: on ? "var(--cream)" : "rgba(255,255,255,0.18)", background: on ? "var(--cream)" : "transparent", color: on ? "var(--bean-950)" : "var(--bean-200)", borderRadius: 999, padding: "12px 18px", fontSize: 14.5, fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-sans)" }}>
+              <button key={c} onClick={() => setCat(c)} style={{ flex: "none", border: "1.5px solid", borderColor: on ? "var(--cream)" : "rgba(255,255,255,0.18)", background: on ? "var(--cream)" : "transparent", color: on ? "var(--bean-950)" : "var(--bean-200)", borderRadius: 999, padding: "12px 18px", fontSize: 14.5, fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-sans)", scrollSnapAlign: "start" }}>
                 {c}
               </button>
             );
@@ -563,7 +563,7 @@ function LayoutSoft({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat, o
               }
             />
           </div>
-          <h1 style={{ fontFamily: "var(--font-display)", fontSize: 28, fontWeight: 500, color: "var(--text-strong)", lineHeight: 1.1 }}>{cafe.name}</h1>
+          <h1 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(23px, 7vw, 28px)", fontWeight: 500, color: "var(--text-strong)", lineHeight: 1.1, overflowWrap: "anywhere" }}>{cafe.name}</h1>
           <p style={{ color: "var(--text-muted)", fontSize: 14, marginTop: 8, lineHeight: 1.55, maxWidth: 320, marginInline: "auto" }}>{cafe.intro}</p>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 7, marginTop: 14, fontSize: 12.5, color: "var(--sage-700)", background: "var(--available-soft)", padding: "6px 13px", borderRadius: 999, fontWeight: 600 }}>
             <Clock size={14} /> {cafe.hours}
@@ -621,7 +621,7 @@ function LayoutPlayful({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat
               }
             />
           </div>
-          <h1 style={{ fontFamily: "var(--font-display)", fontSize: 28, fontWeight: 500, color: "var(--text-strong)", lineHeight: 1.08 }}>{cafe.name}</h1>
+          <h1 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(23px, 7vw, 28px)", fontWeight: 500, color: "var(--text-strong)", lineHeight: 1.08, overflowWrap: "anywhere" }}>{cafe.name}</h1>
           <p style={{ color: "var(--bean-700)", fontSize: 13.5, marginTop: 7, fontWeight: 500 }}>{cafe.intro}</p>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 7, marginTop: 12, fontSize: 12.5, color: "var(--brand-active)", fontWeight: 600 }}>
             <span style={{ width: 7, height: 7, borderRadius: 999, background: "var(--available)" }} /> {cafe.hours}
@@ -638,9 +638,9 @@ function LayoutPlayful({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat
         {showRails && popular.length > 0 && (
           <section style={{ marginTop: 12 }}>
             <Eyebrow color="var(--brand-active)">Popular picks</Eyebrow>
-            <div style={{ display: "flex", gap: 12, overflowX: "auto", padding: "2px 0 8px", scrollbarWidth: "none" }}>
+            <div style={{ display: "flex", gap: 12, overflowX: "auto", padding: "2px 0 8px", scrollbarWidth: "none", scrollSnapType: "x proximity", WebkitOverflowScrolling: "touch" }}>
               {popular.map((m) => (
-                <button key={m.id} onClick={() => onOpen(m)} style={{ flex: "none", width: 152, textAlign: "left", border: "1px solid color-mix(in srgb, var(--brand) 22%, transparent)", background: "var(--surface-card)", borderRadius: "var(--radius-lg)", overflow: "hidden", cursor: "pointer", boxShadow: "var(--shadow-sm)" }}>
+                <button key={m.id} onClick={() => onOpen(m)} style={{ flex: "none", width: "min(152px, 42vw)", textAlign: "left", border: "1px solid color-mix(in srgb, var(--brand) 22%, transparent)", background: "var(--surface-card)", borderRadius: "var(--radius-lg)", overflow: "hidden", cursor: "pointer", boxShadow: "var(--shadow-sm)", scrollSnapAlign: "start" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={m.img} alt="" style={{ width: "100%", height: 104, objectFit: "cover", display: "block" }} />
                   <div style={{ padding: "10px 12px 12px" }}>

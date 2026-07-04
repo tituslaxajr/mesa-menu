@@ -126,7 +126,7 @@ export function StatCard({ icon: Icon, value, label, delta }: { icon: LucideIcon
   return (
     <Card variant="flat" padded style={{ flex: 1, minWidth: 0 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <div style={{ fontFamily: "var(--font-display)", fontSize: 30, fontWeight: 500, color: "var(--text-strong)", lineHeight: 1 }}>{value}</div>
+        <div style={{ fontFamily: "var(--font-display)", fontSize: "clamp(22px, 6vw, 30px)", fontWeight: 500, color: "var(--text-strong)", lineHeight: 1, minWidth: 0, overflowWrap: "anywhere" }}>{value}</div>
         <span style={{ width: 34, height: 34, borderRadius: 10, background: "var(--brand-soft)", color: "var(--brand-active)", display: "grid", placeItems: "center", flex: "none" }}>
           <Icon size={18} />
         </span>
