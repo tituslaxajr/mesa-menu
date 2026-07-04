@@ -1,10 +1,10 @@
 "use client";
 // Today — the time-aware home of the Araw dashboard. Instead of a stats page,
 // the owner opens the café's day: bring back yesterday's sold-outs before
-// open, run the 86 sheet and promo flicks during service, get a merienda
+// open, run the 'ubos na' sheet and promo flicks during service, get a merienda
 // nudge in the lull, and close the day with the numbers. Phases change which
 // cards lead — never which actions exist (see day-phase.ts).
-import React, { useRef, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Sunrise,
   ExternalLink,
@@ -29,46 +29,22 @@ import { PageWrap, SectionTitle, StatCard, useNow, PLACEHOLDER_IMG, type TabId }
 
 const peso = (n: number) => `₱${n.toLocaleString("en-PH")}`;
 
-/* ── hold-to-confirm sold-out tile ──────────────────────────────────── */
+/* ── one-tap sold-out tile ───────────────────────────────────────────
+ * A single tap flips availability both ways. Marking sold-out is instantly
+ * reversible via the 6-second Undo below (and by tapping again), so there's
+ * no hold-to-confirm gesture to slow the common case down during a rush. */
 function Tile86({ item, onConfirm }: { item: MenuItem; onConfirm: () => void }) {
-  const [holding, setHolding] = useState(false);
-  const timer = useRef<number | null>(null);
   const out = !!item.soldOut;
-  const start = () => {
-    if (out) return; // restoring is a plain tap (non-destructive)
-    if (timer.current) return;
-    setHolding(true);
-    timer.current = window.setTimeout(() => {
-      timer.current = null;
-      setHolding(false);
-      onConfirm();
-    }, 350);
-  };
-  const cancel = () => {
-    if (timer.current) {
-      clearTimeout(timer.current);
-      timer.current = null;
-    }
-    setHolding(false);
-  };
-  useEffect(() => cancel, []); // clear a pending hold on unmount
   return (
     <button
-      className={`mesa-86-tile${holding ? " is-holding" : ""}${out ? " is-out" : ""}`}
-      onPointerDown={start}
-      onPointerUp={cancel}
-      onPointerLeave={cancel}
-      onPointerCancel={cancel}
-      onClick={() => { if (out) onConfirm(); }}
-      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); onConfirm(); } }}
-      onContextMenu={(e) => e.preventDefault()}
-      aria-label={out ? `Bring ${item.name} back on the menu` : `Mark ${item.name} sold out — press and hold`}
+      className={`mesa-86-tile${out ? " is-out" : ""}`}
+      onClick={onConfirm}
+      aria-label={out ? `Bring ${item.name} back on the menu` : `Mark ${item.name} sold out`}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={item.img || PLACEHOLDER_IMG} alt="" />
       <span className="mesa-86-name">{item.name}</span>
       {out && <span className="mesa-86-stamp">Wala na po</span>}
-      <span className="mesa-86-ring" aria-hidden />
     </button>
   );
 }
@@ -134,7 +110,7 @@ export function DayHome({
   if (orderMode === "kitchen" && !PHASE2_ORDERING) orderMode = "counter";
   const accepting = cafe.acceptingOrders !== false;
 
-  // First-run intro + local 6s undo for the 86 sheet.
+  // First-run intro + local 6s undo for the 'ubos na' sheet.
   const [introSeen, setIntroSeen] = useLocalStore<boolean>("mesa.flags.arawIntroSeen", false);
 
   // Day Close: auto-surface once per day when the café's real clock reaches
@@ -215,8 +191,8 @@ export function DayHome({
 
   const sheet86 = (compact = false) => (
     <Card variant="flat" padded>
-      <SectionTitle right={<Badge variant="neutral">hold to confirm</Badge>}>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><Ban size={17} style={{ color: "var(--soldout)" }} /> Wala na? 86 it.</span>
+      <SectionTitle right={<Badge variant="neutral">one tap · undo for 6s</Badge>}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><Ban size={17} style={{ color: "var(--soldout)" }} /> Wala na? Ubos na.</span>
       </SectionTitle>
       {justSixed && (
         <div className="mesa-anim-fade" style={{ display: "flex", alignItems: "center", gap: 10, background: "var(--soldout-soft)", border: "1px solid var(--berry-100)", borderRadius: "var(--radius-md)", padding: "9px 12px", marginBottom: 12 }}>
@@ -226,7 +202,7 @@ export function DayHome({
       )}
       {availableItems.length ? (
         <>
-          <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>Press and hold an item until the ring closes — it&rsquo;s off every table instantly. No reprint, no &ldquo;wala na po&rdquo; at the counter.</p>
+          <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>Tap an item to take it off every table instantly — no reprint, no &ldquo;wala na po&rdquo; at the counter. Changed your mind? Undo for six seconds, or tap it again.</p>
           <div className="mesa-86-grid">
             {(compact ? sheetItems.slice(0, 6) : sheetItems).map((m) => <Tile86 key={m.id} item={m} onConfirm={() => sixItem(m)} />)}
           </div>
@@ -329,16 +305,6 @@ export function DayHome({
     </div>
   );
 
-  const tomorrowPrep = soldOutItems.length > 0 && (
-    <Card variant="flat" padded>
-      <SectionTitle>Tomorrow&rsquo;s prep</SectionTitle>
-      <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>These went &ldquo;wala na&rdquo; today. Tap what you&rsquo;re restocking — it&rsquo;s back on the menu before the kitchen warms up.</p>
-      <div className="mesa-86-grid">
-        {soldOutItems.map((m) => <Tile86 key={m.id} item={m} onConfirm={() => restoreItem(m)} />)}
-      </div>
-    </Card>
-  );
-
   // Phase 2 "Record sales with Mesa": guest-submitted counter orders waiting
   // for the staff tap that turns them into recorded sales.
   const pendingStrip = recording ? (
@@ -363,21 +329,29 @@ export function DayHome({
     </Card>
   ) : null;
 
-  /* ---- phase → card order (defaults, never walls) ---- */
-  const sections: React.ReactNode[] = (() => {
-    const queueFirst = pendingOrders.length ? [pendingStrip] : [];
-    switch (phase) {
-      case "prep":
-        return [...queueFirst, leftovers, <PromoFlicks key="pf" promos={promos} setPromos={setPromos} toast={toast} title="Running today" />, liveCard];
-      case "service":
-        return [pendingStrip, sheet86(), statsRow, <PromoFlicks key="pf" promos={promos} setPromos={setPromos} toast={toast} />, pauseCard];
-      case "merienda":
-        return [...queueFirst, meriendaPrompt, <PromoFlicks key="pf" promos={promos} setPromos={setPromos} toast={toast} />, statsRow, sheet86(true)];
-      case "closing":
-      case "closed":
-        return [...queueFirst, closingCard, tomorrowPrep, <PromoFlicks key="pf" promos={promos} setPromos={setPromos} toast={toast} title="Still running — flick off?" />, liveCard];
-    }
-  })();
+  /* ---- fixed layout + one "now" highlight ----
+     The daily-use surfaces stay in the SAME order all day, so nothing moves
+     under the owner mid-shift. Only the single highlight card at the top
+     changes with the café's clock — the time-aware bit, contained to one spot
+     (the phase chips still let you peek at how it reads later). */
+  const nowHighlight: React.ReactNode =
+    phase === "prep"
+      ? leftovers
+      : phase === "merienda"
+        ? meriendaPrompt
+        : phase === "closing" || phase === "closed"
+          ? closingCard
+          : null; // service: lead straight into the 'ubos na' sheet
+
+  const sections: React.ReactNode[] = [
+    pendingStrip,
+    nowHighlight,
+    sheet86(),
+    <PromoFlicks key="pf" promos={promos} setPromos={setPromos} toast={toast} title="Promos" />,
+    statsRow,
+    pauseCard,
+    liveCard,
+  ].filter(Boolean);
 
   const chip = (id: DayPhase | "auto", label: string) => (
     <button

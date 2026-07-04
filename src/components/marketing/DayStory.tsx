@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
+import { Check } from "lucide-react";
 import { Button, Switch } from "@/components/ds";
 import { PLANS, MENU, DEMO_CAFE, annualPerMonth, annualTotal, type MenuItem } from "@/lib/data";
 import { menuUrl } from "@/lib/site";
@@ -117,56 +118,61 @@ function CountUp({ target, peso, active }: { target: number; peso?: boolean; act
   );
 }
 
-/* ── receipt pricing (data from PLANS — the source of truth) ──────── */
+/* ── pricing (data from PLANS — the source of truth) ──────────────────
+ * A 3-column comparison, not a receipt: three plans are easiest to weigh
+ * side by side. One honest beta message up top (free now, these are the
+ * launch prices) so "Subscribe" and "free" never contradict each other,
+ * and one CTA verb — "Start free" — everywhere. */
 
-function Receipt() {
+function Plans() {
   const [annual, setAnnual] = useState(false);
   return (
-    <div className="mesa-land-receipt">
-      <h3>MESA</h3>
-      <p className="mesa-land-r-meta">*** {annual ? "annual" : "monthly"} plans · cancel anytime ***</p>
-      <div className="mesa-land-r-toggle">
-        <span>Pay annually — 2 months free</span>
+    <div className="mesa-land-pricing">
+      <div className="mesa-land-betabar">
+        <b>Free for every café while Mesa is in beta — no card.</b>
+        <span>These are the launch prices. Join now and lock yours in.</span>
+      </div>
+
+      <div className="mesa-land-billing" role="group" aria-label="Billing period">
+        <span className={annual ? "" : "is-on"}>Monthly</span>
         <Switch checked={annual} onChange={setAnnual} tone="brand" label="" id="landing-billing" />
+        <span className={annual ? "is-on" : ""}>
+          Annual <em>2 months free</em>
+        </span>
       </div>
-      <hr className="mesa-land-r-sep" />
-      {PLANS.map((p) => (
-        <div key={p.id}>
-          <div className="mesa-land-r-line">
-            <span className="mesa-land-r-name">
-              {p.name.toUpperCase()}
-              {p.popular && <span className="mesa-land-r-pop">MOST ORDERED</span>}
-            </span>
-            <span className="mesa-land-r-amt">
-              ₱{annual ? annualPerMonth(p.monthly) : p.monthly}/mo{" "}
-              {annual && <small>(₱{annualTotal(p.monthly).toLocaleString()}/yr)</small>}
-            </span>
+
+      <div className="mesa-land-plangrid">
+        {PLANS.map((p) => (
+          <div key={p.id} className={`mesa-land-plan ${p.popular ? "is-pop" : ""}`}>
+            {p.popular && <span className="mesa-land-plan-flag">Most ordered</span>}
+            <h3 className="mesa-land-plan-name">{p.name}</h3>
+            <p className="mesa-land-plan-tag">{p.tagline}</p>
+            <div className="mesa-land-plan-price">
+              <span className="mesa-land-plan-amt">₱{annual ? annualPerMonth(p.monthly) : p.monthly}</span>
+              <span className="mesa-land-plan-per">/mo</span>
+            </div>
+            <p className="mesa-land-plan-note">
+              {annual ? `₱${annualTotal(p.monthly).toLocaleString()} billed yearly` : " "}
+            </p>
+            <Link
+              href={`/signup?plan=${p.id}`}
+              className={`mesa-land-plan-cta ${p.popular ? "is-primary" : ""}`}
+            >
+              Start free
+            </Link>
+            <ul className="mesa-land-plan-feats">
+              {p.features.map((f) => (
+                <li key={f}>
+                  <Check size={15} aria-hidden /> {f}
+                </li>
+              ))}
+            </ul>
           </div>
-          <p className="mesa-land-r-desc">{p.tagline}</p>
-          <ul className="mesa-land-r-features">
-            {p.features.map((f) => (
-              <li key={f}>+ {f}</li>
-            ))}
-          </ul>
-          <Link
-            href={`/signup?plan=${p.id}`}
-            className={`mesa-land-r-cta ${p.popular ? "mesa-land-r-cta--primary" : ""}`}
-          >
-            {p.cta}
-          </Link>
-          <hr className="mesa-land-r-sep" />
-        </div>
-      ))}
-      <div className="mesa-land-r-line mesa-land-r-total">
-        <span>WHILE IN BETA</span>
-        <span>₱0.00</span>
+        ))}
       </div>
-      <p className="mesa-land-r-note">
-        <b>Free for our beta cafés — no card.</b>
-        <br />
-        Join now and lock in this pricing for launch.
-        <br />
-        Salamat po! ☕
+
+      <p className="mesa-land-fineprint" style={{ marginTop: 24 }}>
+        Cancel anytime · Salamat po ☕
       </p>
     </div>
   );
@@ -182,7 +188,7 @@ export function DayStory() {
   const [promoOn, setPromoOn] = useState(false);
   const [statsIn, setStatsIn] = useState(false);
   // Hold-to-confirm for the 12:05 interactive — the real gesture from the
-  // app's 86 sheet (350ms press, ring fills, releasing early cancels).
+  // app's 'ubos na' sheet (350ms press, ring fills, releasing early cancels).
   const [holding, setHolding] = useState(false);
   const holdTimer = useRef<number | null>(null);
   const holdStart = () => {
@@ -270,9 +276,14 @@ export function DayStory() {
           </Link>
           <span className="mesa-land-beta">Beta</span>
         </div>
-        <Link href="/signup" className="mesa-land-chrome-cta">
-          Try the beta — free
-        </Link>
+        <nav className="mesa-land-nav">
+          <a href="#pricing" className="mesa-land-navlink">Pricing</a>
+          <Link href="/demo" className="mesa-land-navlink">Demo</Link>
+          <Link href="/login" className="mesa-land-navlink">Log in</Link>
+          <Link href="/signup" className="mesa-land-chrome-cta">
+            Start free
+          </Link>
+        </nav>
       </header>
 
       <div className="mesa-land-clock" aria-live="polite">
@@ -286,24 +297,34 @@ export function DayStory() {
         <section className="mesa-land-chapter" data-chapter data-phase="night" data-time="5:48 AM" data-label="Before opening">
           <div className="mesa-land-inner mesa-land-center">
             <Reveal>
-              <p className="mesa-land-stamp">5:48 AM · SAN FERNANDO, PAMPANGA</p>
+              <p className="mesa-land-stamp">QR MENUS FOR FILIPINO CAFÉS · BETA</p>
             </Reveal>
             <Reveal delay={1}>
               <h1>
-                Your café is still dark.
+                Change your menu in one tap.
                 <br />
-                Your menu is already <span className="mesa-land-em">out of date.</span>
+                The reprints <span className="mesa-land-em">stop today.</span>
               </h1>
             </Reveal>
             <Reveal delay={2}>
               <p className="mesa-land-lede">
-                The pulled pork that ran out last night is still on the laminated card. The new
-                latte price is a sticker on top of a sticker. This page is one day at your café —
-                and how <strong>Mesa</strong> makes the menu the one thing you never worry about
-                again.
+                Guests scan a QR at the table and see your live menu. Sold out, price change, a new
+                merienda promo — you update once with <strong>Mesa</strong>, and every table sees it
+                before the coffee gets cold.
               </p>
             </Reveal>
             <Reveal delay={3}>
+              <div className="mesa-land-ctas">
+                <Button as="a" href="/signup" variant="primary" size="lg">
+                  Start free
+                </Button>
+                <Link href="/demo" className="mesa-land-btn-ghost">
+                  See the live demo →
+                </Link>
+              </div>
+              <p className="mesa-land-fineprint" style={{ marginTop: 18 }}>
+                Free while in beta · no card · your own QR in minutes
+              </p>
               <div className="mesa-land-tablescene">
                 <div className="mesa-land-ring" aria-hidden="true" />
                 <Link className="mesa-land-tent" href="/m/demo">
@@ -316,10 +337,7 @@ export function DayStory() {
                   <p className="mesa-land-tent-brand">powered by mesa</p>
                 </Link>
               </div>
-              <p className="mesa-land-fineprint" style={{ marginTop: 22 }}>
-                This QR is real — scan it with your phone, or tap it.
-              </p>
-              <p className="mesa-land-scrollcue">Scroll to open the café</p>
+              <p className="mesa-land-scrollcue">See it as one day at your café</p>
             </Reveal>
           </div>
         </section>
@@ -466,7 +484,7 @@ export function DayStory() {
                 <div className="mesa-land-duo-col">
                   <div className="mesa-land-studio">
                     <h4 style={{ fontFamily: "var(--font-display)" }}>Today · Service</h4>
-                    <p className="mesa-land-s-sub">{DEMO_CAFE.name} · The 86 sheet</p>
+                    <p className="mesa-land-s-sub">{DEMO_CAFE.name} · The &lsquo;ubos na&rsquo; sheet</p>
                     <div className="mesa-land-s-row">
                       <div>
                         <div className="mesa-land-s-name">Flat White</div>
@@ -647,7 +665,7 @@ export function DayStory() {
               </h2>
             </Reveal>
             <Reveal delay={2}>
-              <Receipt />
+              <Plans />
             </Reveal>
           </div>
         </section>
@@ -675,10 +693,10 @@ export function DayStory() {
             <Reveal delay={3}>
               <div className="mesa-land-ctas">
                 <Button as="a" href="/signup" variant="primary" size="lg">
-                  Start your Day 1 — free
+                  Start free
                 </Button>
                 <Link href="/demo" className="mesa-land-btn-ghost">
-                  Open the live demo
+                  See the live demo →
                 </Link>
               </div>
               <p className="mesa-land-fineprint">Free while in beta · no card · cancel anytime</p>

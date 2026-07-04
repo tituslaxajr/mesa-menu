@@ -13,6 +13,8 @@ import {
   MessageSquare,
   Sun,
   Boxes,
+  AlertTriangle,
+  RefreshCw,
   type LucideIcon,
 } from "lucide-react";
 import { Avatar, Button, IconButton } from "@/components/ds";
@@ -146,6 +148,7 @@ function ShellInner() {
     planId,
     dbSave,
     saveStatus,
+    retrySave,
     items,
     cafe,
     setCafe,
@@ -359,10 +362,10 @@ function ShellInner() {
                 <Plus /> Add item
               </Button>
             )}
-            {dbSave && saveStatus !== "idle" && (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 500, color: saveStatus === "error" ? "var(--danger, #b42318)" : "var(--text-muted)", fontFamily: "var(--font-sans)" }}>
-                <span style={{ width: 7, height: 7, borderRadius: 999, flex: "none", background: saveStatus === "saving" ? "var(--brand)" : saveStatus === "error" ? "var(--danger, #b42318)" : "var(--sage-400, #6E8B5B)" }} />
-                {saveStatus === "saving" ? "Saving…" : saveStatus === "error" ? "Couldn’t save" : "Saved"}
+            {dbSave && (saveStatus === "saving" || saveStatus === "saved") && (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 500, color: "var(--text-muted)", fontFamily: "var(--font-sans)" }}>
+                <span style={{ width: 7, height: 7, borderRadius: 999, flex: "none", background: saveStatus === "saving" ? "var(--brand)" : "var(--sage-400, #6E8B5B)" }} />
+                {saveStatus === "saving" ? "Saving…" : "Saved"}
               </span>
             )}
             <span className="mesa-dash-preview-toggle">
@@ -371,6 +374,21 @@ function ShellInner() {
             <Button as="a" href={`/m/${cafe.slug}`} target="_blank" variant="primary"><ExternalLink /> View live menu</Button>
           </div>
         </div>
+
+        {dbSave && saveStatus === "error" && (
+          <div
+            role="alert"
+            style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", margin: "0", padding: "12px 28px", background: "var(--soldout-soft, #F6E4DE)", borderBottom: "1px solid var(--soldout, #b42318)", color: "var(--text-strong)" }}
+          >
+            <AlertTriangle size={18} style={{ color: "var(--soldout, #b42318)", flex: "none" }} />
+            <span style={{ flex: 1, minWidth: 200, fontSize: 13.5, fontWeight: 600 }}>
+              Your last change didn’t save — the live menu on your tables may be out of date.
+            </span>
+            <Button variant="primary" size="sm" onClick={() => void retrySave()}>
+              <RefreshCw /> Retry save
+            </Button>
+          </div>
+        )}
 
         {classicHome ? (
           renderTab(tab)

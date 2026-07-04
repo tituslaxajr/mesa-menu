@@ -57,6 +57,8 @@ export interface StudioContextValue {
   planId: string;
   dbSave: boolean;
   saveStatus: SaveStatus;
+  /** Re-run every save now (used by the "Couldn't save" retry action). */
+  retrySave: () => Promise<void>;
   items: MenuItem[];
   cafe: Cafe;
   setCafe: StudioSet<Cafe>;
@@ -168,6 +170,24 @@ export function StudioProvider({
     const t = setTimeout(() => setToastMsg(""), 2000);
     return () => clearTimeout(t);
   }, [toastMsg]);
+
+  // Re-run every concern's save at once. Autosave normally handles this on
+  // edit; this is the manual retry the header offers after a failed save.
+  const retrySave = async () => {
+    if (!(dbSave && cafeId)) return;
+    setSaveStatus("saving");
+    try {
+      const results = await Promise.all([
+        saveMenu(cafeId, categories, rawItems),
+        saveBrand(cafeId, brand),
+        saveCafeProfile(cafeId, cafe, theme),
+        savePromos(cafeId, promos),
+      ]);
+      setSaveStatus(results.every((r) => r.ok) ? "saved" : "error");
+    } catch {
+      setSaveStatus("error");
+    }
+  };
 
   // BETA: switch the account's tier, then reload so plan-gated capabilities
   // (themes, custom colours, white-label, etc.) re-resolve from the new plan.
@@ -361,6 +381,7 @@ export function StudioProvider({
     planId,
     dbSave,
     saveStatus,
+    retrySave,
     items,
     cafe,
     setCafe,
