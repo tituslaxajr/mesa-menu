@@ -189,6 +189,9 @@ export function DayStory() {
   // app's 'ubos na' sheet (350ms press, ring fills, releasing early cancels).
   const [holding, setHolding] = useState(false);
   const holdTimer = useRef<number | null>(null);
+  // A completed hold also emits a click on release; this flag swallows that
+  // one click so the freshly sold-out item doesn't immediately flip back.
+  const suppressClick = useRef(false);
   const holdStart = () => {
     if (soldOut || holdTimer.current) return;
     setHolding(true);
@@ -197,6 +200,7 @@ export function DayStory() {
       setHolding(false);
       setSoldOut(true);
       setTapped(true);
+      suppressClick.current = true;
     }, 350);
   };
   const holdCancel = () => {
@@ -499,6 +503,8 @@ export function DayStory() {
                       onPointerCancel={holdCancel}
                       onContextMenu={(e) => e.preventDefault()}
                       onClick={() => {
+                        // Swallow the click that fires on release of a completed hold.
+                        if (suppressClick.current) { suppressClick.current = false; return; }
                         // Bringing it back is a plain tap; keyboard users get
                         // click for both directions (hold is pointer-only).
                         if (soldOut) { setSoldOut(false); setTapped(true); }
