@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Check } from "lucide-react";
 import { Button, Switch } from "@/components/ds";
 import { PLANS, MENU, DEMO_CAFE, annualPerMonth, annualTotal, type MenuItem } from "@/lib/data";
 import { menuUrl } from "@/lib/site";
@@ -118,61 +117,60 @@ function CountUp({ target, peso, active }: { target: number; peso?: boolean; act
   );
 }
 
-/* ── pricing (data from PLANS — the source of truth) ──────────────────
- * A 3-column comparison, not a receipt: three plans are easiest to weigh
- * side by side. One honest beta message up top (free now, these are the
- * launch prices) so "Subscribe" and "free" never contradict each other,
- * and one CTA verb — "Start free" — everywhere. */
+/* ── receipt pricing (data from PLANS — the source of truth) ──────────
+ * The pricing renders as a café receipt: mono type, dashed tear-lines, a
+ * perforated bottom edge, and a "WHILE IN BETA · ₱0.00" total so the beta
+ * message and the prices never contradict. One CTA verb — "Start free" —
+ * on every line, so nothing reads "Subscribe" while the plan is free. */
 
-function Plans() {
+function Receipt() {
   const [annual, setAnnual] = useState(false);
   return (
-    <div className="mesa-land-pricing">
-      <div className="mesa-land-betabar">
-        <b>Free for every café while Mesa is in beta — no card.</b>
-        <span>These are the launch prices. Join now and lock yours in.</span>
-      </div>
-
-      <div className="mesa-land-billing" role="group" aria-label="Billing period">
-        <span className={annual ? "" : "is-on"}>Monthly</span>
+    <div className="mesa-land-receipt">
+      <h3>MESA</h3>
+      <p className="mesa-land-r-meta">*** {annual ? "annual" : "monthly"} plans · cancel anytime ***</p>
+      <div className="mesa-land-r-toggle">
+        <span>Pay annually — 2 months free</span>
         <Switch checked={annual} onChange={setAnnual} tone="brand" label="" id="landing-billing" />
-        <span className={annual ? "is-on" : ""}>
-          Annual <em>2 months free</em>
-        </span>
       </div>
-
-      <div className="mesa-land-plangrid">
-        {PLANS.map((p) => (
-          <div key={p.id} className={`mesa-land-plan ${p.popular ? "is-pop" : ""}`}>
-            {p.popular && <span className="mesa-land-plan-flag">Most ordered</span>}
-            <h3 className="mesa-land-plan-name">{p.name}</h3>
-            <p className="mesa-land-plan-tag">{p.tagline}</p>
-            <div className="mesa-land-plan-price">
-              <span className="mesa-land-plan-amt">₱{annual ? annualPerMonth(p.monthly) : p.monthly}</span>
-              <span className="mesa-land-plan-per">/mo</span>
-            </div>
-            <p className="mesa-land-plan-note">
-              {annual ? `₱${annualTotal(p.monthly).toLocaleString()} billed yearly` : " "}
-            </p>
-            <Link
-              href={`/signup?plan=${p.id}`}
-              className={`mesa-land-plan-cta ${p.popular ? "is-primary" : ""}`}
-            >
-              Start free
-            </Link>
-            <ul className="mesa-land-plan-feats">
-              {p.features.map((f) => (
-                <li key={f}>
-                  <Check size={15} aria-hidden /> {f}
-                </li>
-              ))}
-            </ul>
+      <hr className="mesa-land-r-sep" />
+      {PLANS.map((p) => (
+        <div key={p.id}>
+          <div className="mesa-land-r-line">
+            <span className="mesa-land-r-name">
+              {p.name.toUpperCase()}
+              {p.popular && <span className="mesa-land-r-pop">MOST ORDERED</span>}
+            </span>
+            <span className="mesa-land-r-amt">
+              ₱{annual ? annualPerMonth(p.monthly) : p.monthly}/mo{" "}
+              {annual && <small>(₱{annualTotal(p.monthly).toLocaleString()}/yr)</small>}
+            </span>
           </div>
-        ))}
+          <p className="mesa-land-r-desc">{p.tagline}</p>
+          <ul className="mesa-land-r-features">
+            {p.features.map((f) => (
+              <li key={f}>+ {f}</li>
+            ))}
+          </ul>
+          <Link
+            href={`/signup?plan=${p.id}`}
+            className={`mesa-land-r-cta ${p.popular ? "mesa-land-r-cta--primary" : ""}`}
+          >
+            Start free
+          </Link>
+          <hr className="mesa-land-r-sep" />
+        </div>
+      ))}
+      <div className="mesa-land-r-line mesa-land-r-total">
+        <span>WHILE IN BETA</span>
+        <span>₱0.00</span>
       </div>
-
-      <p className="mesa-land-fineprint" style={{ marginTop: 24 }}>
-        Cancel anytime · Salamat po ☕
+      <p className="mesa-land-r-note">
+        <b>Free for our beta cafés — no card.</b>
+        <br />
+        Join now and lock in this pricing for launch.
+        <br />
+        Salamat po! ☕
       </p>
     </div>
   );
@@ -182,7 +180,7 @@ function Plans() {
 
 export function DayStory() {
   const rootRef = useRef<HTMLDivElement>(null);
-  const [clock, setClock] = useState({ phase: "night" as Phase, time: "5:48 AM", label: "San Fernando, Pampanga" });
+  const [phase, setPhase] = useState<Phase>("night");
   const [soldOut, setSoldOut] = useState(false);
   const [tapped, setTapped] = useState(false);
   const [promoOn, setPromoOn] = useState(false);
@@ -219,11 +217,7 @@ export function DayStory() {
         for (const e of entries) {
           if (!e.isIntersecting) continue;
           const el = e.target as HTMLElement;
-          setClock({
-            phase: el.dataset.phase as Phase,
-            time: el.dataset.time || "",
-            label: el.dataset.label || "",
-          });
+          setPhase(el.dataset.phase as Phase);
         }
       },
       // Fire when a chapter crosses the middle band of the viewport, so even
@@ -267,7 +261,7 @@ export function DayStory() {
   const pulledPork = item("pulled-sandwich");
 
   return (
-    <div ref={rootRef} className="mesa-land" data-phase={clock.phase}>
+    <div ref={rootRef} className="mesa-land" data-phase={phase}>
       {/* fixed chrome */}
       <header className="mesa-land-chrome">
         <div className="mesa-land-brandgroup">
@@ -285,12 +279,6 @@ export function DayStory() {
           </Link>
         </nav>
       </header>
-
-      <div className="mesa-land-clock" aria-live="polite">
-        <span className="mesa-land-clock-dot" />
-        <span>{clock.time}</span>
-        <span className="mesa-land-clock-label">{clock.label}</span>
-      </div>
 
       <main>
         {/* ═══ 5:48 AM · the dark café ═══ */}
@@ -665,7 +653,7 @@ export function DayStory() {
               </h2>
             </Reveal>
             <Reveal delay={2}>
-              <Plans />
+              <Receipt />
             </Reveal>
           </div>
         </section>
@@ -700,7 +688,6 @@ export function DayStory() {
                 </Link>
               </div>
               <p className="mesa-land-fineprint">Free while in beta · no card · cancel anytime</p>
-              <p className="mesa-land-fineprint">That clock at the bottom? It&apos;s in the app too — your dashboard follows your café&apos;s day.</p>
             </Reveal>
           </div>
         </section>

@@ -100,37 +100,6 @@
   .mesa-land-navlink { display: none; }
 }
 
-/* the day clock */
-.mesa-land-clock {
-  position: fixed;
-  z-index: 40;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: 22px;
-  font-family: var(--font-mono);
-  font-size: 12.5px;
-  letter-spacing: 0.06em;
-  color: var(--land-ink);
-  border: 1px solid var(--land-hairline);
-  background: color-mix(in srgb, var(--land-bg) 82%, transparent);
-  backdrop-filter: blur(8px);
-  border-radius: var(--radius-pill);
-  padding: 8px 16px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  white-space: nowrap;
-  transition: color 0.7s ease, border-color 0.7s ease, background-color 0.7s ease;
-}
-.mesa-land-clock .mesa-land-clock-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--land-accent);
-  flex: none;
-}
-.mesa-land-clock .mesa-land-clock-label { color: var(--land-ink-muted); }
-
 /* ---------- chapters ---------- */
 .mesa-land-chapter {
   min-height: 100vh;
@@ -668,106 +637,98 @@
 }
 .mesa-land-daycard-foot b { color: var(--land-ink); }
 
-/* ---------- pricing (3-column comparison) ---------- */
-.mesa-land-pricing { width: 100%; margin: 40px auto 0; }
-.mesa-land-betabar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: center;
-  gap: 6px 12px;
-  text-align: center;
-  max-width: 640px;
-  margin: 0 auto 26px;
-  padding: 14px 22px;
-  border-radius: 16px;
-  background: var(--available-soft);
-  border: 1px solid color-mix(in oklab, var(--available) 35%, transparent);
-}
-.mesa-land-betabar b { color: var(--available); font-weight: 700; }
-.mesa-land-betabar span { color: var(--land-ink-muted); font-size: 14px; }
-.mesa-land-billing {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 26px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--land-ink-muted);
-}
-.mesa-land-billing .is-on { color: var(--land-ink); }
-.mesa-land-billing em { font-style: normal; color: var(--available); font-size: 12.5px; }
-.mesa-land-plangrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
-  align-items: start;
-  max-width: 940px;
-  margin: 0 auto;
-}
-.mesa-land-plan {
-  position: relative;
+/* ---------- receipt pricing ---------- */
+.mesa-land-receipt {
   background: #fffdf7;
   color: var(--bean-900);
-  border: 1px solid var(--bean-200);
-  border-radius: 20px;
-  padding: 26px 24px;
+  width: min(460px, 100%);
+  margin: 42px auto 0;
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  padding: 34px 30px 44px;
+  box-shadow: 0 30px 60px -20px rgba(31, 20, 14, 0.45);
+  position: relative;
+  box-sizing: border-box;
   text-align: left;
-  box-shadow: 0 24px 48px -26px rgba(31, 20, 14, 0.5);
+  /* perforated bottom edge */
+  -webkit-mask:
+    linear-gradient(#000 0 0) top / 100% calc(100% - 12px) no-repeat,
+    radial-gradient(circle at 8px 0, transparent 7px, #000 7.5px) bottom / 16px 12px repeat-x;
+  mask:
+    linear-gradient(#000 0 0) top / 100% calc(100% - 12px) no-repeat,
+    radial-gradient(circle at 8px 0, transparent 7px, #000 7.5px) bottom / 16px 12px repeat-x;
 }
-.mesa-land-plan.is-pop {
-  border-color: var(--brand);
-  box-shadow: 0 0 0 1px var(--brand), 0 26px 52px -22px rgba(31, 20, 14, 0.55);
+.mesa-land-receipt h3 {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.18em;
+  margin: 0 0 4px;
+  color: var(--bean-900);
 }
-.mesa-land-plan-flag {
-  position: absolute;
-  top: -12px;
-  left: 24px;
+.mesa-land-r-meta { text-align: center; font-size: 11px; color: var(--bean-600); margin: 0 0 18px; transition: none; }
+.mesa-land-r-sep { border: 0; border-top: 1px dashed var(--bean-300); margin: 14px 0; }
+.mesa-land-r-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 5px 0;
+  gap: 10px;
+}
+.mesa-land-r-name { font-weight: 700; }
+.mesa-land-r-amt { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mesa-land-r-amt small { font-size: 10.5px; color: var(--bean-500); }
+.mesa-land-r-desc { font-size: 11.5px; color: var(--bean-600); margin: 0 0 8px; line-height: 1.5; transition: none; }
+.mesa-land-r-features { list-style: none; margin: 0 0 10px; padding: 0; font-size: 11.5px; color: var(--bean-600); line-height: 1.7; }
+.mesa-land-r-features li { transition: none; }
+.mesa-land-r-pop {
+  display: inline-block;
   background: var(--brand);
   color: var(--text-on-clay);
-  font-family: var(--font-sans);
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 4px 12px;
-  border-radius: var(--radius-pill);
+  padding: 2px 8px;
+  border-radius: 3px;
+  margin-left: 8px;
+  vertical-align: 1px;
 }
-.mesa-land-plan-name { font-family: var(--font-display); font-size: 24px; font-weight: 500; margin: 0 0 4px; color: var(--bean-900); }
-.mesa-land-plan-tag { font-family: var(--font-sans); font-size: 13px; color: var(--bean-600); margin: 0 0 14px; min-height: 2.8em; line-height: 1.45; transition: none; }
-.mesa-land-plan-price { display: flex; align-items: baseline; gap: 3px; }
-.mesa-land-plan-amt { font-family: var(--font-display); font-size: 40px; font-weight: 500; line-height: 1; color: var(--bean-900); font-variant-numeric: tabular-nums; }
-.mesa-land-plan-per { font-family: var(--font-sans); font-size: 13px; color: var(--bean-500); }
-.mesa-land-plan-note { font-family: var(--font-sans); font-size: 12px; color: var(--bean-500); margin: 6px 0 18px; min-height: 1.2em; transition: none; }
-.mesa-land-plan-cta {
+.mesa-land-r-cta {
   display: block;
   text-align: center;
   text-decoration: none;
+  border-radius: 10px;
   font-family: var(--font-sans);
   font-weight: 700;
-  font-size: 14px;
-  padding: 12px;
-  border-radius: var(--radius-pill);
-  background: var(--surface-sunken, #f3ece0);
-  color: var(--bean-800);
-  border: 1px solid var(--bean-200);
-  transition: filter 0.2s ease;
-}
-.mesa-land-plan-cta.is-primary { background: var(--brand); color: var(--text-on-clay); border-color: var(--brand); }
-.mesa-land-plan-cta:hover { filter: brightness(0.97); }
-.mesa-land-plan-feats { list-style: none; margin: 20px 0 0; padding: 0; display: grid; gap: 11px; }
-.mesa-land-plan-feats li {
-  display: flex;
-  gap: 9px;
-  align-items: flex-start;
-  font-family: var(--font-sans);
   font-size: 13.5px;
-  line-height: 1.45;
+  padding: 11px;
+  margin: 4px 0 14px;
+  background: var(--surface-sunken);
   color: var(--bean-800);
+  border: 1px solid var(--border-default);
+}
+.mesa-land-r-cta--primary { background: var(--brand); color: var(--text-on-clay); border-color: var(--brand); }
+.mesa-land-r-cta:hover { filter: brightness(0.96); }
+.mesa-land-r-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 0 6px;
+  font-size: 11.5px;
+  color: var(--bean-600);
+}
+.mesa-land-r-total { font-weight: 700; font-size: 14px; }
+.mesa-land-r-note {
+  font-size: 11.5px;
+  color: var(--bean-600);
+  text-align: center;
+  margin: 16px 0 0;
+  line-height: 1.6;
   transition: none;
 }
-.mesa-land-plan-feats svg { color: var(--available); flex: none; margin-top: 2px; }
+.mesa-land-r-note b { color: var(--bean-900); }
 
 /* ---------- final CTA ---------- */
 .mesa-land-ctas { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 36px; }
@@ -799,11 +760,8 @@
   .mesa-land-oldmenu-wrap { grid-template-columns: 1fr; gap: 40px; }
   .mesa-land-chapter { padding: 96px 18px; }
   .mesa-land-ring { left: calc(50% + 70px); }
-  .mesa-land-plangrid { grid-template-columns: 1fr; max-width: 380px; gap: 24px; }
-  .mesa-land-plan-tag { min-height: 0; }
 }
 @media (max-width: 560px) {
   .mesa-land-stats { grid-template-columns: 1fr; }
-  .mesa-land-clock { font-size: 11px; padding: 7px 12px; }
   .mesa-land-duo { gap: 32px; }
 }
