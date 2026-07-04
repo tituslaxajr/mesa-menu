@@ -5,7 +5,6 @@ import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Beta overview — Mesa" };
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 interface Row {
   account_name: string;
   plan: string;
@@ -54,12 +53,24 @@ export default async function AdminPage() {
     .order("created_at", { ascending: false });
   const rows = (data ?? []) as Row[];
 
+  // How many feedback threads are waiting on a reply (drives the inbox link badge).
+  const { data: fbRows } = await supabase
+    .from("admin_feedback_overview")
+    .select("needs_reply");
+  const needsReply = (fbRows ?? []).filter((f) => (f as { needs_reply: boolean }).needs_reply).length;
+
   return (
     <main style={{ minHeight: "100dvh", background: "var(--surface-page)", padding: "32px 24px", fontFamily: "var(--font-sans)" }}>
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: 18 }}>
           <h1 style={{ fontFamily: "var(--font-display)", fontSize: 28, color: "var(--text-strong)" }}>Beta overview</h1>
-          <span style={{ fontSize: 14, color: "var(--text-muted)" }}>{rows.length} café{rows.length === 1 ? "" : "s"}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <Link href="/admin/feedback" style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 14, color: "var(--brand)", fontWeight: 600 }}>
+              Feedback inbox
+              {needsReply > 0 && <span style={{ minWidth: 20, height: 20, padding: "0 6px", borderRadius: 999, display: "grid", placeItems: "center", fontSize: 12, fontWeight: 700, background: "var(--brand)", color: "var(--brand-on)" }}>{needsReply}</span>}
+            </Link>
+            <span style={{ fontSize: 14, color: "var(--text-muted)" }}>{rows.length} café{rows.length === 1 ? "" : "s"}</span>
+          </div>
         </div>
 
         <div style={{ overflowX: "auto", background: "var(--surface-card)", border: "1px solid var(--border-soft)", borderRadius: "var(--radius-lg)" }}>

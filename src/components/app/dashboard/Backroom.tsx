@@ -39,11 +39,14 @@ export function Backroom({
   setTab,
   allowed,
   renderTab,
+  onFeedback,
 }: {
   tab: TabId | null;
   setTab: (t: TabId | null) => void;
   allowed: TabId[];
   renderTab: (t: TabId) => React.ReactNode;
+  /** Open the in-app Messages drawer (café ↔ Mesa). */
+  onFeedback?: () => void;
 }) {
   if (tab) {
     return (
@@ -81,9 +84,15 @@ export function Backroom({
             </button>
           </Card>
         ))}
-        <a href={feedbackMailto} style={{ display: "inline-flex", alignItems: "center", gap: 9, padding: "12px 6px", color: "var(--text-body)", fontSize: 14, fontWeight: 600, fontFamily: "var(--font-sans)", textDecoration: "none" }}>
-          <MessageSquare size={17} /> Send feedback
-        </a>
+        {onFeedback ? (
+          <button onClick={onFeedback} style={{ display: "inline-flex", alignItems: "center", gap: 9, padding: "12px 6px", color: "var(--text-body)", fontSize: 14, fontWeight: 600, fontFamily: "var(--font-sans)", background: "transparent", border: 0, cursor: "pointer", textAlign: "left" }}>
+            <MessageSquare size={17} /> Messages
+          </button>
+        ) : (
+          <a href={feedbackMailto} style={{ display: "inline-flex", alignItems: "center", gap: 9, padding: "12px 6px", color: "var(--text-body)", fontSize: 14, fontWeight: 600, fontFamily: "var(--font-sans)", textDecoration: "none" }}>
+            <MessageSquare size={17} /> Send feedback
+          </a>
+        )}
       </div>
     </PageWrap>
   );

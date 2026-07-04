@@ -33,8 +33,10 @@ import {
   type Promo,
   PHASE2_ORDERING,
 } from "@/lib/data";
+import { getMyThreads } from "@/lib/feedback-actions";
 import { Brandmark, NAV, type TabId } from "./dashboard/shared";
 import { StudioProvider, useStudio } from "./dashboard/StudioProvider";
+import { FeedbackDrawer } from "./dashboard/FeedbackDrawer";
 import { EditDrawer } from "./dashboard/EditDrawer";
 import { DayHome } from "./dashboard/DayHome";
 import { Backroom } from "./dashboard/Backroom";
@@ -193,6 +195,8 @@ function ShellInner() {
   const [backTab, setBackTab] = useState<TabId | null>(null);
   const [navOpen, setNavOpen] = useState(false); // mobile nav drawer (classic)
   const [previewOpen, setPreviewOpen] = useState(false); // narrow-screen live-preview drawer
+  const [feedbackOpen, setFeedbackOpen] = useState(false); // in-app Messages drawer (café ↔ Mesa)
+  const [feedbackUnread, setFeedbackUnread] = useState(0);
 
   // The café's day phase drives the shell's ambient surface (app-day.css) and
   // which Today cards lead. The override chip lets owners peek at any mode.
@@ -208,6 +212,17 @@ function ShellInner() {
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = prev; };
   }, [navOpen]);
+
+  // Seed the "Messages" unread badge on load (db mode only — the /demo sandbox
+  // has no session, so the feedback server actions would 401/redirect).
+  useEffect(() => {
+    if (!dbSave) return;
+    let active = true;
+    getMyThreads()
+      .then((rows) => { if (active) setFeedbackUnread(rows.filter((t) => t.unread).length); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [dbSave]);
 
   const soldOut = items.filter((i) => i.soldOut).length;
   const tabMeta: Record<TabId, { t: string; s: string }> = {
@@ -287,6 +302,23 @@ function ShellInner() {
           );
         });
 
+  // Feedback entry — real owners get the in-app Messages drawer (with an unread
+  // badge); the /demo sandbox (no session) keeps the plain mailto link.
+  const feedbackEntry = (onPick: () => void, extra: React.CSSProperties) => {
+    const base: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 9, padding: "11px 14px", borderRadius: "var(--radius-md)", color: "var(--text-body)", fontSize: 14, fontWeight: 600, fontFamily: "var(--font-sans)", textDecoration: "none", ...extra };
+    if (!dbSave) {
+      return <a href={feedbackMailto} style={base}><MessageSquare size={18} /> Send feedback</a>;
+    }
+    return (
+      <button onClick={() => { onPick(); setFeedbackOpen(true); }} style={{ ...base, background: "transparent", border: 0, cursor: "pointer", width: "100%", textAlign: "left" }}>
+        <MessageSquare size={18} /> Messages
+        {feedbackUnread > 0 && (
+          <span style={{ marginLeft: "auto", minWidth: 20, height: 20, padding: "0 6px", borderRadius: 999, display: "grid", placeItems: "center", fontSize: 12, fontWeight: 700, background: "var(--brand)", color: "var(--brand-on)" }}>{feedbackUnread}</span>
+        )}
+      </button>
+    );
+  };
+
   return (
     <div className="mesa-dayroot" data-phase={classicHome ? undefined : phase} style={{ display: "flex", minHeight: "100dvh", ...(brandVars(brand) as React.CSSProperties) }}>
       {/* Sidebar (desktop) */}
@@ -298,9 +330,7 @@ function ShellInner() {
         <nav style={{ display: "flex", flexDirection: "column", gap: 3 }}>
           {navItems(() => {})}
         </nav>
-        <a href={feedbackMailto} style={{ marginTop: "auto", display: "inline-flex", alignItems: "center", gap: 9, padding: "11px 14px", borderRadius: "var(--radius-md)", color: "var(--text-body)", fontSize: 14, fontWeight: 600, fontFamily: "var(--font-sans)", textDecoration: "none" }}>
-          <MessageSquare size={18} /> Send feedback
-        </a>
+        {feedbackEntry(() => {}, { marginTop: "auto" })}
         <div style={{ paddingTop: 14, borderTop: "1px solid var(--border-soft)", display: "flex", alignItems: "center", gap: 11 }}>
           {brand.logo
             // eslint-disable-next-line @next/next/no-img-element
@@ -326,9 +356,7 @@ function ShellInner() {
             <nav style={{ display: "flex", flexDirection: "column", gap: 3, overflowY: "auto" }}>
               {navItems(() => setNavOpen(false))}
             </nav>
-            <a href={feedbackMailto} style={{ marginTop: "auto", display: "inline-flex", alignItems: "center", gap: 9, padding: "11px 14px", borderRadius: "var(--radius-md)", color: "var(--text-body)", fontSize: 14, fontWeight: 600, fontFamily: "var(--font-sans)", textDecoration: "none" }}>
-              <MessageSquare size={18} /> Send feedback
-            </a>
+            {feedbackEntry(() => setNavOpen(false), { marginTop: "auto" })}
             <div style={{ paddingTop: 14, borderTop: "1px solid var(--border-soft)", fontSize: 12, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 7 }}>
               {PLANS.find((p) => p.id === planId)?.name} plan <BetaBadge />
             </div>
@@ -404,7 +432,7 @@ function ShellInner() {
             )}
             {place === "menu" && <MenuPlace onGo={(p, t) => { setPlace(p); setBackTab(t); }} />}
             {place === "backroom" && (
-              <Backroom tab={backTab} setTab={setBackTab} allowed={allowedTabs} renderTab={renderTab} />
+              <Backroom tab={backTab} setTab={setBackTab} allowed={allowedTabs} renderTab={renderTab} onFeedback={dbSave ? () => setFeedbackOpen(true) : undefined} />
             )}
           </>
         )}
@@ -412,6 +440,11 @@ function ShellInner() {
 
       {/* Live guest-menu preview — right column on wide screens, drawer on narrow */}
       <PreviewPane open={previewOpen} onClose={() => setPreviewOpen(false)} cafe={cafe} items={items} categories={categories} theme={theme} brand={brand} />
+
+      {/* In-app Messages drawer — the café side of the café ↔ Mesa conversation */}
+      {dbSave && feedbackOpen && (
+        <FeedbackDrawer onClose={() => setFeedbackOpen(false)} onUnreadChange={setFeedbackUnread} />
+      )}
 
       {/* Mobile bottom tab bar — fast access to the daily-use screens */}
       <nav className="mesa-dash-bottombar" style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 8, background: "var(--surface-card)", borderTop: "1px solid var(--border-soft)", paddingBottom: "env(safe-area-inset-bottom)", boxShadow: "0 -2px 16px rgba(31,20,14,0.06)" }}>
