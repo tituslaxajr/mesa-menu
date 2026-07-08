@@ -153,7 +153,7 @@ function Receipt() {
             ))}
           </ul>
           <Link
-            href={`/signup?plan=${p.id}`}
+            href="/request-access"
             className={`mesa-land-r-cta ${p.popular ? "mesa-land-r-cta--primary" : ""}`}
           >
             Start free
@@ -278,7 +278,7 @@ export function DayStory() {
           <a href="#pricing" className="mesa-land-navlink">Pricing</a>
           <Link href="/demo" className="mesa-land-navlink">Demo</Link>
           <Link href="/login" className="mesa-land-navlink">Log in</Link>
-          <Link href="/signup" className="mesa-land-chrome-cta">
+          <Link href="/request-access" className="mesa-land-chrome-cta">
             Start free
           </Link>
         </nav>
@@ -307,7 +307,7 @@ export function DayStory() {
             </Reveal>
             <Reveal delay={3}>
               <div className="mesa-land-ctas">
-                <Button as="a" href="/signup" variant="primary" size="lg">
+                <Button as="a" href="/request-access" variant="primary" size="lg">
                   Start free
                 </Button>
                 <Link href="/demo" className="mesa-land-btn-ghost">
@@ -686,7 +686,7 @@ export function DayStory() {
             </Reveal>
             <Reveal delay={3}>
               <div className="mesa-land-ctas">
-                <Button as="a" href="/signup" variant="primary" size="lg">
+                <Button as="a" href="/request-access" variant="primary" size="lg">
                   Start free
                 </Button>
                 <Link href="/demo" className="mesa-land-btn-ghost">

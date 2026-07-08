@@ -34,6 +34,16 @@ const label: React.CSSProperties = {
   marginBottom: 6,
   fontFamily: "var(--font-sans)",
 };
+const linkBtn: React.CSSProperties = {
+  border: 0,
+  background: "none",
+  color: "var(--brand)",
+  fontWeight: 600,
+  cursor: "pointer",
+  fontSize: 12.5,
+  padding: 0,
+  fontFamily: "var(--font-sans)",
+};
 
 const slugify = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
@@ -182,7 +192,7 @@ export function OnboardingForm() {
               <p style={{ fontSize: 12.5, color: "var(--text-muted)", fontFamily: "var(--font-sans)", margin: 0 }}>
                 Your menu will live at <span style={{ color: "var(--brand-active)", fontWeight: 600 }}>/m/{effectiveSlug || "your-cafe"}</span>
                 {!editLink && (
-                  <> · <button type="button" onClick={() => setEditLink(true)} style={{ border: 0, background: "none", color: "var(--brand)", fontWeight: 600, cursor: "pointer", fontSize: 12.5, padding: 0, fontFamily: "var(--font-sans)" }}>change link</button></>
+                  <> · <button type="button" onClick={() => setEditLink(true)} style={linkBtn}>change link</button></>
                 )}
               </p>
             </>
@@ -259,11 +269,33 @@ export function OnboardingForm() {
                 ))}
               </div>
               <p style={{ fontSize: 12.5, color: "var(--text-muted)", margin: 0, fontFamily: "var(--font-sans)" }}>
-                Missing something? Add anything later — with photos, sizes and add-ons. Or{" "}
-                <button type="button" onClick={() => { setStart("sample"); setPicked(new Map()); }} style={{ border: 0, background: "none", color: "var(--brand)", fontWeight: 600, cursor: "pointer", fontSize: 12.5, padding: 0, fontFamily: "var(--font-sans)" }}>
-                  load the full sample menu
-                </button>
-                {start === "sample" && <> — <span style={{ color: "var(--sage-600)", fontWeight: 600 }}>sample menu selected</span> (<button type="button" onClick={() => setStart("picker")} style={{ border: 0, background: "none", color: "var(--brand)", fontWeight: 600, cursor: "pointer", fontSize: 12.5, padding: 0, fontFamily: "var(--font-sans)" }}>pick my own</button>)</>}
+                Don&rsquo;t worry about getting this exactly right — anything you pick (name, price, photos) can be edited or removed later.
+              </p>
+              <p style={{ fontSize: 12.5, color: "var(--text-muted)", margin: 0, fontFamily: "var(--font-sans)" }}>
+                {start === "picker" && (
+                  <>
+                    Menu not ready?{" "}
+                    <button type="button" onClick={() => { setStart("sample"); setPicked(new Map()); }} style={linkBtn}>
+                      load the full sample menu
+                    </button>
+                    {" "}or{" "}
+                    <button type="button" onClick={() => { setStart("blank"); setPicked(new Map()); }} style={linkBtn}>
+                      skip for now
+                    </button>
+                  </>
+                )}
+                {start === "sample" && (
+                  <>
+                    <span style={{ color: "var(--sage-600)", fontWeight: 600 }}>Sample menu selected</span> —{" "}
+                    <button type="button" onClick={() => setStart("picker")} style={linkBtn}>pick my own</button>
+                  </>
+                )}
+                {start === "blank" && (
+                  <>
+                    <span style={{ color: "var(--sage-600)", fontWeight: 600 }}>Menu skipped</span> — add items anytime from the dashboard.{" "}
+                    <button type="button" onClick={() => setStart("picker")} style={linkBtn}>pick my own instead</button>
+                  </>
+                )}
               </p>
             </>
           )}

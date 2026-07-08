@@ -45,6 +45,23 @@ Two independent axes — don't conflate them:
   insert into public.platform_admins (user_id)
   values ('<your-auth-user-id>');  -- Authentication → Users → copy the UUID
   ```
+  Example — bootstrapping the first platform admin end-to-end (see
+  `20260708000013_beta_gate.sql`, which seeds an approved `beta_requests` row so this
+  email can pass the beta gate below):
+  1. Run the migrations (includes the pre-approved seed row for
+     `tituslaxajr@cortanatechsolutions.com`).
+  2. Sign up at `/signup` with that email — the beta gate lets it through.
+  3. Run in the SQL editor:
+     ```sql
+     insert into public.platform_admins (user_id)
+     select id from auth.users where email = 'tituslaxajr@cortanatechsolutions.com';
+     ```
+- **Beta access gate** (`20260708000013_beta_gate.sql`) — while in closed beta, nobody can
+  sign up unprompted. A café applies via the public `/request-access` form, which inserts a
+  `beta_requests` row (no `auth.users` row yet). A platform admin approves/rejects it from
+  `/admin/requests`. Only an approved, unused request lets that email complete a real signup —
+  enforced by a `BEFORE INSERT ON auth.users` trigger, not just app code, so it can't be
+  bypassed by calling Supabase Auth directly.
 - **Café team** (`cafe_members.role`): `owner` (billing, team, create/delete locations) ›
   `manager` (menu, branding, categories, promos) › `staff` (work the live orders board).
   `cafe_members.cafe_id` is `null` for account-wide members (owners) or set to scope a

@@ -59,12 +59,23 @@ export default async function AdminPage() {
     .select("needs_reply");
   const needsReply = (fbRows ?? []).filter((f) => (f as { needs_reply: boolean }).needs_reply).length;
 
+  // How many beta requests are still awaiting review (drives the requests link badge).
+  const { data: reqRows } = await supabase
+    .from("beta_requests")
+    .select("status")
+    .eq("status", "pending");
+  const pendingRequests = (reqRows ?? []).length;
+
   return (
     <main style={{ minHeight: "100dvh", background: "var(--surface-page)", padding: "32px 24px", fontFamily: "var(--font-sans)" }}>
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: 18 }}>
           <h1 style={{ fontFamily: "var(--font-display)", fontSize: 28, color: "var(--text-strong)" }}>Beta overview</h1>
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <Link href="/admin/requests" style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 14, color: "var(--brand)", fontWeight: 600 }}>
+              Beta requests
+              {pendingRequests > 0 && <span style={{ minWidth: 20, height: 20, padding: "0 6px", borderRadius: 999, display: "grid", placeItems: "center", fontSize: 12, fontWeight: 700, background: "var(--brand)", color: "var(--brand-on)" }}>{pendingRequests}</span>}
+            </Link>
             <Link href="/admin/feedback" style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 14, color: "var(--brand)", fontWeight: 600 }}>
               Feedback inbox
               {needsReply > 0 && <span style={{ minWidth: 20, height: 20, padding: "0 6px", borderRadius: 999, display: "grid", placeItems: "center", fontSize: 12, fontWeight: 700, background: "var(--brand)", color: "var(--brand-on)" }}>{needsReply}</span>}

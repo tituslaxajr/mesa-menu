@@ -128,6 +128,11 @@ export function AuthForm({ mode, notice, presetPlan }: { mode: Mode; notice?: st
             <Link href="/login" style={{ color: "var(--brand)", fontWeight: 600 }}>Back to log in</Link>
           )}
         </p>
+        {mode === "signup" && (
+          <p style={{ fontSize: 13.5, color: "var(--text-muted)", textAlign: "center", margin: "6px 0 0", fontFamily: "var(--font-sans)" }}>
+            Haven&apos;t requested access? <Link href="/request-access" style={{ color: "var(--brand)", fontWeight: 600 }}>Request beta access</Link>
+          </p>
+        )}
       </div>
     </main>
   );

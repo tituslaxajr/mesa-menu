@@ -25,7 +25,7 @@ export async function login(_prev: AuthState | undefined, formData: FormData): P
 }
 
 export async function signup(_prev: AuthState | undefined, formData: FormData): Promise<AuthState> {
-  const email = String(formData.get("email") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
   const cafeName = String(formData.get("cafe_name") ?? "").trim();
   const planRaw = String(formData.get("plan") ?? "");
@@ -34,6 +34,14 @@ export async function signup(_prev: AuthState | undefined, formData: FormData): 
   if (password.length < 8) return { error: "Password must be at least 8 characters." };
 
   const supabase = await createClient();
+
+  // UX-only pre-check — the real enforcement is the DB trigger on auth.users
+  // (migration 0013), which blocks the insert outright for unapproved emails.
+  const { data: approved } = await supabase.rpc("is_beta_approved", { p_email: email });
+  if (!approved) {
+    return { error: "This email hasn't been approved for the Mesa beta yet. Request access first." };
+  }
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
