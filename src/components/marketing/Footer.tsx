@@ -32,7 +32,15 @@ export function Footer() {
           </nav>
         </div>
         <span style={{ fontSize: 13.5, color: "var(--text-subtle)" }}>
-          Mesa is in beta · Made with care for small cafés in the Philippines · © 2026
+          Mesa is in beta · Made with care for small cafés in the Philippines · © 2026 · powered by{" "}
+          <a
+            href="https://cortanatechsolutions.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "var(--text-muted)", textDecoration: "underline" }}
+          >
+            CortanaTech Solutions, Inc.
+          </a>
         </span>
       </div>
     </footer>
