@@ -85,7 +85,7 @@ export function DemoExperience({
             <RotateCcw size={14} /> Reset demo
           </button>
           <Link
-            href="/signup"
+            href="/request-access"
             style={{
               display: "inline-flex",
               alignItems: "center",

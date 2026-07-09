@@ -20,7 +20,7 @@ export function Footer() {
             <a href="#pricing" style={{ fontSize: 13.5, color: "var(--text-muted)" }}>
               Pricing
             </a>
-            <Link href="/signup" style={{ fontSize: 13.5, color: "var(--text-muted)" }}>
+            <Link href="/request-access" style={{ fontSize: 13.5, color: "var(--text-muted)" }}>
               Start free
             </Link>
             <Link href="/terms" style={{ fontSize: 13.5, color: "var(--text-muted)" }}>
