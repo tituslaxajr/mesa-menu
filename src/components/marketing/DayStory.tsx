@@ -285,51 +285,68 @@ export function DayStory() {
       </header>
 
       <main>
-        {/* ═══ 5:48 AM · the dark café ═══ */}
+        {/* ═══ 5:48 AM · the dark café — the hero, and chapter one ═══
+            Product-forward: copy + CTAs on the left, and on the right the
+            dawn table scene — the QR tent card WITH the live guest menu
+            already glowing on a phone. The product is visible before the
+            first scroll; the scroll cue announces the day-story structure. */}
         <section className="mesa-land-chapter" data-chapter data-phase="night" data-time="5:48 AM" data-label="Before opening">
-          <div className="mesa-land-inner mesa-land-center">
-            <Reveal>
-              <p className="mesa-land-stamp">QR MENUS FOR FILIPINO CAFÉS · BETA</p>
-            </Reveal>
-            <Reveal delay={1}>
-              <h1>
-                Change your menu in one tap.
-                <br />
-                The reprints <span className="mesa-land-em">stop today.</span>
-              </h1>
-            </Reveal>
-            <Reveal delay={2}>
-              <p className="mesa-land-lede">
-                Guests scan a QR at the table and see your live menu. Sold out, price change, a new
-                merienda promo — you update once with <strong>Mesa</strong>, and every table sees it
-                before the coffee gets cold.
-              </p>
-            </Reveal>
-            <Reveal delay={3}>
-              <div className="mesa-land-ctas">
-                <Button as="a" href="/request-access" variant="primary" size="lg">
-                  Start free
-                </Button>
-                <Link href="/demo" className="mesa-land-btn-ghost">
-                  See the live demo →
-                </Link>
-              </div>
-              <p className="mesa-land-fineprint" style={{ marginTop: 18 }}>
-                Free while in beta · no card · your own QR in minutes
-              </p>
-              <div className="mesa-land-tablescene">
-                <div className="mesa-land-ring" aria-hidden="true" />
-                <Link className="mesa-land-tent" href="/m/demo">
-                  <p className="mesa-land-tent-cafe" style={{ fontFamily: "var(--font-display)" }}>
-                    {DEMO_CAFE.name}
+          <div className="mesa-land-inner mesa-land-inner--wide">
+            <div className="mesa-land-hero">
+              <div className="mesa-land-hero-copy">
+                <Reveal>
+                  <p className="mesa-land-stamp">QR MENUS FOR FILIPINO CAFÉS · BETA</p>
+                </Reveal>
+                <Reveal delay={1}>
+                  <h1>
+                    Change your menu in one tap.
+                    <br />
+                    The reprints <span className="mesa-land-em">stop today.</span>
+                  </h1>
+                </Reveal>
+                <Reveal delay={2}>
+                  <p className="mesa-land-lede">
+                    Guests scan a QR at the table and see your live menu. Sold out, price change, a
+                    new merienda promo — you update once with <strong>Mesa</strong>, and every table
+                    sees it before the coffee gets cold.
                   </p>
-                  <p className="mesa-land-tent-hint">Scan for our menu</p>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={QR_SRC} alt={`QR code that opens the live demo menu for ${DEMO_CAFE.name}`} width={132} height={132} />
-                  <p className="mesa-land-tent-brand">powered by mesa</p>
-                </Link>
+                </Reveal>
+                <Reveal delay={3}>
+                  <div className="mesa-land-ctas">
+                    <Button as="a" href="/request-access" variant="primary" size="lg">
+                      Start free
+                    </Button>
+                    <Link href="/demo" className="mesa-land-btn-ghost">
+                      See the live demo →
+                    </Link>
+                  </div>
+                  <p className="mesa-land-fineprint" style={{ marginTop: 18 }}>
+                    Free while in beta · no card · your own QR in minutes
+                  </p>
+                </Reveal>
               </div>
-              <p className="mesa-land-scrollcue">See it as one day at your café</p>
+              <Reveal delay={2} className="mesa-land-hero-scene">
+                <div className="mesa-land-ring" aria-hidden="true" />
+                <Phone sub="Table 4 · opens at 7" label="The menu guests scan — live, not a PDF">
+                  <PhoneItem m={item("flat-white")} />
+                  <PhoneItem m={item("iced-spanish")} />
+                  <PhoneItem m={item("butter-croissant")} />
+                </Phone>
+                <div className="mesa-land-hero-tent">
+                  <Link className="mesa-land-tent" href="/m/demo">
+                    <p className="mesa-land-tent-cafe" style={{ fontFamily: "var(--font-display)" }}>
+                      {DEMO_CAFE.name}
+                    </p>
+                    <p className="mesa-land-tent-hint">Scan for our menu</p>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={QR_SRC} alt={`QR code that opens the live demo menu for ${DEMO_CAFE.name}`} width={132} height={132} />
+                    <p className="mesa-land-tent-brand">powered by mesa</p>
+                  </Link>
+                </div>
+              </Reveal>
+            </div>
+            <Reveal delay={3}>
+              <p className="mesa-land-scrollcue">Scroll through one day at your café — 5:48 AM to close</p>
             </Reveal>
           </div>
         </section>
@@ -671,11 +688,11 @@ export function DayStory() {
               <p className="mesa-land-stamp">TOMORROW · 5:48 AM</p>
             </Reveal>
             <Reveal delay={1}>
-              <h1 style={{ fontSize: "clamp(34px, 5.4vw, 60px)" }}>
+              <h2 style={{ fontSize: "clamp(34px, 5.4vw, 60px)" }}>
                 Same dark café.
                 <br />
                 But the menu is already <span className="mesa-land-em">perfect.</span>
-              </h1>
+              </h2>
             </Reveal>
             <Reveal delay={2}>
               <p className="mesa-land-lede">

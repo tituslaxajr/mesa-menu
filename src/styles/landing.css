@@ -46,7 +46,27 @@
   padding: 18px 26px;
   pointer-events: none;
 }
-.mesa-land-chrome > * { pointer-events: auto; }
+/* Scrim behind the transparent chrome so scrolling content (e.g. a section
+   stamp) never collides with the wordmark/CTA. Fades from the current phase
+   background to clear, so it reads as a soft veil, not a hard bar. Tracks
+   --land-bg, so it recolours with the day. */
+.mesa-land-chrome::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    var(--land-bg) 0%,
+    color-mix(in oklab, var(--land-bg) 82%, transparent) 55%,
+    transparent 100%
+  );
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+  pointer-events: none;
+}
+.mesa-land-chrome > * { pointer-events: auto; position: relative; }
 .mesa-land-wordmark {
   font-family: var(--font-display);
   font-size: 24px;
@@ -754,6 +774,52 @@
   align-items: center;
 }
 .mesa-land-btn-ghost:hover { border-color: var(--land-accent); color: var(--land-accent); }
+
+/* ---------- product-forward hero (chapter one is still the hero) ----------
+   Copy + CTAs left; the dawn table scene right — the guest phone showing the
+   live menu with the QR tent card leaning against it. Above the fold, the
+   visitor sees the product, not just the promise. */
+.mesa-land-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: 56px;
+  align-items: center;
+  text-align: left;
+}
+.mesa-land-hero-copy .mesa-land-ctas { justify-content: flex-start; }
+.mesa-land-hero-copy .mesa-land-fineprint { text-align: left; }
+.mesa-land-hero-scene {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding-bottom: 30px;
+}
+.mesa-land-hero-scene .mesa-land-phone { width: 264px; }
+.mesa-land-hero-scene .mesa-land-screen { min-height: 400px; }
+.mesa-land-hero-scene .mesa-land-ring { top: -18px; left: auto; right: 2px; }
+.mesa-land-hero-tent {
+  position: absolute;
+  bottom: 16px;
+  left: max(0px, calc(50% - 244px));
+  transform: rotate(-5deg) scale(0.72);
+  transform-origin: bottom left;
+  z-index: 2;
+  filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.35));
+}
+.mesa-land-hero ~ .mesa-land-reveal .mesa-land-scrollcue { margin-top: 44px; }
+
+@media (max-width: 860px) {
+  .mesa-land-hero { grid-template-columns: 1fr; gap: 44px; text-align: center; }
+  .mesa-land-hero-copy .mesa-land-ctas { justify-content: center; }
+  .mesa-land-hero-copy .mesa-land-fineprint { text-align: center; }
+  .mesa-land-hero-scene { padding-bottom: 44px; }
+  .mesa-land-hero-tent {
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-72%) rotate(-4deg) scale(0.62);
+    transform-origin: bottom center;
+  }
+}
 
 /* ---------- responsive ---------- */
 @media (max-width: 780px) {
