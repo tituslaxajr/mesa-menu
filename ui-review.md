@@ -24,7 +24,7 @@ _Living document for the UI polish loop. Re-render and re-score; never mark a sc
 ### Screens (derived from `src/app` routing)
 | Route | File | Purpose | Primary viewport |
 |-------|------|---------|------------------|
-| `/` | `src/app/page.tsx` | Marketing landing (Nav, Hero, CustomerApp, OwnerDashboard, Customization, HowItWorks, Pricing, Footer) | desktop + mobile |
+| `/` | `src/app/page.tsx` | Marketing landing — day-story scrollytell (`DayStory` + `Footer`) | desktop + mobile |
 | `/m/[slug]` | `src/app/m/[slug]/page.tsx` → `MenuBrowser` | **Customer menu** — the QR-scan target. THE primary mobile screen. Themed (5 themes via `menu-themes.tsx`). | mobile-first |
 | `/dashboard` | `src/app/dashboard/page.tsx` → `DashboardShell` | Owner Studio — Home, Orders, Menu, Appearance, QR, Analytics, Settings. Mobile = bottom nav + drawer; desktop = sidebar. | mobile + desktop |
 
@@ -116,17 +116,15 @@ All 5 themes rendered via `?theme=`. Each is internally cohesive; no High intra-
 | T7b | warm | Item-sheet price weight 400 vs list prices weight 500 | OPEN | Low | Minor type-weight drift in detail view; size diff (22 vs 16) is intentional hierarchy. Align weight next pass. |
 | T7c | ALL | Cart drawer, sold-out, empty/search-no-results states | _needs visual_ | — | Measurable controls OK; visual review blocked by screenshot outage. |
 
-### Landing `/` — mobile (375), measured iteration 4 (no screenshot — tool down)
+### Landing `/` — DayStory polish (2026-07-10)
+Full polish pass: motion-safe reveals, static demo QR, trust strip, distilled 9:02 deep-link, mobile Pricing nav, landing footer bridge, Day Close sample framing, SEO title aligned to hero, dead marketing components removed.
 | # | Item | Verdict | Sev | Note |
 |---|------|---------|-----|------|
 | L1 | Primary/secondary/pricing CTAs | PASS | — | All 54px (`mesa-btn--lg`) — strong touch targets. |
-| L2 | Hero h1 sizing | PASS | — | `clamp(40px,6vw,68px)` fluid display — intentional, brackets the type scale. |
-| L3 | Nav at mobile | PASS | Low | Section links hidden ≤560px (by design); logo + CTA remain. |
-| L4 | Section spacing rhythm, hierarchy, image balance, Pricing card layout | _needs visual_ | — | Cannot assess without screenshots; deferred. |
-| L5 | Desktop (1280) layout | _not yet rendered_ | — | Pending. |
-
-### Landing `/` — _not yet rendered_
-Pending (mobile + desktop): Nav, Hero, section rhythm, Pricing, Footer.
+| L2 | Hero h1 sizing | PASS | — | Fluid display clamp. |
+| L3 | Nav at mobile | PASS | — | Pricing + Start free remain ≤620px; Demo/Log in fold. |
+| L4 | Reveals / reduced-motion | PASS | — | Content visible by default; motion only under `no-preference`. |
+| L5 | Section rhythm / desktop visual | _needs visual_ | — | Screenshot session still recommended. |
 
 ---
 

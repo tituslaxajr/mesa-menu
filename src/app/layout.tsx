@@ -83,22 +83,23 @@ const BRAND_FONTS = [
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Mesa — A better menu for every table",
+    default: "Mesa — Change your menu in one tap",
     template: "%s · Mesa",
   },
   description:
-    "Mesa gives small cafés a warm, always-fresh QR-code menu guests browse from their table. One QR code, live updates, set up the same afternoon. Made for cafés in San Fernando, Pampanga and beyond.",
+    "QR menus for Filipino cafés. Update sold-out items, prices, and promos once — every table sees it live. Free while in beta. Made for cafés in San Fernando, Pampanga and beyond.",
   keywords: [
     "QR menu",
     "café menu",
     "digital menu Philippines",
     "San Fernando Pampanga café",
     "online menu",
+    "live menu",
   ],
   openGraph: {
-    title: "Mesa — A better menu for every table",
+    title: "Mesa — Change your menu in one tap",
     description:
-      "A warm, always-fresh QR-code menu your guests browse from their table — just a scan away.",
+      "Live QR menus for small cafés. The reprints stop today. Free while in beta.",
     type: "website",
     locale: "en_PH",
   },

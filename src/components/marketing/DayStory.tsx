@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Button, Switch } from "@/components/ds";
 import { PLANS, MENU, DEMO_CAFE, annualPerMonth, annualTotal, type MenuItem } from "@/lib/data";
-import { menuUrl } from "@/lib/site";
 
 /* ════════════════════════════════════════════════════════════════════
    Landing page — "One day at your café."
@@ -18,9 +17,8 @@ type Phase = "night" | "morning" | "noon" | "merienda" | "dusk";
 
 const item = (id: string): MenuItem => MENU.find((m) => m.id === id) ?? MENU[0];
 
-const QR_SRC = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(
-  menuUrl("demo"),
-)}&size=264x264&color=2A1D16&bgcolor=FFFDF7&margin=8`;
+/** Static asset so the tent QR works offline and without a third-party host. */
+const QR_SRC = "/demo-menu-qr.png";
 
 /* ── tiny building blocks ─────────────────────────────────────────── */
 
@@ -130,8 +128,14 @@ function Receipt() {
       <h3>MESA</h3>
       <p className="mesa-land-r-meta">*** {annual ? "annual" : "monthly"} plans · cancel anytime ***</p>
       <div className="mesa-land-r-toggle">
-        <span>Pay annually — 2 months free</span>
-        <Switch checked={annual} onChange={setAnnual} tone="brand" label="" id="landing-billing" />
+        <span id="landing-billing-label">Pay annually — 2 months free</span>
+        <Switch
+          checked={annual}
+          onChange={setAnnual}
+          tone="brand"
+          label="Pay annually — 2 months free"
+          id="landing-billing"
+        />
       </div>
       <hr className="mesa-land-r-sep" />
       {PLANS.map((p) => (
@@ -274,10 +278,10 @@ export function DayStory() {
           </Link>
           <span className="mesa-land-beta">Beta</span>
         </div>
-        <nav className="mesa-land-nav">
+        <nav className="mesa-land-nav" aria-label="Landing">
           <a href="#pricing" className="mesa-land-navlink">Pricing</a>
-          <Link href="/demo" className="mesa-land-navlink">Demo</Link>
-          <Link href="/login" className="mesa-land-navlink">Log in</Link>
+          <Link href="/demo" className="mesa-land-navlink mesa-land-navlink--secondary">Demo</Link>
+          <Link href="/login" className="mesa-land-navlink mesa-land-navlink--secondary">Log in</Link>
           <Link href="/request-access" className="mesa-land-chrome-cta">
             Start free
           </Link>
@@ -320,9 +324,11 @@ export function DayStory() {
                       See the live demo →
                     </Link>
                   </div>
-                  <p className="mesa-land-fineprint" style={{ marginTop: 18 }}>
-                    Free while in beta · no card · your own QR in minutes
-                  </p>
+                  <ul className="mesa-land-trust" aria-label="Why try Mesa now">
+                    <li>Free while in beta · no card</li>
+                    <li>Your own QR in minutes</li>
+                    <li>Built for small cafés in San Fernando, Pampanga</li>
+                  </ul>
                 </Reveal>
               </div>
               <Reveal delay={2} className="mesa-land-hero-scene">
@@ -436,7 +442,9 @@ export function DayStory() {
           </div>
         </section>
 
-        {/* ═══ 9:02 AM · first scan ═══ */}
+        {/* ═══ 9:02 AM · first scan — QR tent + phone portal to live menu ═══
+            Device language matches 12:05/3:40, but this beat owns the guest path:
+            physical QR + tappable phone (not a passive second mock, not a text card). */}
         <section className="mesa-land-chapter" data-chapter data-phase="noon" data-time="9:02 AM" data-label="First scan">
           <div className="mesa-land-inner mesa-land-inner--wide mesa-land-center">
             <Reveal>
@@ -451,17 +459,36 @@ export function DayStory() {
             </Reveal>
             <Reveal delay={2}>
               <p className="mesa-land-lede">
-                No app to install. No PDF to download. A menu that loads in under a second, looks
-                exactly like your café, and always tells the truth.
+                No app to install. No PDF to download. Tap the phone — same live menu guests get
+                after they scan. Loads fast, looks like your café, always tells the truth.
               </p>
             </Reveal>
             <Reveal delay={3}>
-              <div className="mesa-land-duo">
-                <Phone sub="Table 4 · open till 10 PM" chips label="The guest's phone — a live menu, not a PDF">
+              <div className="mesa-land-duo mesa-land-scan-duo">
+                <div className="mesa-land-duo-col">
+                  <Link className="mesa-land-tent mesa-land-scan-tent" href="/m/demo">
+                    <p className="mesa-land-tent-cafe" style={{ fontFamily: "var(--font-display)" }}>
+                      {DEMO_CAFE.name}
+                    </p>
+                    <p className="mesa-land-tent-hint">Scan for our menu</p>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={QR_SRC}
+                      alt={`QR code that opens the live demo menu for ${DEMO_CAFE.name}`}
+                      width={132}
+                      height={132}
+                    />
+                    <p className="mesa-land-tent-brand">powered by mesa</p>
+                  </Link>
+                  <p className="mesa-land-devicetag">Table 4 · the QR they scan</p>
+                </div>
+                <Phone sub="Table 4 · open till 10 PM" chips label="Tap to open the real guest menu">
+                  <Link href="/m/demo" className="mesa-land-p-livecta">
+                    View live menu →
+                  </Link>
                   <PhoneItem m={flatWhite} />
                   <PhoneItem m={icedSpanish} />
                   <PhoneItem m={croissant} />
-                  <PhoneItem m={pulledPork} />
                 </Phone>
               </div>
             </Reveal>
@@ -622,13 +649,16 @@ export function DayStory() {
               <p className="mesa-land-lede">
                 Guests build their order on their phone and show it at the counter — your staff
                 keys it into your own POS like always. And when you close, Mesa hands you a{" "}
-                <strong>Day Close</strong> recap: the day&apos;s story, ready to post. (Real
-                earnings appear once you let Mesa record confirmed sales.)
+                <strong>Day Close</strong> recap: the shape of the day, ready to post. Numbers
+                below are a sample of what that screen looks like — your real totals appear once
+                Mesa records confirmed sales.
               </p>
             </Reveal>
             <Reveal delay={3}>
               <div className="mesa-land-daycard">
-                <p className="mesa-land-s-sub" style={{ marginBottom: 14 }}>🌙 Day Close · {DEMO_CAFE.name}</p>
+                <p className="mesa-land-s-sub" style={{ marginBottom: 14 }}>
+                  🌙 Day Close · sample · {DEMO_CAFE.name}
+                </p>
                 <div className="mesa-land-stats">
                   <div>
                     <div className="mesa-land-stat-n">

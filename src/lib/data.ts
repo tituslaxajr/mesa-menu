@@ -243,7 +243,7 @@ export function resolveOrderMode(cafe: Cafe, planAllowsOrders: boolean): OrderMo
 
 // ---- Demo café + menu (marketing landing graphics only) --------------------
 // The live demo café/menu come from the database (see supabase/migrations); the
-// constants below are used only by the marketing PhoneMock / DashboardMock.
+// constants below support demo café marketing surfaces (DayStory, etc.).
 
 export const DEMO_CAFE: Cafe = {
   slug: "demo",
