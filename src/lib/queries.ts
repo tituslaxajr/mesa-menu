@@ -138,7 +138,7 @@ function toBrand(r: any | null): BrandKit {
 }
 
 function toPromo(r: any): Promo {
-  return {
+  const promo: Promo = {
     id: r.id,
     title: r.title,
     desc: r.descr,
@@ -146,6 +146,33 @@ function toPromo(r: any): Promo {
     active: r.active,
     tone: r.tone,
   };
+  // Discount/schedule columns land with migration 0014; selects use `*`, so a
+  // pre-migration DB simply reads these as undefined → banner-only promo.
+  if (r.discount_type && r.discount_type !== "none" && r.discount_value > 0) {
+    promo.discount = {
+      type: r.discount_type,
+      value: r.discount_value,
+      appliesTo: r.applies_to ?? "all",
+      targetCategories: r.target_categories ?? [],
+      targetItems: r.target_items ?? [],
+    };
+  }
+  const hasSchedule =
+    (r.days_of_week?.length ?? 0) > 0 ||
+    typeof r.start_min === "number" ||
+    typeof r.end_min === "number" ||
+    r.start_date != null ||
+    r.end_date != null;
+  if (hasSchedule) {
+    promo.schedule = {
+      daysOfWeek: r.days_of_week?.length ? r.days_of_week : undefined,
+      startMin: r.start_min ?? undefined,
+      endMin: r.end_min ?? undefined,
+      startDate: r.start_date ?? undefined,
+      endDate: r.end_date ?? undefined,
+    };
+  }
+  return promo;
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
 

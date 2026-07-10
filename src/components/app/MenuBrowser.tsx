@@ -9,7 +9,8 @@ import { placeOrder, useMyOrders, type Order } from "@/lib/orders-store";
 import { submitCounterOrder } from "@/lib/order-actions";
 import { hoursForCafe, minToLabel, MERIENDA_END } from "@/lib/day-phase";
 import { usePhase } from "@/lib/use-phase";
-import { ThemeLayout, themeVars, HAS_TAB_BAR, TabBar } from "./menu-themes";
+import { applyPromosToMenu } from "@/lib/promo-pricing";
+import { ThemeLayout, themeVars, HAS_TAB_BAR, TabBar, Price } from "./menu-themes";
 
 const peso = (n: number) => `₱${n}`;
 
@@ -91,9 +92,26 @@ interface Props {
  * All content (menu, café profile, categories, theme, brand kit, promos) comes
  * from the server, which reads the database — server data is authoritative.
  */
-export function MenuBrowser({ cafe, menu, categories, brand, promos, ordering, plan, theme, themeOverridden }: Props) {
+export function MenuBrowser({ cafe, menu: menuRaw, categories, brand, promos, ordering, plan, theme, themeOverridden }: Props) {
   const [dismissedPromos, setDismissedPromos] = useState<string[]>([]);
   const caps = capsFor(plan);
+
+  // Live promo discounts: rewrite item prices through the shared engine and
+  // re-evaluate every minute, so a scheduled promo (e.g. 2–5 PM) appears and
+  // reverts on an already-open menu without a reload. SSR-safe the same way
+  // as usePhase: pre-mount falls back to the render-time clock for one frame.
+  const [nowMs, setNowMs] = useState(0);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- seed real time on mount (intentional SSR-safe pattern, same as usePhase)
+    setNowMs(Date.now());
+    const t = setInterval(() => setNowMs(Date.now()), 60000);
+    return () => clearInterval(t);
+  }, []);
+  const menu = useMemo(
+    // eslint-disable-next-line react-hooks/purity -- pre-mount fallback only; settles on the real clock one frame after mount
+    () => applyPromosToMenu(menuRaw, promos, new Date(nowMs || Date.now())),
+    [menuRaw, promos, nowMs],
+  );
 
   const [cat, setCat] = useState("All");
   const [q, setQ] = useState("");
@@ -642,8 +660,15 @@ function ItemSheet({
       <div style={{ padding: "18px 20px 20px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
           <h2 id={titleId} style={{ fontFamily: "var(--font-display)", fontSize: "clamp(21px, 6vw, 26px)", fontWeight: 500, color: "var(--text-strong)", minWidth: 0, overflowWrap: "anywhere" }}>{item.name}</h2>
-          <span style={{ fontFamily: "var(--font-display)", fontSize: 22, color: "var(--text-strong)", whiteSpace: "nowrap", flex: "none" }}>{peso(item.price)}</span>
+          <Price m={item} style={{ fontFamily: "var(--font-display)", fontSize: 22, color: "var(--text-strong)", whiteSpace: "nowrap", flex: "none" }} />
         </div>
+        {item.promoTitle && (
+          <div style={{ marginTop: 8 }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 600, color: "var(--honey-700)", background: "var(--highlight-soft)", padding: "4px 10px", borderRadius: 999 }}>
+              <Tag size={13} /> {item.promoTitle}
+            </span>
+          </div>
+        )}
         {totalForItem > 0 && (
           <div style={{ marginTop: 8 }}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 600, color: "var(--brand)", background: "var(--brand-soft)", padding: "4px 10px", borderRadius: 999 }}>
@@ -707,6 +732,8 @@ function OrderSheet({
   onPlace: (note: string) => void;
 }) {
   const [note, setNote] = useState("");
+  // Promo savings across the cart (discounts apply to base prices; options ride on top).
+  const savings = lines.reduce((s, l) => s + (l.origPrice != null ? (l.origPrice - l.price) * l.qty : 0), 0);
   return (
     <Sheet onClose={onClose} labelledBy="order-sheet-title">
       <div style={{ padding: "20px 20px 24px" }}>
@@ -732,6 +759,9 @@ function OrderSheet({
                   <div style={{ fontSize: 12, color: "var(--text-subtle)", marginTop: 1, lineHeight: 1.35, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{l.optionLabels.join(" · ")}</div>
                 )}
                 <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 1 }}>
+                  {l.origPrice != null && (
+                    <s style={{ opacity: 0.6, marginRight: 6 }}>{peso(l.unitPrice + (l.origPrice - l.price))}</s>
+                  )}
                   {peso(l.unitPrice)} × {l.qty}
                 </div>
               </div>
@@ -749,6 +779,12 @@ function OrderSheet({
             <Input label="Note (optional)" value={note} onChange={(e) => setNote(e.target.value.slice(0, 120))} placeholder="No sugar, extra hot…" />
           </div>
         </div>
+        {savings > 0 && (
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 14, fontSize: 13.5 }}>
+            <span style={{ fontWeight: 600, color: "var(--honey-700)" }}>Promo savings</span>
+            <span style={{ fontWeight: 600, color: "var(--honey-700)" }}>−{peso(savings)}</span>
+          </div>
+        )}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "16px 0 18px" }}>
           <span style={{ fontWeight: 600, color: "var(--text-strong)", fontSize: 16 }}>Total</span>
           <span style={{ fontFamily: "var(--font-display)", fontSize: "clamp(20px, 5.5vw, 24px)", color: "var(--text-strong)" }}>{peso(total)}</span>

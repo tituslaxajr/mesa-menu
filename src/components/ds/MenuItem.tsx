@@ -6,6 +6,8 @@ export interface MenuItemProps
   name: string;
   description?: string;
   price?: number | string;
+  /** Pre-discount price (a live promo rewrote `price`) — struck-through. */
+  origPrice?: number;
   image?: string;
   layout?: "row" | "card";
   soldOut?: boolean;
@@ -48,10 +50,24 @@ function priceText(price?: number | string): string {
   return typeof price === "number" ? `₱${price}` : String(price);
 }
 
+function PriceTag({ price, origPrice }: { price?: number | string; origPrice?: number }) {
+  return (
+    <span className="mesa-mi__price">
+      {origPrice != null && (
+        <s style={{ fontSize: "0.85em", opacity: 0.55, marginRight: 6, textDecorationThickness: "1.5px" }}>
+          {priceText(origPrice)}
+        </s>
+      )}
+      {priceText(price)}
+    </span>
+  );
+}
+
 export function MenuItem({
   name,
   description,
   price,
+  origPrice,
   image,
   layout = "row",
   soldOut = false,
@@ -86,7 +102,7 @@ export function MenuItem({
         <div className="mesa-mi__body">
           <div className="mesa-mi__top">
             <span className="mesa-mi__name">{name}</span>
-            <span className="mesa-mi__price">{priceText(price)}</span>
+            <PriceTag price={price} origPrice={origPrice} />
           </div>
           {description && <p className="mesa-mi__desc">{description}</p>}
           {footer}
@@ -102,7 +118,7 @@ export function MenuItem({
       <div className="mesa-mi__body">
         <div className="mesa-mi__top">
           <span className="mesa-mi__name">{name}</span>
-          <span className="mesa-mi__price">{priceText(price)}</span>
+          <PriceTag price={price} origPrice={origPrice} />
         </div>
         {description && <p className="mesa-mi__desc">{description}</p>}
         {footer}

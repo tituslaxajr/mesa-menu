@@ -23,6 +23,22 @@ import { usePhase } from "@/lib/use-phase";
 
 const peso = (n: number) => `₱${n}`;
 
+/**
+ * Item price, promo-aware: when a live promo rewrote `price`, the original
+ * rides in `origPrice` and renders struck-through beside the deal price.
+ * Font styles come from the caller (via `style` or inheritance) so each
+ * theme keeps its own look.
+ */
+export function Price({ m, style }: { m: { price: number; origPrice?: number }; style?: React.CSSProperties }) {
+  if (m.origPrice == null) return <span style={style}>{peso(m.price)}</span>;
+  return (
+    <span style={{ ...style, display: "inline-flex", alignItems: "baseline", gap: 6 }}>
+      <s style={{ fontSize: "0.82em", opacity: 0.55, textDecorationThickness: "1.5px" }}>{peso(m.origPrice)}</s>
+      {peso(m.price)}
+    </span>
+  );
+}
+
 // A QR diner menu has no real "Home/Promos/About" destinations, so the decorative
 // bottom tab bar is disabled (TabBar kept for reference, gated by this list).
 export const HAS_TAB_BAR: ThemeKey[] = [];
@@ -320,7 +336,7 @@ function SoftRow({ m, onOpen, badgeVariant = "highlight" }: { m: MenuItemType; o
         </div>
         <div style={{ fontSize: 12.5, color: "var(--text-muted)", marginTop: 3, lineHeight: 1.4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{m.desc}</div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>
-          <span style={{ fontFamily: "var(--font-display)", fontSize: 15, color: "var(--brand)" }}>{peso(m.price)}</span>
+          <Price m={m} style={{ fontFamily: "var(--font-display)", fontSize: 15, color: "var(--brand)" }} />
           <DietChips tags={m.tags} marginTop={0} />
         </div>
       </div>
@@ -382,7 +398,7 @@ function LayoutWarm({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat, o
                   </div>
                   <div style={{ padding: "11px 13px 13px" }}>
                     <div style={{ fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 500, color: "var(--text-strong)", lineHeight: 1.15 }}>{m.name}</div>
-                    <div style={{ fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 500, color: "var(--text-strong)", marginTop: 5 }}>{peso(m.price)}</div>
+                    <div style={{ fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 500, color: "var(--text-strong)", marginTop: 5 }}><Price m={m} /></div>
                   </div>
                 </button>
               ))}
@@ -393,7 +409,7 @@ function LayoutWarm({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat, o
           <Sections
             groups={groups}
             renderRow={(m) => (
-              <MenuItem key={m.id} name={m.name} price={m.price} image={m.img} description={m.desc} badge={m.badge} soldOut={m.soldOut} footer={<DietChips tags={m.tags} />} onClick={() => onOpen(m)} />
+              <MenuItem key={m.id} name={m.name} price={m.price} origPrice={m.origPrice} image={m.img} description={m.desc} badge={m.badge} soldOut={m.soldOut} footer={<DietChips tags={m.tags} />} onClick={() => onOpen(m)} />
             )}
           />
           {!whiteLabel && <TrustFooter />}
@@ -443,7 +459,7 @@ function LayoutMinimal({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontFamily: "var(--font-display)", fontSize: 17, color: "var(--text-strong)" }}>{m.name}</div>
                     <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 3, lineHeight: 1.4 }}>{m.desc}</div>
-                    <div style={{ fontFamily: "var(--font-display)", fontSize: 15, color: "var(--text-strong)", marginTop: 6 }}>{peso(m.price)}</div>
+                    <div style={{ fontFamily: "var(--font-display)", fontSize: 15, color: "var(--text-strong)", marginTop: 6 }}><Price m={m} /></div>
                   </div>
                 </button>
               ))}
@@ -463,7 +479,7 @@ function LayoutMinimal({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat
                 </div>
                 <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4, lineHeight: 1.45 }}>{m.desc}</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 7 }}>
-                  <span style={{ fontFamily: "var(--font-display)", fontSize: 15, color: "var(--text-strong)" }}>{peso(m.price)}</span>
+                  <Price m={m} style={{ fontFamily: "var(--font-display)", fontSize: 15, color: "var(--text-strong)" }} />
                   <DietChips tags={m.tags} marginTop={0} />
                 </div>
               </div>
@@ -544,7 +560,7 @@ function LayoutBold({ cafe, logo, whiteLabel, groups, cats, cat, setCat, onOpen,
                         <div style={{ fontSize: 13, opacity: 0.92, marginTop: 4, lineHeight: 1.4, textShadow: "0 1px 10px rgba(0,0,0,0.55)" }}>{m.desc}</div>
                         <DietChips tags={m.tags} light />
                       </div>
-                      <span style={{ fontFamily: "var(--font-display)", fontSize: 19, whiteSpace: "nowrap", background: "var(--brand)", color: "var(--brand-on)", padding: "5px 13px", borderRadius: 999 }}>{peso(m.price)}</span>
+                      <Price m={m} style={{ fontFamily: "var(--font-display)", fontSize: 19, whiteSpace: "nowrap", background: "var(--brand)", color: "var(--brand-on)", padding: "5px 13px", borderRadius: 999 }} />
                     </div>
                   </div>
                 </button>
@@ -604,7 +620,7 @@ function LayoutSoft({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat, o
                   {special.badge && <Badge variant="available" size="sm">{special.badge}</Badge>}
                 </div>
                 <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4, lineHeight: 1.4 }}>{special.desc}</div>
-                <div style={{ fontFamily: "var(--font-display)", fontSize: 16, color: "var(--sage-700)", marginTop: 7 }}>{peso(special.price)}</div>
+                <div style={{ fontFamily: "var(--font-display)", fontSize: 16, color: "var(--sage-700)", marginTop: 7 }}><Price m={special} /></div>
               </div>
             </button>
           </section>
@@ -661,7 +677,7 @@ function LayoutPlayful({ cafe, logo, whiteLabel, menu, groups, cats, cat, setCat
                   <div style={{ padding: "10px 12px 12px" }}>
                     <div style={{ fontFamily: "var(--font-display)", fontSize: 15, color: "var(--text-strong)", lineHeight: 1.15 }}>{m.name}</div>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 6 }}>
-                      <span style={{ fontFamily: "var(--font-display)", fontSize: 14.5, color: "var(--brand)" }}>{peso(m.price)}</span>
+                      <Price m={m} style={{ fontFamily: "var(--font-display)", fontSize: 14.5, color: "var(--brand)" }} />
                       {m.badge && <Badge variant="highlight" size="sm">{m.badge}</Badge>}
                     </div>
                   </div>

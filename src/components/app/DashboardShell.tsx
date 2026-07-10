@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Utensils,
   Plus,
@@ -23,6 +23,7 @@ import { brandVars } from "@/lib/brand";
 import { useLocalStore } from "@/lib/useLocalStore";
 import { hoursForCafe, minToLabel, type DayPhase } from "@/lib/day-phase";
 import { usePhase } from "@/lib/use-phase";
+import { applyPromosToMenu } from "@/lib/promo-pricing";
 import { LivePreview } from "./LivePreview";
 import {
   PLANS,
@@ -198,6 +199,10 @@ function ShellInner() {
   const [feedbackOpen, setFeedbackOpen] = useState(false); // in-app Messages drawer (café ↔ Mesa)
   const [feedbackUnread, setFeedbackUnread] = useState(0);
 
+  // Preview menu with live promo discounts applied (render-time evaluation is
+  // enough here — the pane re-renders on every edit).
+  const previewMenu = useMemo(() => applyPromosToMenu(items, promos), [items, promos]);
+
   // The café's day phase drives the shell's ambient surface (app-day.css) and
   // which Today cards lead. The override chip lets owners peek at any mode.
   const hours = hoursForCafe(cafe);
@@ -264,7 +269,7 @@ function ShellInner() {
       case "categories": return <CategoriesTab items={items} categories={categories} setCategories={setCategories} onDelete={deleteCategory} toast={toast} />;
       case "appearance": return <AppearanceTab theme={theme} setTheme={setTheme} brand={brand} setBrand={setBrand} cafe={cafe} setCafe={setCafe} items={items} categories={categories} caps={caps} plan={cafe.plan} uploadImage={uploadImage} />;
       case "qr": return <QRTab cafe={cafe} brand={brand} caps={caps} toast={toast} />;
-      case "promos": return <PromosTab promos={promos} setPromos={setPromos} toast={toast} />;
+      case "promos": return <PromosTab promos={promos} setPromos={setPromos} categories={categories} items={items} toast={toast} />;
       case "analytics": return <AnalyticsTab orders={orders} cafeName={cafe.name} />;
       case "subscription": return <SubscriptionTab currentId={planId} onSwitch={onSwitchPlan} />;
       case "settings": return <SettingsTab cafe={cafe} setCafe={setCafe} toast={toast} classicHome={classicHome} onClassicHome={setClassicHome} />;
@@ -438,8 +443,9 @@ function ShellInner() {
         )}
       </div>
 
-      {/* Live guest-menu preview — right column on wide screens, drawer on narrow */}
-      <PreviewPane open={previewOpen} onClose={() => setPreviewOpen(false)} cafe={cafe} items={items} categories={categories} theme={theme} brand={brand} />
+      {/* Live guest-menu preview — right column on wide screens, drawer on narrow.
+          Promo-applied menu so a live deal shows its struck-through price here too. */}
+      <PreviewPane open={previewOpen} onClose={() => setPreviewOpen(false)} cafe={cafe} items={previewMenu} categories={categories} theme={theme} brand={brand} />
 
       {/* In-app Messages drawer — the café side of the café ↔ Mesa conversation */}
       {dbSave && feedbackOpen && (

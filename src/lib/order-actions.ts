@@ -6,6 +6,8 @@
 // answer, backed by a per-café rate limit inside place_order.
 import { verifySession } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
+import { getCafeData } from "@/lib/queries";
+import { bestPromoFor } from "@/lib/promo-pricing";
 import type { Order, OrderLine } from "@/lib/orders-store";
 
 export type SubmitResult = { ok: true; code: string } | { ok: false; error: string };
@@ -28,18 +30,41 @@ export async function submitCounterOrder(
   input: { table?: string; note?: string; lines: OrderLine[] },
 ): Promise<SubmitResult> {
   const supabase = await createClient();
+
+  // Authoritative pricing: recompute every line from the café's own menu and
+  // live promos, overriding whatever the client sent. Lines are matched by
+  // item name + option labels (the payload's existing vocabulary). An item
+  // the menu no longer has passes through at the client price — the staff
+  // confirm gate eyeballs the total either way.
+  const cafeData = await getCafeData(slug);
+  const cafeMenu = cafeData?.menu ?? [];
+  const cafePromos = cafeData?.promos ?? [];
+  const now = new Date();
+  const lines = input.lines.map((l) => {
+    const options = l.options ?? [];
+    const item = cafeMenu.find((m) => m.name === l.name);
+    if (!item) return { name: l.name, price: l.price, qty: l.qty, options };
+    let delta = 0;
+    for (const g of item.options ?? [])
+      for (const c of g.choices)
+        if (options.includes(c.label) || options.includes(`+${c.label}`)) delta += c.priceDelta ?? 0;
+    const best = bestPromoFor(item, cafePromos, now);
+    return {
+      name: l.name,
+      qty: l.qty,
+      options,
+      price: (best ? best.price : item.price) + delta,
+      ...(best ? { orig_price: item.price + delta, promo: best.promo.title } : {}),
+    };
+  });
+
   const { data, error } = await supabase.rpc("place_order", {
     p_slug: slug,
     p_table: input.table ?? "",
     p_note: input.note ?? "",
     p_channel: "counter",
     p_guest_token: crypto.randomUUID(),
-    p_lines: input.lines.map((l) => ({
-      name: l.name,
-      price: l.price,
-      qty: l.qty,
-      options: l.options ?? [],
-    })),
+    p_lines: lines,
   });
   if (error) return { ok: false, error: error.message };
   const code = (data as { code?: string } | null)?.code;

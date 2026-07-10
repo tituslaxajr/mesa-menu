@@ -83,7 +83,10 @@ export function LivePreview({ cafe, menu, categories, theme: theme0, brand: bran
             <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "baseline" }}>
                 <h3 style={{ fontFamily: "var(--font-display)", fontSize: 20, margin: 0, lineHeight: 1.2 }}>{openItem.name}</h3>
-                <span style={{ fontWeight: 700, flex: "none" }}>₱{openItem.price}</span>
+                <span style={{ fontWeight: 700, flex: "none" }}>
+                  {openItem.origPrice != null && <s style={{ opacity: 0.55, marginRight: 6, fontWeight: 500 }}>₱{openItem.origPrice}</s>}
+                  ₱{openItem.price}
+                </span>
               </div>
               {openItem.desc && <p style={{ fontSize: 13.5, color: "var(--text-muted)", margin: 0, lineHeight: 1.5 }}>{openItem.desc}</p>}
               {openItem.tags && openItem.tags.length > 0 && (

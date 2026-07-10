@@ -64,26 +64,52 @@ export async function saveCafeProfile(
   return error ? { ok: false, error: error.message } : { ok: true };
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function savePromos(cafeId: string, promos: Promo[]): Promise<SaveResult> {
   await verifySession();
   const supabase = await createClient();
-  // Small set; replace wholesale (RLS scopes both ops to this café).
-  const del = await supabase.from("promos").delete().eq("cafe_id", cafeId);
-  if (del.error) return { ok: false, error: del.error.message };
-  if (promos.length) {
-    const { error } = await supabase.from("promos").insert(
-      promos.map((p, i) => ({
-        cafe_id: cafeId,
-        title: p.title,
-        descr: p.desc,
-        period: p.period,
-        active: p.active,
-        tone: p.tone,
-        position: i,
-      })),
-    );
+  // Upsert by id so promo ids stay stable across saves — discounts snapshot
+  // promo titles onto orders, and stable ids keep edits from churning rows.
+  // Legacy client ids ("promo-<ts>") aren't uuids; give them one here.
+  const rows = promos.map((p, i) => ({
+    id: UUID_RE.test(p.id) ? p.id : crypto.randomUUID(),
+    cafe_id: cafeId,
+    title: p.title,
+    descr: p.desc,
+    period: p.period,
+    active: p.active,
+    tone: p.tone,
+    position: i,
+    discount_type: p.discount?.type ?? "none",
+    discount_value: p.discount?.value ?? 0,
+    applies_to: p.discount?.appliesTo ?? "all",
+    target_categories: p.discount?.targetCategories ?? [],
+    target_items: p.discount?.targetItems ?? [],
+    days_of_week: p.schedule?.daysOfWeek ?? null,
+    start_min: p.schedule?.startMin ?? null,
+    end_min: p.schedule?.endMin ?? null,
+    start_date: p.schedule?.startDate ?? null,
+    end_date: p.schedule?.endDate ?? null,
+  }));
+  if (rows.length) {
+    let { error } = await supabase.from("promos").upsert(rows, { onConflict: "id" });
+    // Pre-0014 DBs miss the discount/schedule columns — retry with the legacy
+    // shape so banner edits keep saving (same pattern as saveCafeProfile).
+    if (error && /discount_type|applies_to|days_of_week/.test(error.message)) {
+      const legacy = rows.map(({ id, cafe_id, title, descr, period, active, tone, position }) =>
+        ({ id, cafe_id, title, descr, period, active, tone, position }));
+      ({ error } = await supabase.from("promos").upsert(legacy, { onConflict: "id" }));
+    }
     if (error) return { ok: false, error: error.message };
   }
+  // Drop promos the owner deleted (RLS scopes this to their café).
+  const del = rows.length
+    ? await supabase.from("promos").delete().eq("cafe_id", cafeId)
+        .not("id", "in", `(${rows.map((r) => r.id).join(",")})`)
+    : await supabase.from("promos").delete().eq("cafe_id", cafeId);
+  if (del.error) return { ok: false, error: del.error.message };
+  revalidatePath(`/m/[slug]`, "page");
   return { ok: true };
 }
 

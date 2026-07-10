@@ -90,6 +90,11 @@ export interface MenuItem {
   /** Dietary / allergen / custom tags. Self-contained (label + emoji) so custom
    *  ones render everywhere without a registry. Shown on cards + the detail. */
   tags?: MenuTag[];
+  /** Pre-discount price when a live promo has rewritten `price` (see
+   *  src/lib/promo-pricing.ts). Present = show it struck-through. */
+  origPrice?: number;
+  /** Title of the promo whose discount is applied to `price`. */
+  promoTitle?: string;
 }
 
 /** A menu tag — a preset (vegetarian, etc.) or an owner's custom one (e.g. Keto). */
@@ -339,6 +344,31 @@ export const THEMES: MenuTheme[] = [
 
 // ---- Owner Studio content --------------------------------------------------
 
+/** What a promo takes off and which items it covers. Targeting keys on NAMES
+ *  (categories/items are wiped & reinserted on every menu save, so names are
+ *  the app's only stable key — same convention as order_lines/sales). */
+export interface PromoDiscount {
+  type: "none" | "percent" | "fixed";
+  /** Percent 1–100, or whole ₱ off. */
+  value: number;
+  appliesTo: "all" | "categories" | "items";
+  targetCategories: string[];
+  targetItems: string[];
+}
+
+/** When a promo auto-activates, in Manila wall-clock. Every axis is optional;
+ *  unset axes don't constrain. The manual `active` switch always gates. */
+export interface PromoSchedule {
+  /** 0=Sun .. 6=Sat. Empty/undefined = every day. */
+  daysOfWeek?: number[];
+  /** Daily window [startMin, endMin) in minutes since midnight. */
+  startMin?: number;
+  endMin?: number;
+  /** Inclusive "YYYY-MM-DD" bounds. */
+  startDate?: string;
+  endDate?: string;
+}
+
 export interface Promo {
   id: string;
   title: string;
@@ -346,6 +376,10 @@ export interface Promo {
   period: string;
   active: boolean;
   tone: "highlight" | "brand" | "neutral";
+  /** Absent or type "none" = banner-only promo (the original behavior). */
+  discount?: PromoDiscount;
+  /** Absent = no schedule; `active` alone decides. */
+  schedule?: PromoSchedule;
 }
 
 // ---- Brand kit -------------------------------------------------------------
