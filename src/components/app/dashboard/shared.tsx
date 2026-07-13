@@ -110,6 +110,23 @@ export const NAV: { id: TabId; label: string; icon: LucideIcon }[] = [
   { id: "settings", label: "Settings", icon: SettingsIcon },
 ];
 
+// The nav tabs grouped into labelled sections for the sidebar — easier to scan
+// than a flat list of ten. Order/membership is independent of NAV (which stays
+// flat for allowedTabs). Empty groups (all items filtered out) are hidden.
+export const NAV_GROUPS: { label: string; items: TabId[] }[] = [
+  { label: "Overview", items: ["home", "orders"] },
+  { label: "Menu", items: ["menu", "categories", "promos"] },
+  { label: "Storefront", items: ["appearance", "qr"] },
+  { label: "Business", items: ["analytics", "subscription"] },
+  { label: "Account", items: ["settings"] },
+];
+
+/** id → { label, icon } lookup so grouped nav can render by tab id. */
+export const NAV_BY_ID = Object.fromEntries(NAV.map((n) => [n.id, n])) as Record<
+  TabId,
+  (typeof NAV)[number]
+>;
+
 export const CAT_ICON_COMP: Record<string, LucideIcon> = {
   coffee: Coffee,
   "cup-soda": CupSoda,
