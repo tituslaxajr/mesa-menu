@@ -15,14 +15,13 @@ import {
   Boxes,
   AlertTriangle,
   RefreshCw,
+  LogOut,
   type LucideIcon,
 } from "lucide-react";
 import { Avatar, Button, IconButton } from "@/components/ds";
 import { feedbackMailto } from "@/lib/site";
 import { brandVars } from "@/lib/brand";
-import { useLocalStore } from "@/lib/useLocalStore";
-import { hoursForCafe, minToLabel, type DayPhase } from "@/lib/day-phase";
-import { usePhase } from "@/lib/use-phase";
+import { logout } from "@/lib/auth-actions";
 import { applyPromosToMenu } from "@/lib/promo-pricing";
 import { LivePreview } from "./LivePreview";
 import {
@@ -32,16 +31,12 @@ import {
   type ThemeKey,
   type BrandKit,
   type Promo,
-  PHASE2_ORDERING,
 } from "@/lib/data";
 import { getMyThreads } from "@/lib/feedback-actions";
-import { Brandmark, NAV, type TabId } from "./dashboard/shared";
+import { Brandmark, NAV_GROUPS, NAV_BY_ID, type TabId } from "./dashboard/shared";
 import { StudioProvider, useStudio } from "./dashboard/StudioProvider";
 import { FeedbackDrawer } from "./dashboard/FeedbackDrawer";
 import { EditDrawer } from "./dashboard/EditDrawer";
-import { DayHome } from "./dashboard/DayHome";
-import { Backroom } from "./dashboard/Backroom";
-import { MenuPlace } from "./dashboard/MenuCanvas";
 import { HomeTab } from "./dashboard/tabs/HomeTab";
 import { OrdersTab } from "./dashboard/tabs/OrdersTab";
 import { MenuTab } from "./dashboard/tabs/MenuTab";
@@ -137,14 +132,6 @@ export function DashboardShell(props: Props) {
   );
 }
 
-/** The three Araw places. Today is time-aware; Menu and Backroom are not. */
-type Place = "today" | "menu" | "backroom";
-const PLACES: { id: Place; label: string; icon: LucideIcon }[] = [
-  { id: "today", label: "Today", icon: Sun },
-  { id: "menu", label: "Menu", icon: Utensils },
-  { id: "backroom", label: "Backroom", icon: Boxes },
-];
-
 function ShellInner() {
   const {
     slug,
@@ -188,13 +175,8 @@ function ShellInner() {
     customTags,
   } = useStudio();
 
-  // Araw is the default experience; "classic" restores the old 10-tab layout
-  // wholesale (Settings → "Use classic dashboard").
-  const [classicHome, setClassicHome] = useLocalStore<boolean>("mesa.flags.classicHome", false);
-  const [tab, setTab] = useState<TabId>("home"); // classic mode
-  const [place, setPlace] = useState<Place>("today"); // araw mode
-  const [backTab, setBackTab] = useState<TabId | null>(null);
-  const [navOpen, setNavOpen] = useState(false); // mobile nav drawer (classic)
+  const [tab, setTab] = useState<TabId>("home");
+  const [navOpen, setNavOpen] = useState(false); // mobile nav drawer
   const [previewOpen, setPreviewOpen] = useState(false); // narrow-screen live-preview drawer
   const [feedbackOpen, setFeedbackOpen] = useState(false); // in-app Messages drawer (café ↔ Mesa)
   const [feedbackUnread, setFeedbackUnread] = useState(0);
@@ -202,13 +184,6 @@ function ShellInner() {
   // Preview menu with live promo discounts applied (render-time evaluation is
   // enough here — the pane re-renders on every edit).
   const previewMenu = useMemo(() => applyPromosToMenu(items, promos), [items, promos]);
-
-  // The café's day phase drives the shell's ambient surface (app-day.css) and
-  // which Today cards lead. The override chip lets owners peek at any mode.
-  const hours = hoursForCafe(cafe);
-  const autoPhase = usePhase(hours);
-  const [override, setOverride] = useLocalStore<DayPhase | "auto">(`mesa.phase.${slug}.override`, "auto");
-  const phase = override === "auto" ? autoPhase : override;
 
   // Lock background scroll while the mobile nav drawer is open.
   useEffect(() => {
@@ -242,25 +217,9 @@ function ShellInner() {
     subscription: { t: "Plan", s: "Your Mesa plan and billing." },
     settings: { t: "Café settings", s: "Your café profile and menu display." },
   };
-  const dayMeta: Record<DayPhase, { t: string; s: string }> = {
-    prep: { t: "Magandang umaga.", s: `Doors open at ${minToLabel(hours.openMin).toLowerCase()} — set the day before the first scan.` },
-    service: { t: "Mid-service.", s: "One tap keeps the menu honest — no reprints, no “wala na po”." },
-    merienda: { t: "Merienda lull.", s: "Quiet hour. A good time to flick a promo on." },
-    closing: { t: "Closing up.", s: "Mesa counts the day with you." },
-    closed: { t: "Sarado na.", s: `The books are closed. See you before ${minToLabel(hours.openMin).toLowerCase()}.` },
-  };
-  const meta = classicHome
-    ? tabMeta[tab]
-    : place === "today"
-      ? dayMeta[phase]
-      : place === "menu"
-        ? tabMeta.menu
-        : backTab
-          ? tabMeta[backTab]
-          : { t: "Backroom", s: "Reports, printing, look, plan — the weekly things." };
+  const meta = tabMeta[tab];
 
-  // One renderer for every legacy tab — used by classic mode directly and by
-  // the Backroom (and Menu place) in araw mode.
+  // One renderer for every tab in the dashboard.
   const renderTab = (t: TabId): React.ReactNode => {
     switch (t) {
       case "home": return <HomeTab items={items} cafe={cafe} theme={theme} brand={brand} orders={orders} setTab={setTab} />;
@@ -272,40 +231,38 @@ function ShellInner() {
       case "promos": return <PromosTab promos={promos} setPromos={setPromos} categories={categories} items={items} toast={toast} />;
       case "analytics": return <AnalyticsTab orders={orders} cafeName={cafe.name} />;
       case "subscription": return <SubscriptionTab currentId={planId} onSwitch={onSwitchPlan} />;
-      case "settings": return <SettingsTab cafe={cafe} setCafe={setCafe} toast={toast} classicHome={classicHome} onClassicHome={setClassicHome} />;
+      case "settings": return <SettingsTab cafe={cafe} setCafe={setCafe} toast={toast} />;
     }
   };
 
-  const ordersSurfaceOn = classicHome ? tab === "orders" : backTab === "orders" && place === "backroom";
-  const menuSurfaceOn = classicHome ? tab === "menu" : place === "menu";
+  const ordersSurfaceOn = tab === "orders";
+  const menuSurfaceOn = tab === "menu";
 
-  // Shared nav items — classic renders the legacy tab list, araw the 3 places.
+  // Sidebar / drawer nav — the classic tabs grouped into labelled sections and
+  // filtered to the plan's allowed tabs. Groups with nothing visible are hidden.
   const navItems = (onPick: () => void) =>
-    classicHome
-      ? NAV.filter((n) => allowedTabs.includes(n.id)).map((n) => {
-          const on = tab === n.id;
-          const badge = n.id === "orders" && newOrders > 0 ? newOrders : 0;
-          return (
-            <button key={n.id} onClick={() => { setTab(n.id); onPick(); }} style={{ display: "flex", alignItems: "center", gap: 11, minHeight: 44, padding: "11px 14px", borderRadius: "var(--radius-md)", border: 0, cursor: "pointer", fontFamily: "var(--font-sans)", fontSize: 14.5, fontWeight: 600, textAlign: "left", background: on ? "var(--brand)" : "transparent", color: on ? "var(--brand-on)" : "var(--text-body)" }}>
-              <n.icon size={18} /> {n.label}
-              {badge > 0 && (
-                <span style={{ marginLeft: "auto", minWidth: 20, height: 20, padding: "0 6px", borderRadius: 999, display: "grid", placeItems: "center", fontSize: 12, fontWeight: 700, background: on ? "var(--brand-on)" : "var(--brand)", color: on ? "var(--brand)" : "var(--brand-on)" }}>{badge}</span>
-              )}
-            </button>
-          );
-        })
-      : PLACES.map((p) => {
-          const on = place === p.id;
-          const badge = p.id === "today" && PHASE2_ORDERING && newOrders > 0 ? newOrders : 0;
-          return (
-            <button key={p.id} onClick={() => { setPlace(p.id); if (p.id !== "backroom") setBackTab(null); onPick(); }} style={{ display: "flex", alignItems: "center", gap: 11, minHeight: 44, padding: "11px 14px", borderRadius: "var(--radius-md)", border: 0, cursor: "pointer", fontFamily: "var(--font-sans)", fontSize: 14.5, fontWeight: 600, textAlign: "left", background: on ? "var(--brand)" : "transparent", color: on ? "var(--brand-on)" : "var(--text-body)" }}>
-              <p.icon size={18} /> {p.label}
-              {badge > 0 && (
-                <span style={{ marginLeft: "auto", minWidth: 20, height: 20, padding: "0 6px", borderRadius: 999, display: "grid", placeItems: "center", fontSize: 12, fontWeight: 700, background: on ? "var(--brand-on)" : "var(--brand)", color: on ? "var(--brand)" : "var(--brand-on)" }}>{badge}</span>
-              )}
-            </button>
-          );
-        });
+    NAV_GROUPS.map((group, gi) => {
+      const ids = group.items.filter((id) => allowedTabs.includes(id));
+      if (ids.length === 0) return null;
+      return (
+        <div key={group.label} style={{ display: "flex", flexDirection: "column", gap: 3, marginTop: gi === 0 ? 0 : 14 }}>
+          <div style={{ padding: "0 10px 4px", fontSize: 11, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--text-subtle)" }}>{group.label}</div>
+          {ids.map((id) => {
+            const n = NAV_BY_ID[id];
+            const on = tab === id;
+            const badge = id === "orders" && newOrders > 0 ? newOrders : 0;
+            return (
+              <button key={id} onClick={() => { setTab(id); onPick(); }} style={{ display: "flex", alignItems: "center", gap: 11, minHeight: 44, padding: "11px 14px", borderRadius: "var(--radius-md)", border: 0, cursor: "pointer", fontFamily: "var(--font-sans)", fontSize: 14.5, fontWeight: 600, textAlign: "left", background: on ? "var(--brand)" : "transparent", color: on ? "var(--brand-on)" : "var(--text-body)" }}>
+                <n.icon size={18} /> {n.label}
+                {badge > 0 && (
+                  <span style={{ marginLeft: "auto", minWidth: 20, height: 20, padding: "0 6px", borderRadius: 999, display: "grid", placeItems: "center", fontSize: 12, fontWeight: 700, background: on ? "var(--brand-on)" : "var(--brand)", color: on ? "var(--brand)" : "var(--brand-on)" }}>{badge}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      );
+    });
 
   // Feedback entry — real owners get the in-app Messages drawer (with an unread
   // badge); the /demo sandbox (no session) keeps the plain mailto link.
@@ -324,8 +281,21 @@ function ShellInner() {
     );
   };
 
+  // Log out — real owner sessions only (the /demo sandbox has no session, so the
+  // sign-out server action would have nothing to clear).
+  const logoutEntry = (extra: React.CSSProperties) => {
+    if (!dbSave) return null;
+    return (
+      <form action={logout} style={{ display: "block", ...extra }}>
+        <button type="submit" style={{ display: "inline-flex", alignItems: "center", gap: 9, padding: "11px 14px", borderRadius: "var(--radius-md)", color: "var(--text-body)", fontSize: 14, fontWeight: 600, fontFamily: "var(--font-sans)", background: "transparent", border: 0, cursor: "pointer", width: "100%", textAlign: "left" }}>
+          <LogOut size={18} /> Log out
+        </button>
+      </form>
+    );
+  };
+
   return (
-    <div className="mesa-dayroot" data-phase={classicHome ? undefined : phase} style={{ display: "flex", minHeight: "100dvh", ...(brandVars(brand) as React.CSSProperties) }}>
+    <div className="mesa-dayroot" style={{ display: "flex", minHeight: "100dvh", ...(brandVars(brand) as React.CSSProperties) }}>
       {/* Sidebar (desktop) */}
       <aside className="mesa-dash-sidebar" style={{ width: 236, flex: "none", background: "var(--surface-card)", borderRight: "1px solid var(--border-soft)", display: "flex", flexDirection: "column", padding: "20px 14px", position: "sticky", top: 0, height: "100dvh" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "4px 8px 20px" }}>
@@ -336,6 +306,7 @@ function ShellInner() {
           {navItems(() => {})}
         </nav>
         {feedbackEntry(() => {}, { marginTop: "auto" })}
+        {logoutEntry({})}
         <div style={{ paddingTop: 14, borderTop: "1px solid var(--border-soft)", display: "flex", alignItems: "center", gap: 11 }}>
           {brand.logo
             // eslint-disable-next-line @next/next/no-img-element
@@ -362,6 +333,7 @@ function ShellInner() {
               {navItems(() => setNavOpen(false))}
             </nav>
             {feedbackEntry(() => setNavOpen(false), { marginTop: "auto" })}
+            {logoutEntry({})}
             <div style={{ paddingTop: 14, borderTop: "1px solid var(--border-soft)", fontSize: 12, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 7 }}>
               {PLANS.find((p) => p.id === planId)?.name} plan <BetaBadge />
             </div>
@@ -423,24 +395,7 @@ function ShellInner() {
           </div>
         )}
 
-        {classicHome ? (
-          renderTab(tab)
-        ) : (
-          <>
-            {place === "today" && (
-              <DayHome
-                phase={phase}
-                override={override}
-                setOverride={setOverride}
-                onGo={(p, t) => { setPlace(p); setBackTab(t ?? null); }}
-              />
-            )}
-            {place === "menu" && <MenuPlace onGo={(p, t) => { setPlace(p); setBackTab(t); }} />}
-            {place === "backroom" && (
-              <Backroom tab={backTab} setTab={setBackTab} allowed={allowedTabs} renderTab={renderTab} onFeedback={dbSave ? () => setFeedbackOpen(true) : undefined} />
-            )}
-          </>
-        )}
+        {renderTab(tab)}
       </div>
 
       {/* Live guest-menu preview — right column on wide screens, drawer on narrow.
@@ -454,37 +409,19 @@ function ShellInner() {
 
       {/* Mobile bottom tab bar — fast access to the daily-use screens */}
       <nav className="mesa-dash-bottombar" style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 8, background: "var(--surface-card)", borderTop: "1px solid var(--border-soft)", paddingBottom: "env(safe-area-inset-bottom)", boxShadow: "0 -2px 16px rgba(31,20,14,0.06)" }}>
-        {classicHome ? (
-          <>
-            {([{ id: "home", label: "Home", icon: Sun }, { id: "menu", label: "Menu", icon: Utensils }] as { id: TabId; label: string; icon: LucideIcon }[]).map((item) => {
-              const on = tab === item.id;
-              return (
-                <button key={item.id} onClick={() => setTab(item.id)} style={{ flex: 1, border: 0, background: "transparent", cursor: "pointer", padding: "8px 4px", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, color: on ? "var(--brand)" : "var(--text-muted)", fontFamily: "var(--font-sans)" }}>
-                  <item.icon size={21} />
-                  <span style={{ fontSize: 11, fontWeight: 600 }}>{item.label}</span>
-                </button>
-              );
-            })}
-            <button onClick={() => setNavOpen(true)} style={{ flex: 1, border: 0, background: "transparent", cursor: "pointer", padding: "8px 4px", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, color: !["home", "menu"].includes(tab) ? "var(--brand)" : "var(--text-muted)", fontFamily: "var(--font-sans)" }}>
-              <Boxes size={21} />
-              <span style={{ fontSize: 11, fontWeight: 600 }}>More</span>
+        {([{ id: "home", label: "Home", icon: Sun }, { id: "menu", label: "Menu", icon: Utensils }] as { id: TabId; label: string; icon: LucideIcon }[]).map((item) => {
+          const on = tab === item.id;
+          return (
+            <button key={item.id} onClick={() => setTab(item.id)} style={{ flex: 1, border: 0, background: "transparent", cursor: "pointer", padding: "8px 4px", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, color: on ? "var(--brand)" : "var(--text-muted)", fontFamily: "var(--font-sans)" }}>
+              <item.icon size={21} />
+              <span style={{ fontSize: 11, fontWeight: 600 }}>{item.label}</span>
             </button>
-          </>
-        ) : (
-          PLACES.map((p) => {
-            const on = place === p.id;
-            const showBadge = p.id === "today" && PHASE2_ORDERING && newOrders > 0;
-            return (
-              <button key={p.id} onClick={() => { setPlace(p.id); if (p.id !== "backroom") setBackTab(null); }} style={{ flex: 1, border: 0, background: "transparent", cursor: "pointer", padding: "8px 4px", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, color: on ? "var(--brand)" : "var(--text-muted)", fontFamily: "var(--font-sans)" }}>
-                <span style={{ position: "relative", display: "grid", placeItems: "center" }}>
-                  <p.icon size={21} />
-                  {showBadge && <span style={{ position: "absolute", top: -3, right: -7, minWidth: 8, height: 8, borderRadius: 999, background: "var(--brand)", border: "1.5px solid var(--surface-card)" }} />}
-                </span>
-                <span style={{ fontSize: 11, fontWeight: 600 }}>{p.label}</span>
-              </button>
-            );
-          })
-        )}
+          );
+        })}
+        <button onClick={() => setNavOpen(true)} style={{ flex: 1, border: 0, background: "transparent", cursor: "pointer", padding: "8px 4px", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, color: !["home", "menu"].includes(tab) ? "var(--brand)" : "var(--text-muted)", fontFamily: "var(--font-sans)" }}>
+          <Boxes size={21} />
+          <span style={{ fontSize: 11, fontWeight: 600 }}>More</span>
+        </button>
       </nav>
 
       {editing && <EditDrawer item={editing} cats={categories} customTags={customTags} onClose={() => setEditing(null)} onSave={save} uploadImage={uploadImage} />}

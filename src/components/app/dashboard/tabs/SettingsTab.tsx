@@ -19,7 +19,7 @@ const MODE_OPTIONS: { id: OrderMode; label: string; desc: string; comingSoon?: b
   { id: "kitchen", label: "Order to kitchen", desc: "Orders flow live to a Mesa order board with status the guest can watch — arriving in a later phase.", comingSoon: true },
 ];
 
-export function SettingsTab({ cafe, setCafe, toast, classicHome, onClassicHome }: { cafe: Cafe; setCafe: (f: (c: Cafe) => Cafe) => void; toast: (m: string) => void; classicHome?: boolean; onClassicHome?: (v: boolean) => void }) {
+export function SettingsTab({ cafe, setCafe, toast }: { cafe: Cafe; setCafe: (f: (c: Cafe) => Cafe) => void; toast: (m: string) => void }) {
   const set = <K extends keyof Cafe>(k: K, v: Cafe[K]) => setCafe((c) => ({ ...c, [k]: v }));
   // Inputs read the raw stored values (falling back to parsed/default hours)
   // so a transiently invalid pair mid-edit doesn't snap the fields back; the
@@ -56,7 +56,7 @@ export function SettingsTab({ cafe, setCafe, toast, classicHome, onClassicHome }
           <p style={{ fontSize: 12.5, color: "var(--soldout)", marginTop: 8 }}>Closing time should be after opening time.</p>
         )}
         <p style={{ fontSize: 12.5, color: "var(--text-muted)", marginTop: 10 }}>
-          Shown on your menu — and your dashboard follows this day (prep, service, merienda, closing).
+          Shown on your menu so guests know when you&rsquo;re open.
         </p>
       </Card>
       <Card variant="flat" padded style={{ marginTop: 18 }}>
@@ -111,20 +111,6 @@ export function SettingsTab({ cafe, setCafe, toast, classicHome, onClassicHome }
           </div>
         )}
       </Card>
-      {onClassicHome && (
-        <Card variant="flat" padded style={{ marginTop: 18 }}>
-          <SectionTitle>Dashboard</SectionTitle>
-          <Switch
-            checked={!!classicHome}
-            tone="brand"
-            onChange={(v) => { onClassicHome(v); toast(v ? "Classic dashboard restored" : "Welcome back to your day"); }}
-            label="Use classic dashboard"
-          />
-          <p style={{ fontSize: 12.5, color: "var(--text-muted)", marginTop: 8 }}>
-            The new dashboard follows your café&rsquo;s day (Today · Menu · Backroom). Flip this to get the old 10-tab layout back — everything exists in both.
-          </p>
-        </Card>
-      )}
       <Card variant="flat" padded style={{ marginTop: 18 }}>
         <SectionTitle>Menu display</SectionTitle>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
