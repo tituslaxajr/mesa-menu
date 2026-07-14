@@ -145,6 +145,7 @@ function BrandMark({
   background?: string;
 }) {
   if (!logo) return <>{fallback}</>;
+  const pad = background ? Math.round(size * 0.16) : 0;
   return (
     <span
       style={{
@@ -154,15 +155,19 @@ function BrandMark({
         borderRadius: radius,
         background: background ?? "transparent",
         boxShadow: background ? "var(--shadow-sm)" : undefined,
-        padding: background ? Math.round(size * 0.16) : 0,
-        display: "inline-grid",
-        placeItems: "center",
+        padding: pad,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
         overflow: "hidden",
         flex: "none",
       }}
     >
+      {/* Cap the height in absolute px (a percentage max-height doesn't resolve
+          against the flex/grid box, so tall logos overflowed and got cropped).
+          maxWidth 100% + object-fit contain keeps wide wordmarks letterboxed. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={logo} alt="" style={{ maxHeight: "100%", maxWidth: "100%", width: "auto", objectFit: "contain", display: "block" }} />
+      <img src={logo} alt="" style={{ maxHeight: size - pad * 2, maxWidth: "100%", width: "auto", height: "auto", objectFit: "contain", display: "block" }} />
     </span>
   );
 }
