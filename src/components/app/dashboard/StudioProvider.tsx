@@ -40,6 +40,8 @@ interface StudioProviderProps {
   planId: string;
   /** Owner's café uuid — required for DB persistence. */
   cafeId?: string;
+  /** Member is owner/manager (may void/refund POS sales). Staff = false. */
+  canManage?: boolean;
   /** Saved brand kit / promos from the DB (db mode); fall back to defaults. */
   initialBrand?: BrandKit;
   initialPromos?: Promo[];
@@ -80,6 +82,8 @@ export interface StudioContextValue {
   recording: boolean;
   /** Staff cashier terminal (POS) is live for this café (db mode + opt-in). */
   posEnabled: boolean;
+  /** Member is owner/manager (may void/refund POS sales). Staff = false. */
+  canManage: boolean;
   /** Owner café uuid (db mode) — needed by the POS server actions. */
   cafeId?: string;
   /** Re-pull recorded DB orders now — e.g. right after a POS sale lands. */
@@ -122,6 +126,7 @@ export function StudioProvider({
   categories: categories0,
   planId,
   cafeId,
+  canManage = false,
   initialBrand,
   initialPromos,
   persistence = "local",
@@ -421,6 +426,7 @@ export function StudioProvider({
     newOrders,
     recording,
     posEnabled: posOn,
+    canManage,
     cafeId,
     refreshDbOrders,
     pendingOrders,

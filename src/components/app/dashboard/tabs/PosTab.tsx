@@ -14,12 +14,13 @@ import { cartKey, unitPrice, choiceLabels, defaultChoiceIds } from "@/lib/cart";
 import { ticketTotals, changeDue } from "@/lib/pos-pricing";
 import { printReceipt, printXReading, printZReading } from "@/lib/pos-receipt";
 import {
-  openShift, closeShift, getOpenShift, recordSale, getShiftSales,
+  openShift, closeShift, getOpenShift, recordSale, getShiftSales, voidSale, refundSale,
   type Shift, type PosSale,
 } from "@/lib/pos-actions";
 import type { MenuItem } from "@/lib/data";
 
 const money = (n: number) => `₱${(n ?? 0).toLocaleString("en-PH")}`;
+const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
 
 type Entry = { item: MenuItem; qty: number; choiceIds: string[] };
 type Tender = "cash" | "gcash" | "card" | "other";
@@ -34,7 +35,7 @@ const TENDERS: { id: Tender; label: string }[] = [
 const needsSheet = (item: MenuItem) => (item.options ?? []).some((g) => g.required || g.multi);
 
 export function PosTab() {
-  const { items, cafe, slug, cafeId, posEnabled, toast, refreshDbOrders } = useStudio();
+  const { items, cafe, slug, cafeId, posEnabled, canManage, toast, refreshDbOrders } = useStudio();
 
   const [shift, setShift] = useState<Shift | null>(null);
   const [shiftReady, setShiftReady] = useState(false);
@@ -47,6 +48,7 @@ export function PosTab() {
   const [charging, setCharging] = useState(false);
   const [closing, setClosing] = useState(false);
   const [receipt, setReceipt] = useState<PosSale | null>(null);
+  const [adjust, setAdjust] = useState<{ sale: PosSale; kind: "void" | "refund" } | null>(null);
 
   const [rate, setRate] = useState<number>(cafe.serviceChargeRate ?? 0);
 
@@ -160,6 +162,15 @@ export function PosTab() {
     refreshDbOrders();
     getShiftSales(shift.id).then(setShiftSales).catch(() => {});
     toast(`Sale #${r.sale.code} recorded`);
+  };
+
+  const doAdjust = async (sale: PosSale, kind: "void" | "refund", reason: string) => {
+    const r = kind === "void" ? await voidSale(sale.id, reason) : await refundSale(sale.id, reason);
+    if (!r.ok) { toast(r.error); return; }
+    setAdjust(null);
+    if (shift) getShiftSales(shift.id).then(setShiftSales).catch(() => {});
+    refreshDbOrders();
+    toast(kind === "void" ? `Sale #${sale.code} voided` : `Sale #${sale.code} refunded`);
   };
 
   // Guardrails — the tab is gated in the nav, but be defensive.
@@ -289,6 +300,25 @@ export function PosTab() {
         </Card>
       </div>
 
+      {/* This shift's sales — reprint receipts, and (manager/owner) void/refund */}
+      {shiftSales.length > 0 && (
+        <Card variant="flat" padded style={{ marginTop: 18 }}>
+          <SectionTitle>This shift · {shiftSales.length} {shiftSales.length === 1 ? "sale" : "sales"}</SectionTitle>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {shiftSales.map((s) => (
+              <SaleRow
+                key={s.id}
+                sale={s}
+                canManage={canManage}
+                onPrint={() => printReceipt(cafe.name, s)}
+                onVoid={() => setAdjust({ sale: s, kind: "void" })}
+                onRefund={() => setAdjust({ sale: s, kind: "refund" })}
+              />
+            ))}
+          </div>
+        </Card>
+      )}
+
       {sheetItem && (
         <OptionSheet item={sheetItem} onClose={() => setSheetItem(null)} onAdd={(ids) => add(sheetItem, ids)} />
       )}
@@ -299,7 +329,61 @@ export function PosTab() {
         <CloseDrawerModal onClose={() => setClosing(false)} onConfirm={doCloseShift} />
       )}
       {receipt && <ReceiptModal sale={receipt} cafeName={cafe.name} onClose={() => setReceipt(null)} />}
+      {adjust && (
+        <AdjustModal sale={adjust.sale} kind={adjust.kind} onClose={() => setAdjust(null)} onConfirm={(reason) => doAdjust(adjust.sale, adjust.kind, reason)} />
+      )}
     </PageWrap>
+  );
+}
+
+const SALE_STATUS: Record<string, { label: string; fg: string; bg: string }> = {
+  completed: { label: "Done", fg: "var(--sage-600)", bg: "var(--sage-50)" },
+  cancelled: { label: "Voided", fg: "var(--text-muted)", bg: "var(--surface-muted)" },
+  refunded: { label: "Refunded", fg: "var(--soldout, #b42318)", bg: "var(--soldout-soft, #F6E4DE)" },
+};
+
+function SaleRow({ sale, canManage, onPrint, onVoid, onRefund }: { sale: PosSale; canManage: boolean; onPrint: () => void; onVoid: () => void; onRefund: () => void }) {
+  const st = SALE_STATUS[sale.status] ?? SALE_STATUS.completed;
+  const live = sale.status === "completed";
+  const count = sale.lines.reduce((s, l) => s + l.qty, 0);
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "9px 12px", borderRadius: "var(--radius-md)", background: "var(--surface-card)", border: "1px solid var(--border-soft)", opacity: live ? 1 : 0.7 }}>
+      <span style={{ fontFamily: "var(--font-display)", fontSize: 15, color: "var(--text-strong)" }}>#{sale.code}</span>
+      <span style={{ fontSize: 12.5, color: "var(--text-subtle)" }}>{count} {count === 1 ? "item" : "items"} · {sale.tenderType === "cash" ? "Cash" : cap(sale.tenderType ?? "")}</span>
+      <span style={{ padding: "2px 8px", borderRadius: 999, fontSize: 11.5, fontWeight: 700, color: st.fg, background: st.bg }}>{st.label}</span>
+      <span style={{ marginLeft: "auto", fontFamily: "var(--font-display)", fontSize: 15, color: "var(--text-strong)" }}>{money(sale.total)}</span>
+      <div style={{ display: "flex", gap: 4, flex: "none" }}>
+        <Button variant="ghost" size="sm" onClick={onPrint}><Printer size={13} /></Button>
+        {canManage && live && (
+          <>
+            <Button variant="ghost" size="sm" onClick={onVoid}>Void</Button>
+            <Button variant="ghost" size="sm" onClick={onRefund}>Refund</Button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function AdjustModal({ sale, kind, onClose, onConfirm }: { sale: PosSale; kind: "void" | "refund"; onClose: () => void; onConfirm: (reason: string) => void }) {
+  const [reason, setReason] = useState("");
+  const verb = kind === "void" ? "Void" : "Refund";
+  return (
+    <Overlay onClose={onClose}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+        <h3 style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "var(--text-strong)" }}>{verb} sale #{sale.code}</h3>
+        <button onClick={onClose} aria-label="Close" style={{ ...qtyBtn, width: 30, height: 30 }}><X size={16} /></button>
+      </div>
+      <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 14 }}>
+        {kind === "void"
+          ? `This cancels ${money(sale.total)} — use it for a ticket rung by mistake. It drops out of your sales and is logged.`
+          : `This refunds ${money(sale.total)} — return the payment to the customer. It drops out of your sales and is logged.`}
+      </p>
+      <Input label="Reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder={kind === "void" ? "e.g. wrong item rung" : "e.g. customer returned drink"} autoFocus />
+      <Button variant="danger" block style={{ marginTop: 16 }} disabled={!reason.trim()} onClick={() => onConfirm(reason.trim())}>
+        {verb} · {money(sale.total)}
+      </Button>
+    </Overlay>
   );
 }
 

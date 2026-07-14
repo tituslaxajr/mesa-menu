@@ -200,6 +200,24 @@ export async function recordSale(
   return { ok: true, sale };
 }
 
+export type AdjustResult = { ok: true } | { ok: false; error: string };
+
+/** Void a just-rung sale (mistake) → cancelled + audit row. Manager/owner only. */
+export async function voidSale(orderId: string, reason: string): Promise<AdjustResult> {
+  await verifySession();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("pos_adjust_sale", { p_order_id: orderId, p_kind: "void", p_reason: reason });
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+/** Refund a completed sale (return) → refunded + audit row. Manager/owner only. */
+export async function refundSale(orderId: string, reason: string): Promise<AdjustResult> {
+  await verifySession();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("pos_adjust_sale", { p_order_id: orderId, p_kind: "refund", p_reason: reason });
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
 /** Recorded POS sales for a shift (for the shift bar's running totals). */
 export async function getShiftSales(shiftId: string): Promise<PosSale[]> {
   await verifySession();
