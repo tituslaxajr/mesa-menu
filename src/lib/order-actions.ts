@@ -19,7 +19,9 @@ export interface PendingOrder {
   table?: string;
   total: number;
   note?: string;
-  lines: { name: string; qty: number; options?: string[] }[];
+  /** Priced lines (name + effective unit price + qty + option labels), so the
+   *  Register can load them straight into a ticket. */
+  lines: OrderLine[];
   placedAt: number;
   expiresAt: number;
 }
@@ -114,6 +116,23 @@ export async function confirmOrder(orderId: string): Promise<ConfirmResult> {
   await verifySession();
   const supabase = await createClient();
   const { error } = await supabase.rpc("confirm_order", { p_order_id: orderId });
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+/**
+ * Resolve a still-pending counter order without recording it — used when the
+ * Register loads its items into a ticket and rings it up as a POS sale instead
+ * (so the pending copy doesn't linger in the queue or get charged twice). Only
+ * touches rows still `pending`; RLS scopes it to café members.
+ */
+export async function cancelPending(orderId: string): Promise<ConfirmResult> {
+  await verifySession();
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("orders")
+    .update({ status: "cancelled" })
+    .eq("id", orderId)
+    .eq("status", "pending");
   return error ? { ok: false, error: error.message } : { ok: true };
 }
 

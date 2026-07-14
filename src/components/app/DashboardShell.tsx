@@ -158,6 +158,7 @@ function ShellInner() {
     ordersApi,
     kitchenOrders,
     newOrders,
+    pendingOrders,
     soundOn,
     toggleSound,
     caps,
@@ -255,7 +256,7 @@ function ShellInner() {
           {ids.map((id) => {
             const n = NAV_BY_ID[id];
             const on = tab === id;
-            const badge = id === "orders" && newOrders > 0 ? newOrders : 0;
+            const badge = id === "orders" ? newOrders : id === "pos" ? pendingOrders.length : 0;
             return (
               <button key={id} onClick={() => { setTab(id); onPick(); }} style={{ display: "flex", alignItems: "center", gap: 11, minHeight: 44, padding: "11px 14px", borderRadius: "var(--radius-md)", border: 0, cursor: "pointer", fontFamily: "var(--font-sans)", fontSize: 14.5, fontWeight: 600, textAlign: "left", background: on ? "var(--brand)" : "transparent", color: on ? "var(--brand-on)" : "var(--text-body)" }}>
                 <n.icon size={18} /> {n.label}
