@@ -222,7 +222,10 @@ export function StudioProvider({
     : NAV.map((n) => n.id).filter((id) => {
         if (id === "orders") return PHASE2_ORDERING;
         // POS: real owners only (needs a session), on an ordering plan, opted in.
-        if (id === "pos") return dbSave && planAllowsPos(cafe.plan) && posOn;
+        // Inline the posEnabled check — `posOn` is declared further down, and
+        // this filter runs eagerly during render, so referencing it here would
+        // be a use-before-init (TDZ) crash on the non-demo path.
+        if (id === "pos") return dbSave && planAllowsPos(cafe.plan) && !!cafe.posEnabled;
         return true;
       });
 
