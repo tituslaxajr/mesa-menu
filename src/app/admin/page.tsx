@@ -1,7 +1,16 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { verifySession } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
+import { Badge } from "@/components/ds";
+import {
+  contentWrap,
+  PageHeading,
+  StatRow,
+  StatCard,
+  tableCard,
+  cell,
+  head,
+  EmptyState,
+} from "./ui";
 
 export const metadata: Metadata = { title: "Beta overview — Mesa" };
 
@@ -22,76 +31,45 @@ interface Row {
 const fmtDate = (s: string | null) =>
   s ? new Date(s).toLocaleDateString("en-PH", { month: "short", day: "numeric" }) : "—";
 
-const cell: React.CSSProperties = { padding: "10px 12px", fontSize: 13.5, color: "var(--text-body)", borderBottom: "1px solid var(--border-soft)", whiteSpace: "nowrap" };
-const head: React.CSSProperties = { ...cell, fontWeight: 700, color: "var(--text-muted)", fontSize: 12, textTransform: "uppercase", letterSpacing: ".04em", borderBottom: "1.5px solid var(--border-default)" };
-
 export default async function AdminPage() {
-  const user = await verifySession();
+  // The gate lives in layout.tsx; this view just reads the RLS-scoped,
+  // non-PII overview (admins only — returns zero rows to everyone else).
   const supabase = await createClient();
-
-  const { data: adminRow } = await supabase
-    .from("platform_admins")
-    .select("user_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (!adminRow) {
-    return (
-      <main style={{ minHeight: "100dvh", display: "grid", placeItems: "center", background: "var(--surface-page)", padding: 20, fontFamily: "var(--font-sans)" }}>
-        <div style={{ textAlign: "center" }}>
-          <h1 style={{ fontFamily: "var(--font-display)", fontSize: 24, color: "var(--text-strong)" }}>Not authorized</h1>
-          <p style={{ color: "var(--text-muted)", marginTop: 6 }}>This page is for Mesa platform admins.</p>
-          <p style={{ marginTop: 16 }}><Link href="/dashboard" style={{ color: "var(--brand)", fontWeight: 600 }}>Go to your dashboard →</Link></p>
-        </div>
-      </main>
-    );
-  }
-
   const { data } = await supabase
     .from("admin_cafe_overview")
     .select("*")
     .order("created_at", { ascending: false });
   const rows = (data ?? []) as Row[];
 
-  // How many feedback threads are waiting on a reply (drives the inbox link badge).
-  const { data: fbRows } = await supabase
-    .from("admin_feedback_overview")
-    .select("needs_reply");
-  const needsReply = (fbRows ?? []).filter((f) => (f as { needs_reply: boolean }).needs_reply).length;
-
-  // How many beta requests are still awaiting review (drives the requests link badge).
-  const { data: reqRows } = await supabase
-    .from("beta_requests")
-    .select("status")
-    .eq("status", "pending");
-  const pendingRequests = (reqRows ?? []).length;
+  const liveCount = rows.filter((r) => r.published).length;
+  const totalOrders = rows.reduce((n, r) => n + r.orders_total, 0);
+  const openOrders = rows.reduce((n, r) => n + r.orders_open, 0);
 
   return (
-    <main style={{ minHeight: "100dvh", background: "var(--surface-page)", padding: "32px 24px", fontFamily: "var(--font-sans)" }}>
-      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: 18 }}>
-          <h1 style={{ fontFamily: "var(--font-display)", fontSize: 28, color: "var(--text-strong)" }}>Beta overview</h1>
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <Link href="/admin/requests" style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 14, color: "var(--brand)", fontWeight: 600 }}>
-              Beta requests
-              {pendingRequests > 0 && <span style={{ minWidth: 20, height: 20, padding: "0 6px", borderRadius: 999, display: "grid", placeItems: "center", fontSize: 12, fontWeight: 700, background: "var(--brand)", color: "var(--brand-on)" }}>{pendingRequests}</span>}
-            </Link>
-            <Link href="/admin/feedback" style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 14, color: "var(--brand)", fontWeight: 600 }}>
-              Feedback inbox
-              {needsReply > 0 && <span style={{ minWidth: 20, height: 20, padding: "0 6px", borderRadius: 999, display: "grid", placeItems: "center", fontSize: 12, fontWeight: 700, background: "var(--brand)", color: "var(--brand-on)" }}>{needsReply}</span>}
-            </Link>
-            <span style={{ fontSize: 14, color: "var(--text-muted)" }}>{rows.length} café{rows.length === 1 ? "" : "s"}</span>
-          </div>
-        </div>
+    <div style={contentWrap}>
+      <PageHeading
+        title="Beta overview"
+        subtitle="Every café on Mesa at a glance — no order contents, diner data, or team identities."
+      />
 
-        <div style={{ overflowX: "auto", background: "var(--surface-card)", border: "1px solid var(--border-soft)", borderRadius: "var(--radius-lg)" }}>
-          <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 760 }}>
+      <StatRow>
+        <StatCard label="Cafés" value={rows.length} />
+        <StatCard label="Live menus" value={liveCount} hint={`${rows.length - liveCount} in draft`} tone="good" />
+        <StatCard label="Orders" value={totalOrders} />
+        <StatCard label="Open orders" value={openOrders} tone="alert" />
+      </StatRow>
+
+      {rows.length === 0 ? (
+        <EmptyState icon="🍽️" title="No cafés yet" hint="Cafés appear here once an approved applicant finishes signing up." />
+      ) : (
+        <div style={tableCard}>
+          <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 780 }}>
             <thead>
               <tr>
                 <th style={{ ...head, textAlign: "left" }}>Café</th>
                 <th style={{ ...head, textAlign: "left" }}>Account</th>
                 <th style={{ ...head, textAlign: "left" }}>Plan</th>
-                <th style={{ ...head, textAlign: "center" }}>Live</th>
+                <th style={{ ...head, textAlign: "center" }}>Status</th>
                 <th style={{ ...head, textAlign: "right" }}>Items</th>
                 <th style={{ ...head, textAlign: "right" }}>Orders</th>
                 <th style={{ ...head, textAlign: "left" }}>Last order</th>
@@ -99,29 +77,43 @@ export default async function AdminPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.length === 0 ? (
-                <tr><td style={cell} colSpan={8}>No cafés yet.</td></tr>
-              ) : (
-                rows.map((r) => (
-                  <tr key={r.slug}>
-                    <td style={{ ...cell, color: "var(--text-strong)", fontWeight: 600 }}>{r.cafe_name}<div style={{ fontSize: 12, fontWeight: 400, color: "var(--text-muted)" }}>/m/{r.slug}</div></td>
-                    <td style={cell}>{r.account_name}</td>
-                    <td style={cell}><span style={{ textTransform: "capitalize" }}>{r.plan}</span> <span style={{ color: "var(--text-subtle)" }}>· {r.plan_status}</span></td>
-                    <td style={{ ...cell, textAlign: "center" }}>{r.published ? "✅" : "—"}</td>
-                    <td style={{ ...cell, textAlign: "right" }}>{r.menu_items_count}</td>
-                    <td style={{ ...cell, textAlign: "right" }}>{r.orders_total}{r.orders_open ? ` (${r.orders_open} open)` : ""}</td>
-                    <td style={cell}>{fmtDate(r.last_order_at)}</td>
-                    <td style={cell}>{fmtDate(r.created_at)}</td>
-                  </tr>
-                ))
-              )}
+              {rows.map((r) => (
+                <tr key={r.slug}>
+                  <td style={{ ...cell, color: "var(--text-strong)", fontWeight: 600 }}>
+                    {r.cafe_name}
+                    <div style={{ fontSize: 12, fontWeight: 400, color: "var(--text-muted)" }}>/m/{r.slug}</div>
+                  </td>
+                  <td style={cell}>{r.account_name}</td>
+                  <td style={cell}>
+                    <span style={{ textTransform: "capitalize", fontWeight: 600 }}>{r.plan}</span>
+                    <span style={{ color: "var(--text-subtle)" }}> · {r.plan_status}</span>
+                  </td>
+                  <td style={{ ...cell, textAlign: "center" }}>
+                    {r.published ? (
+                      <Badge variant="available" size="sm" dot>
+                        Live
+                      </Badge>
+                    ) : (
+                      <Badge variant="neutral" size="sm">
+                        Draft
+                      </Badge>
+                    )}
+                  </td>
+                  <td style={{ ...cell, textAlign: "right" }}>{r.menu_items_count}</td>
+                  <td style={{ ...cell, textAlign: "right" }}>
+                    {r.orders_total}
+                    {r.orders_open ? (
+                      <span style={{ color: "var(--soldout)", fontWeight: 600 }}> · {r.orders_open} open</span>
+                    ) : null}
+                  </td>
+                  <td style={cell}>{fmtDate(r.last_order_at)}</td>
+                  <td style={cell}>{fmtDate(r.created_at)}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
-        <p style={{ fontSize: 12.5, color: "var(--text-subtle)", marginTop: 14 }}>
-          Read-only beta overview — no order contents, diner data, or team identities are shown.
-        </p>
-      </div>
-    </main>
+      )}
+    </div>
   );
 }
