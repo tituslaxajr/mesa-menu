@@ -6,10 +6,10 @@
 // path as confirmed counter orders (see StudioProvider.effectiveOrders).
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Search, X, Trash2, Banknote, Check, DoorOpen, DoorClosed, ShoppingCart, Printer, FileText } from "lucide-react";
+import { Search, X, Trash2, Banknote, Check, DoorOpen, DoorClosed, ShoppingCart, Printer, FileText, BellRing } from "lucide-react";
 import { Button, Card, Input, Badge } from "@/components/ds";
 import { useStudio } from "../StudioProvider";
-import { PageWrap, SectionTitle } from "../shared";
+import { PageWrap, SectionTitle, useNow } from "../shared";
 import { cartKey, unitPrice, choiceLabels, defaultChoiceIds } from "@/lib/cart";
 import { ticketTotals, changeDue } from "@/lib/pos-pricing";
 import { printReceipt, printXReading, printZReading } from "@/lib/pos-receipt";
@@ -17,12 +17,17 @@ import {
   openShift, closeShift, getOpenShift, recordSale, getShiftSales, voidSale, refundSale,
   type Shift, type PosSale,
 } from "@/lib/pos-actions";
+import { cancelPending, type PendingOrder } from "@/lib/order-actions";
+import { timeAgo } from "@/lib/orders-store";
 import type { MenuItem } from "@/lib/data";
 
 const money = (n: number) => `₱${(n ?? 0).toLocaleString("en-PH")}`;
 const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
 
-type Entry = { item: MenuItem; qty: number; choiceIds: string[] };
+// A ticket line, source-agnostic: built from a menu pick OR loaded from a
+// guest's counter order. Carries the resolved unit price + option labels so
+// both paths render and record identically.
+type Entry = { name: string; unitPrice: number; qty: number; options: string[] };
 type Tender = "cash" | "gcash" | "card" | "other";
 const TENDERS: { id: Tender; label: string }[] = [
   { id: "cash", label: "Cash" },
@@ -35,13 +40,17 @@ const TENDERS: { id: Tender; label: string }[] = [
 const needsSheet = (item: MenuItem) => (item.options ?? []).some((g) => g.required || g.multi);
 
 export function PosTab() {
-  const { items, cafe, slug, cafeId, posEnabled, canManage, toast, refreshDbOrders } = useStudio();
+  const { items, cafe, slug, cafeId, posEnabled, canManage, pendingOrders, toast, refreshDbOrders } = useStudio();
+  const now = useNow(30000);
 
   const [shift, setShift] = useState<Shift | null>(null);
   const [shiftReady, setShiftReady] = useState(false);
   const [shiftSales, setShiftSales] = useState<PosSale[]>([]);
 
   const [ticket, setTicket] = useState<Record<string, Entry>>({});
+  // The pending counter order this ticket was loaded from (if any), so we can
+  // retire it once the sale is rung — avoids it lingering or being charged twice.
+  const [fulfilling, setFulfilling] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [cat, setCat] = useState("All");
   const [sheetItem, setSheetItem] = useState<MenuItem | null>(null);
@@ -93,11 +102,10 @@ export function PosTab() {
   const lines = useMemo(
     () => Object.entries(ticket).map(([key, e]) => ({
       key,
-      item: e.item,
+      name: e.name,
       qty: e.qty,
-      choiceIds: e.choiceIds,
-      unit: unitPrice(e.item, e.choiceIds),
-      labels: choiceLabels(e.item, e.choiceIds),
+      unit: e.unitPrice,
+      options: e.options,
     })),
     [ticket],
   );
@@ -106,9 +114,10 @@ export function PosTab() {
 
   const add = (item: MenuItem, choiceIds: string[]) => {
     const key = cartKey(item.id, choiceIds);
+    const entry: Entry = { name: item.name, unitPrice: unitPrice(item, choiceIds), qty: 1, options: choiceLabels(item, choiceIds) };
     setTicket((t) => ({
       ...t,
-      [key]: t[key] ? { ...t[key], qty: t[key].qty + 1 } : { item, qty: 1, choiceIds },
+      [key]: t[key] ? { ...t[key], qty: t[key].qty + 1 } : entry,
     }));
   };
   const pick = (item: MenuItem) => {
@@ -121,7 +130,23 @@ export function PosTab() {
       if (qty <= 0) { const n = { ...t }; delete n[key]; return n; }
       return { ...t, [key]: { ...t[key], qty } };
     });
-  const clearTicket = () => setTicket({});
+  const clearTicket = () => { setTicket({}); setFulfilling(null); };
+
+  // Load a guest's counter order into the ticket so the cashier can take
+  // payment. Lines arrive already priced; recordSale re-prices authoritatively.
+  const loadPending = (order: PendingOrder) => {
+    const next: Record<string, Entry> = {};
+    for (const l of order.lines) {
+      const options = l.options ?? [];
+      const key = `g:${l.name}#${[...options].sort().join(",")}`;
+      next[key] = next[key]
+        ? { ...next[key], qty: next[key].qty + l.qty }
+        : { name: l.name, unitPrice: l.price, qty: l.qty, options };
+    }
+    setTicket(next);
+    setFulfilling(order.id);
+    toast(`Loaded #${order.code} — take payment to complete it`);
+  };
 
   const doOpenShift = async (float: number) => {
     if (!cafeId) return;
@@ -149,13 +174,16 @@ export function PosTab() {
   const doCharge = async (tenderType: Tender, tenderLabel: string, amountTendered: number | undefined) => {
     if (!shift || !cafeId) return;
     const r = await recordSale(slug, cafeId, shift.id, {
-      lines: lines.map((l) => ({ name: l.item.name, qty: l.qty, price: l.unit, options: l.labels.length ? l.labels : undefined })),
+      lines: lines.map((l) => ({ name: l.name, qty: l.qty, price: l.unit, options: l.options.length ? l.options : undefined })),
       tenderType,
       tenderLabel,
       amountTendered,
       serviceChargeRate: rate,
     });
     if (!r.ok) { toast(r.error); return; }
+    // If this ticket came from a guest's counter order, retire that pending
+    // copy so it leaves the queue (the poll in StudioProvider drops it).
+    if (fulfilling) { void cancelPending(fulfilling); }
     setCharging(false);
     setReceipt(r.sale);
     clearTicket();
@@ -221,6 +249,37 @@ export function PosTab() {
         </div>
       </div>
 
+      {/* Guest orders sent from the diner menu — tap to load into the ticket */}
+      {pendingOrders.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <BellRing size={15} style={{ color: "var(--honey-700)" }} />
+            <span style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text-strong)" }}>Waiting at the counter</span>
+            <span style={{ fontSize: 12.5, color: "var(--text-subtle)" }}>{pendingOrders.length}</span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 10 }}>
+            {pendingOrders.map((o) => {
+              const count = o.lines.reduce((s, l) => s + l.qty, 0);
+              return (
+                <button
+                  key={o.id}
+                  onClick={() => loadPending(o)}
+                  style={{ textAlign: "left", padding: "11px 13px", borderRadius: "var(--radius-md)", border: fulfilling === o.id ? "2px solid var(--brand)" : "1px solid var(--honey-200, #f0e0c0)", background: "var(--honey-50)", cursor: "pointer", fontFamily: "var(--font-sans)" }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                    <span style={{ fontFamily: "var(--font-display)", fontSize: 15.5, color: "var(--text-strong)" }}>#{o.code}</span>
+                    <span style={{ fontSize: 12, color: "var(--text-subtle)" }}>{timeAgo(o.placedAt, now)}</span>
+                  </div>
+                  <div style={{ fontSize: 12.5, color: "var(--honey-700)", marginTop: 2 }}>
+                    {o.table ? `Table ${o.table} · ` : ""}{count} {count === 1 ? "item" : "items"} · {money(o.total)}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="mesa-dash-2col" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.5fr) minmax(0, 1fr)", gap: 18, alignItems: "start" }}>
         {/* Left — menu picker */}
         <div>
@@ -270,8 +329,8 @@ export function PosTab() {
                 {lines.map((l) => (
                   <div key={l.key} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--text-strong)" }}>{l.item.name}</div>
-                      {l.labels.length > 0 && <div style={{ fontSize: 12, color: "var(--text-subtle)" }}>{l.labels.join(" · ")}</div>}
+                      <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--text-strong)" }}>{l.name}</div>
+                      {l.options.length > 0 && <div style={{ fontSize: 12, color: "var(--text-subtle)" }}>{l.options.join(" · ")}</div>}
                       <div style={{ fontSize: 12.5, color: "var(--text-muted)" }}>{money(l.unit)} each</div>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 6, flex: "none" }}>
