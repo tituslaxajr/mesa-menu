@@ -10,6 +10,8 @@ import {
   Bell,
   BellOff,
   Smartphone,
+  Eye,
+  EyeOff,
   MessageSquare,
   Sun,
   Boxes,
@@ -386,6 +388,12 @@ function ShellInner() {
                 <Button variant="secondary" onClick={() => setPreviewOpen(true)}><Smartphone /> Preview</Button>
               </span>
             )}
+            {/* Wide screens: one-click show/hide of the persistent preview column. */}
+            <span className="mesa-dash-preview-switch">
+              <Button variant="ghost" onClick={() => setShowPreview(!showPreview)} title={showPreview ? "Hide live preview" : "Show live preview"}>
+                {showPreview ? <EyeOff /> : <Eye />} {showPreview ? "Hide preview" : "Show preview"}
+              </Button>
+            </span>
             <Button as="a" href={`/m/${cafe.slug}`} target="_blank" variant="primary"><ExternalLink /> View live menu</Button>
           </div>
         </div>
