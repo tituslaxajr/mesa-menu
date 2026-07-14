@@ -94,6 +94,9 @@ export interface StudioContextValue {
   confirmPending: (orderId: string) => Promise<void>;
   soundOn: boolean;
   toggleSound: () => void;
+  /** Owner preference: show the phone-frame live menu preview in the dashboard. */
+  showPreview: boolean;
+  setShowPreview: (v: boolean) => void;
   caps: BrandCaps;
   editing: DraftItem | null;
   setEditing: React.Dispatch<React.SetStateAction<DraftItem | null>>;
@@ -172,6 +175,7 @@ export function StudioProvider({
   const kitchenOrders = orders.filter((o) => o.channel !== "counter");
   const newOrders = kitchenOrders.filter((o) => o.status === "new").length;
   const [soundOn, setSoundOn] = useLocalStore<boolean>(`mesa.orders.${slug}.sound`, true);
+  const [showPreview, setShowPreview] = useLocalStore<boolean>(`mesa.dash.${slug}.preview`, true);
   const caps = capsFor(cafe.plan);
   const [editing, setEditing] = useState<DraftItem | null>(null);
   const [toastMsg, setToastMsg] = useState("");
@@ -436,6 +440,8 @@ export function StudioProvider({
     confirmPending,
     soundOn,
     toggleSound,
+    showPreview,
+    setShowPreview,
     caps,
     editing,
     setEditing,

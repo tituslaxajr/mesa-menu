@@ -19,7 +19,7 @@ const MODE_OPTIONS: { id: OrderMode; label: string; desc: string; comingSoon?: b
   { id: "kitchen", label: "Order to kitchen", desc: "Orders flow live to a Mesa order board with status the guest can watch — arriving in a later phase.", comingSoon: true },
 ];
 
-export function SettingsTab({ cafe, setCafe, toast }: { cafe: Cafe; setCafe: (f: (c: Cafe) => Cafe) => void; toast: (m: string) => void }) {
+export function SettingsTab({ cafe, setCafe, toast, showPreview, onTogglePreview }: { cafe: Cafe; setCafe: (f: (c: Cafe) => Cafe) => void; toast: (m: string) => void; showPreview: boolean; onTogglePreview: (v: boolean) => void }) {
   const set = <K extends keyof Cafe>(k: K, v: Cafe[K]) => setCafe((c) => ({ ...c, [k]: v }));
   // Inputs read the raw stored values (falling back to parsed/default hours)
   // so a transiently invalid pair mid-edit doesn't snap the fields back; the
@@ -144,6 +144,18 @@ export function SettingsTab({ cafe, setCafe, toast }: { cafe: Cafe; setCafe: (f:
             />
           </div>
         )}
+      </Card>
+      <Card variant="flat" padded style={{ marginTop: 18 }}>
+        <SectionTitle>Dashboard</SectionTitle>
+        <Switch
+          checked={showPreview}
+          tone="brand"
+          onChange={(v) => { onTogglePreview(v); toast(v ? "Live preview shown" : "Live preview hidden"); }}
+          label="Show live menu preview"
+        />
+        <p style={{ fontSize: 12.5, color: "var(--text-muted)", marginTop: 8 }}>
+          The phone-frame preview of your guest menu on the right of your dashboard. Turn it off for more editing space.
+        </p>
       </Card>
       <Card variant="flat" padded style={{ marginTop: 18 }}>
         <SectionTitle>Menu display</SectionTitle>

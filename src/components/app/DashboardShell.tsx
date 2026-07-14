@@ -161,6 +161,8 @@ function ShellInner() {
     pendingOrders,
     soundOn,
     toggleSound,
+    showPreview,
+    setShowPreview,
     caps,
     editing,
     setEditing,
@@ -237,7 +239,7 @@ function ShellInner() {
       case "promos": return <PromosTab promos={promos} setPromos={setPromos} categories={categories} items={items} toast={toast} />;
       case "analytics": return <AnalyticsTab orders={orders} cafeName={cafe.name} />;
       case "subscription": return <SubscriptionTab currentId={planId} onSwitch={onSwitchPlan} />;
-      case "settings": return <SettingsTab cafe={cafe} setCafe={setCafe} toast={toast} />;
+      case "settings": return <SettingsTab cafe={cafe} setCafe={setCafe} toast={toast} showPreview={showPreview} onTogglePreview={setShowPreview} />;
     }
   };
 
@@ -379,9 +381,11 @@ function ShellInner() {
                 {saveStatus === "saving" ? "Saving…" : "Saved"}
               </span>
             )}
-            <span className="mesa-dash-preview-toggle">
-              <Button variant="secondary" onClick={() => setPreviewOpen(true)}><Smartphone /> Preview</Button>
-            </span>
+            {showPreview && (
+              <span className="mesa-dash-preview-toggle">
+                <Button variant="secondary" onClick={() => setPreviewOpen(true)}><Smartphone /> Preview</Button>
+              </span>
+            )}
             <Button as="a" href={`/m/${cafe.slug}`} target="_blank" variant="primary"><ExternalLink /> View live menu</Button>
           </div>
         </div>
@@ -405,8 +409,11 @@ function ShellInner() {
       </div>
 
       {/* Live guest-menu preview — right column on wide screens, drawer on narrow.
-          Promo-applied menu so a live deal shows its struck-through price here too. */}
-      <PreviewPane open={previewOpen} onClose={() => setPreviewOpen(false)} cafe={cafe} items={previewMenu} categories={categories} theme={theme} brand={brand} />
+          Promo-applied menu so a live deal shows its struck-through price here too.
+          Owner can hide it from Settings for more editing space. */}
+      {showPreview && (
+        <PreviewPane open={previewOpen} onClose={() => setPreviewOpen(false)} cafe={cafe} items={previewMenu} categories={categories} theme={theme} brand={brand} />
+      )}
 
       {/* In-app Messages drawer — the café side of the café ↔ Mesa conversation */}
       {dbSave && feedbackOpen && (
