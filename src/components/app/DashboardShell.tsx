@@ -56,6 +56,8 @@ interface Props {
   planId: string;
   /** Owner's café uuid — required for DB persistence. */
   cafeId?: string;
+  /** Member is owner/manager (may void/refund POS sales). Staff = false. */
+  canManage?: boolean;
   /** Saved brand kit / promos from the DB (db mode); fall back to defaults. */
   initialBrand?: BrandKit;
   initialPromos?: Promo[];

@@ -236,7 +236,7 @@ export const getCafeData = cache(async (slug: string): Promise<CafeData | null> 
  * it. Returns null when the owner has no café yet (→ onboarding).
  */
 export const getOwnerCafeData = cache(
-  async (): Promise<{ data: CafeData; planId: PlanId; cafeId: string } | null> => {
+  async (): Promise<{ data: CafeData; planId: PlanId; cafeId: string; canManage: boolean } | null> => {
     const supabase = await createClient();
     const {
       data: { user },
@@ -245,12 +245,14 @@ export const getOwnerCafeData = cache(
 
     const { data: mem } = await supabase
       .from("cafe_members")
-      .select("account_id")
+      .select("account_id, role")
       .eq("user_id", user.id)
       .limit(1)
       .maybeSingle();
     if (!mem) return null;
     const accountId = (mem as { account_id: string }).account_id;
+    // Owner/manager may reverse sales (void/refund); staff can only ring them.
+    const canManage = ["owner", "manager"].includes((mem as { role?: string }).role ?? "");
 
     const { data: acct } = await supabase
       .from("accounts")
@@ -281,6 +283,7 @@ export const getOwnerCafeData = cache(
     return {
       planId,
       cafeId,
+      canManage,
       data: {
         cafe: toCafe({ ...cafeRow, plan: planId } as CafeRow),
         categories: ["All", ...((cats.data ?? []).map((c) => c.name as string))],
