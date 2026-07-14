@@ -394,7 +394,10 @@ function ShellInner() {
                 {showPreview ? <EyeOff /> : <Eye />} {showPreview ? "Hide preview" : "Show preview"}
               </Button>
             </span>
-            <Button as="a" href={`/m/${cafe.slug}`} target="_blank" variant="primary"><ExternalLink /> View live menu</Button>
+            {/* Redundant on mobile — the top bar already links to the live menu. */}
+            <span className="mesa-dash-viewlive">
+              <Button as="a" href={`/m/${cafe.slug}`} target="_blank" variant="primary"><ExternalLink /> View live menu</Button>
+            </span>
           </div>
         </div>
 
@@ -448,7 +451,7 @@ function ShellInner() {
       {editing && <EditDrawer item={editing} cats={categories} customTags={customTags} onClose={() => setEditing(null)} onSave={save} uploadImage={uploadImage} />}
 
       {toastMsg && (
-        <div className="mesa-anim-rise" style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", zIndex: 60, background: "var(--surface-inverse)", color: "var(--text-inverse)", padding: "12px 20px", borderRadius: 999, fontSize: 14, fontWeight: 500, boxShadow: "var(--shadow-lg)", display: "flex", alignItems: "center", gap: 8 }}>
+        <div className="mesa-anim-rise mesa-dash-toast" style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", zIndex: 60, background: "var(--surface-inverse)", color: "var(--text-inverse)", padding: "12px 20px", borderRadius: 999, fontSize: 14, fontWeight: 500, boxShadow: "var(--shadow-lg)", display: "flex", alignItems: "center", gap: 8 }}>
           <Check size={16} style={{ color: "var(--sage-300)" }} /> {toastMsg}
         </div>
       )}

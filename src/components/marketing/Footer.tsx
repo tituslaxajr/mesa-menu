@@ -67,6 +67,15 @@ export function Footer({ variant = "default" }: { variant?: "default" | "landing
               Start free
             </Link>
             <Link
+              href="/login"
+              style={{
+                fontSize: 13.5,
+                color: landing ? undefined : "var(--text-muted)",
+              }}
+            >
+              Log in
+            </Link>
+            <Link
               href="/terms"
               style={{
                 fontSize: 13.5,

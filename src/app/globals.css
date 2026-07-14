@@ -84,6 +84,8 @@ html { scroll-behavior: smooth; }
   .mesa-dash-header    { position: static !important; flex-wrap: wrap; padding: 12px 16px !important; }
   .mesa-dash-page      { padding-left: 16px !important; padding-right: 16px !important; padding-bottom: 88px !important; }
   .mesa-dash-2col      { grid-template-columns: minmax(0, 1fr) !important; }
+  .mesa-dash-viewlive  { display: none !important; }   /* top bar already links to the live menu */
+  .mesa-dash-toast     { bottom: calc(72px + env(safe-area-inset-bottom)) !important; }  /* clear the bottom tab bar */
 }
 
 /* Ultra-narrow phones (≤380px): reclaim side gutter so cards keep their own

@@ -399,7 +399,7 @@ export function AppearanceTab(props: {
   const [sub, setSub] = useState<"theme" | "brand">("theme");
   const subs: [("theme" | "brand"), string, LucideIcon][] = [["theme", "Menu theme", LayoutTemplate], ["brand", "Brand kit", Paintbrush]];
   return (
-    <div style={{ padding: "20px 28px 60px" }}>
+    <div className="mesa-dash-page" style={{ padding: "20px 28px 60px" }}>
       <div style={{ display: "inline-flex", gap: 4, background: "var(--surface-muted)", borderRadius: 999, padding: 4, marginBottom: 18 }}>
         {subs.map(([k, label, Icon]) => {
           const on = sub === k;
