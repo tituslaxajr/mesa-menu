@@ -15,6 +15,7 @@ import {
   CupSoda,
   Croissant,
   ClipboardList,
+  Calculator,
   type LucideIcon,
 } from "lucide-react";
 import { Card } from "@/components/ds";
@@ -95,11 +96,12 @@ export function notifyNewOrder(order: Order) {
 }
 
 export type TabId =
-  | "home" | "orders" | "menu" | "categories" | "appearance" | "qr" | "promos" | "analytics" | "subscription" | "settings";
+  | "home" | "orders" | "pos" | "menu" | "categories" | "appearance" | "qr" | "promos" | "analytics" | "subscription" | "settings";
 
 export const NAV: { id: TabId; label: string; icon: LucideIcon }[] = [
   { id: "home", label: "Dashboard", icon: LayoutDashboard },
   { id: "orders", label: "Orders", icon: ClipboardList },
+  { id: "pos", label: "Register", icon: Calculator },
   { id: "menu", label: "Menu", icon: Utensils },
   { id: "categories", label: "Categories", icon: List },
   { id: "appearance", label: "Appearance", icon: Palette },
@@ -114,7 +116,7 @@ export const NAV: { id: TabId; label: string; icon: LucideIcon }[] = [
 // than a flat list of ten. Order/membership is independent of NAV (which stays
 // flat for allowedTabs). Empty groups (all items filtered out) are hidden.
 export const NAV_GROUPS: { label: string; items: TabId[] }[] = [
-  { label: "Overview", items: ["home", "orders"] },
+  { label: "Overview", items: ["home", "orders", "pos"] },
   { label: "Menu", items: ["menu", "categories", "promos"] },
   { label: "Storefront", items: ["appearance", "qr"] },
   { label: "Business", items: ["analytics", "subscription"] },
@@ -204,6 +206,7 @@ export const STATUS_BADGE: Record<OrderStatus, { label: string; fg: string; bg: 
   ready: { label: "Ready", fg: "var(--sage-600)", bg: "var(--sage-50)" },
   completed: { label: "Done", fg: "var(--text-muted)", bg: "var(--surface-muted)" },
   cancelled: { label: "Cancelled", fg: "var(--text-muted)", bg: "var(--surface-muted)" },
+  refunded: { label: "Refunded", fg: "var(--soldout, #b42318)", bg: "var(--soldout-soft, #F6E4DE)" },
 };
 // Counter orders are stored as "completed" — surface them as their own channel
 // so owners can tell a POS hand-off from a kitchen order they worked.

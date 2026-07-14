@@ -54,6 +54,14 @@ export interface Cafe {
    * show-at-counter summary, nothing recorded). Brew+ only.
    */
   recordSales?: boolean;
+  /**
+   * POS opt-in: the owner turned on the staff cashier terminal (Settings).
+   * The POS tab shows only when this is on AND the plan allows it
+   * (see `planAllowsPos`). Brew/Roast only. Off/undefined = no terminal.
+   */
+  posEnabled?: boolean;
+  /** Default service-charge rate (whole %) applied on POS tickets. 0 = none. */
+  serviceChargeRate?: number;
 }
 
 /** One selectable choice within an OptionGroup (e.g. "Large", "Oat milk"). */
@@ -619,4 +627,14 @@ export function isThemeKey(v: string | undefined | null): v is ThemeKey {
 
 export function getPlan(id: PlanId): Plan | undefined {
   return PLANS.find((p) => p.id === id);
+}
+
+/**
+ * Whether a plan may run the staff cashier terminal (POS). Brew & Roast — the
+ * ordering plans. Starter is browse-only, so it never gets a till. Mirrors the
+ * `ordering` gate; used by the Settings toggle, the tab gate, and re-checked
+ * server-side in the POS RPCs.
+ */
+export function planAllowsPos(id: PlanId): boolean {
+  return id === "brew" || id === "roast";
 }

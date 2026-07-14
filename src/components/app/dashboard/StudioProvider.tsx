@@ -29,6 +29,7 @@ import {
   type BrandKit,
   type Promo,
   PHASE2_ORDERING,
+  planAllowsPos,
 } from "@/lib/data";
 import { NAV, PLACEHOLDER_IMG, playChime, notifyNewOrder, type TabId, type DraftItem, type UploadImage } from "./shared";
 
@@ -77,6 +78,12 @@ export interface StudioContextValue {
   newOrders: number;
   /** Phase 2 "Record sales with Mesa" is live for this café (db mode + opt-in). */
   recording: boolean;
+  /** Staff cashier terminal (POS) is live for this café (db mode + opt-in). */
+  posEnabled: boolean;
+  /** Owner café uuid (db mode) — needed by the POS server actions. */
+  cafeId?: string;
+  /** Re-pull recorded DB orders now — e.g. right after a POS sale lands. */
+  refreshDbOrders: () => void;
   /** Guest-submitted counter orders awaiting staff confirmation. */
   pendingOrders: PendingOrder[];
   /** Staff taps the guest's code → the order becomes a recorded sale. */
@@ -207,7 +214,12 @@ export function StudioProvider({
   const DEMO_TABS: TabId[] = ["home", "menu", "categories", "appearance", "promos", "qr"];
   const allowedTabs: TabId[] = demo
     ? DEMO_TABS
-    : NAV.map((n) => n.id).filter((id) => PHASE2_ORDERING || id !== "orders");
+    : NAV.map((n) => n.id).filter((id) => {
+        if (id === "orders") return PHASE2_ORDERING;
+        // POS: real owners only (needs a session), on an ordering plan, opted in.
+        if (id === "pos") return dbSave && planAllowsPos(cafe.plan) && posOn;
+        return true;
+      });
 
   // Alert (chime + desktop notification) when a NEW order arrives. Establish a
   // baseline of order ids on first load so we don't alert for existing ones.
@@ -230,19 +242,22 @@ export function StudioProvider({
     }
   }, [orders]);
 
-  // ── Phase 2: "Record sales with Mesa" ──────────────────────────────
-  // When the café records sales (db mode + opt-in), the source of truth for
-  // analytics/recaps becomes the DB's confirmed orders, and a pending queue
-  // of guest-submitted counter orders awaits staff confirmation (10s poll —
-  // Realtime can replace this at the same seam later).
+  // ── Phase 2 "Record sales" + POS ───────────────────────────────────
+  // The DB becomes the source of truth for analytics/recaps whenever the café
+  // records counter sales OR runs the staff cashier terminal (POS) — both write
+  // recorded orders. A pending queue of guest counter orders awaits staff
+  // confirmation (10s poll — Realtime can replace this at the same seam later);
+  // it's empty when only POS is on.
   const recording = dbSave && !!cafe.recordSales;
+  const posOn = dbSave && !!cafe.posEnabled;
+  const dbBacked = recording || posOn;
   const [dbOrders, setDbOrders] = useState<Order[] | null>(null);
   const [pendingOrders, setPendingOrders] = useState<PendingOrder[]>([]);
   const seenPending = useRef<Set<string>>(new Set());
   const pendingPrimed = useRef(false);
   useEffect(() => {
-    if (!(recording && cafeId)) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- clear stale queue/sales when recording toggles off (rare, owner-initiated)
+    if (!(dbBacked && cafeId)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- clear stale queue/sales when recording/POS toggles off (rare, owner-initiated)
       setPendingOrders([]);
       setDbOrders(null);
       return;
@@ -270,7 +285,13 @@ export function StudioProvider({
     void tick();
     const t = setInterval(() => void tick(), 10000);
     return () => { stop = true; clearInterval(t); };
-  }, [recording, cafeId]);
+  }, [dbBacked, cafeId]);
+
+  // Re-pull recorded orders on demand (the POS tab calls this after a sale so
+  // analytics/home reflect it before the next 10s poll).
+  const refreshDbOrders = () => {
+    if (dbBacked && cafeId) getRecordedOrders(cafeId).then(setDbOrders).catch(() => {});
+  };
 
   const confirmPending = async (orderId: string) => {
     const r = await confirmOrder(orderId);
@@ -284,7 +305,7 @@ export function StudioProvider({
   };
 
   // What the rest of the dashboard treats as "the orders".
-  const effectiveOrders = recording && dbOrders ? dbOrders : orders;
+  const effectiveOrders = dbBacked && dbOrders ? dbOrders : orders;
 
   const toggleSound = () => {
     const next = !soundOn;
@@ -399,6 +420,9 @@ export function StudioProvider({
     kitchenOrders,
     newOrders,
     recording,
+    posEnabled: posOn,
+    cafeId,
+    refreshDbOrders,
     pendingOrders,
     confirmPending,
     soundOn,

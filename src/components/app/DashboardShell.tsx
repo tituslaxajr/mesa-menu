@@ -39,6 +39,7 @@ import { FeedbackDrawer } from "./dashboard/FeedbackDrawer";
 import { EditDrawer } from "./dashboard/EditDrawer";
 import { HomeTab } from "./dashboard/tabs/HomeTab";
 import { OrdersTab } from "./dashboard/tabs/OrdersTab";
+import { PosTab } from "./dashboard/tabs/PosTab";
 import { MenuTab } from "./dashboard/tabs/MenuTab";
 import { CategoriesTab } from "./dashboard/tabs/CategoriesTab";
 import { AppearanceTab } from "./dashboard/tabs/AppearanceTab";
@@ -208,6 +209,7 @@ function ShellInner() {
   const tabMeta: Record<TabId, { t: string; s: string }> = {
     home: { t: `Good morning, ${cafe.name}.`, s: "Here's what's happening with your menu today." },
     orders: { t: "Orders", s: newOrders ? `${newOrders} new · live from your tables` : "Live orders from your tables." },
+    pos: { t: "Register", s: "Ring up a sale and take payment at the counter." },
     menu: { t: "Menu", s: `${items.length} items · ${soldOut} sold out today` },
     categories: { t: "Menu sections", s: "Organise your menu into sections." },
     appearance: { t: "Look studio", s: "The look of your menu — theme, logo, colours and fonts." },
@@ -224,6 +226,7 @@ function ShellInner() {
     switch (t) {
       case "home": return <HomeTab items={items} cafe={cafe} theme={theme} brand={brand} orders={orders} setTab={setTab} />;
       case "orders": return <OrdersTab orders={kitchenOrders} api={ordersApi} items={items} slug={slug} />;
+      case "pos": return <PosTab />;
       case "menu": return <MenuTab items={items} categories={categories} onMove={moveItem} onDuplicate={duplicateItem} onToggle={toggle} onCategorySoldOut={setCategorySoldOut} onAdd={addItem} onEdit={setEditing} onLoadSample={loadSampleMenu} />;
       case "categories": return <CategoriesTab items={items} categories={categories} setCategories={setCategories} onDelete={deleteCategory} toast={toast} />;
       case "appearance": return <AppearanceTab theme={theme} setTheme={setTheme} brand={brand} setBrand={setBrand} cafe={cafe} setCafe={setCafe} items={items} categories={categories} caps={caps} plan={cafe.plan} uploadImage={uploadImage} />;

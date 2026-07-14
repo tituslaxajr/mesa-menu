@@ -130,7 +130,9 @@ export async function getRecordedOrders(cafeId: string): Promise<Order[]> {
     .from("orders")
     .select("id, code, table_label, total, note, status, channel, placed_at, completed_at, order_lines(id, name, price, qty, options, position)")
     .eq("cafe_id", cafeId)
-    .in("status", ["completed", "cancelled"])
+    // Confirmed counter sales + staff-rung POS sales; refunded/cancelled ride
+    // along for the audit trail (sales.ts excludes them from revenue).
+    .in("status", ["completed", "cancelled", "refunded"])
     .gte("placed_at", since)
     .order("placed_at", { ascending: false });
   return (data ?? []).map((o) => ({

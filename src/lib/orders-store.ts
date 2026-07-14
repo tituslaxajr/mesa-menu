@@ -11,8 +11,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-/** New → Preparing → Ready → Completed (cancel is terminal too). */
-export type OrderStatus = "new" | "preparing" | "ready" | "completed" | "cancelled";
+/** New → Preparing → Ready → Completed (cancel is terminal too). "refunded" is
+ *  a completed POS sale that was returned — terminal, and excluded from revenue. */
+export type OrderStatus = "new" | "preparing" | "ready" | "completed" | "cancelled" | "refunded";
 
 export interface OrderLine {
   id: string;
@@ -28,8 +29,10 @@ export interface OrderLine {
  * "kitchen" (default) = worked through the live Orders board.
  * "counter" = guest built a summary to show staff (café's own POS owns it);
  * logged for analytics but kept off the board, so it's created already done.
+ * "pos" = a staff-rung, cash/manual-tendered sale from Mesa's own cashier
+ * terminal — DB-backed, recorded, and off the board like counter.
  */
-export type OrderChannel = "kitchen" | "counter";
+export type OrderChannel = "kitchen" | "counter" | "pos";
 
 export interface Order {
   id: string;

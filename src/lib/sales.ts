@@ -10,9 +10,12 @@ export function dayStartOf(ts: number) { const d = new Date(ts); d.setHours(0, 0
  * paid, so they're logged for reference but NEVER counted as revenue.
  * Phase 2's staff-confirmed orders arrive with `recorded: true` (from the DB
  * after the confirm gate) — those ARE verified sales, counter channel or not.
+ * POS sales (staff-rung, tendered at Mesa's own till) are always real sales.
+ * Cancelled voids and refunded returns never count.
  */
 export const isSale = (o: Order) =>
-  o.status !== "cancelled" && (o.channel !== "counter" || o.recorded === true);
+  o.status !== "cancelled" && o.status !== "refunded" &&
+  (o.channel === "pos" || o.channel !== "counter" || o.recorded === true);
 
 export function computeSales(orders: Order[], now: number) {
   const paid = orders.filter(isSale);

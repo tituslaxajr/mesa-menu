@@ -33,7 +33,7 @@ export async function saveBrand(cafeId: string, brand: BrandKit): Promise<SaveRe
 
 export async function saveCafeProfile(
   cafeId: string,
-  cafe: Pick<Cafe, "name" | "tagline" | "intro" | "hours" | "cover" | "openMin" | "closeMin" | "acceptingOrders" | "orderMode" | "recordSales">,
+  cafe: Pick<Cafe, "name" | "tagline" | "intro" | "hours" | "cover" | "openMin" | "closeMin" | "acceptingOrders" | "orderMode" | "recordSales" | "posEnabled" | "serviceChargeRate">,
   theme: ThemeKey,
 ): Promise<SaveResult> {
   await verifySession();
@@ -50,14 +50,19 @@ export async function saveCafeProfile(
     order_mode: cafe.orderMode ?? null,
     accepting_orders: cafe.acceptingOrders ?? true,
   };
-  let { error } = await supabase
-    .from("cafes")
-    .update({ ...base, open_min: cafe.openMin ?? null, close_min: cafe.closeMin ?? null, record_sales: cafe.recordSales ?? false })
-    .eq("id", cafeId);
-  // Pre-migration DBs (0010 hours / 0011 record_sales) miss the new columns —
-  // retry without them so profile saves keep working (hours text still saves,
-  // and the phase engine falls back to parsing it).
-  if (error && /open_min|close_min|record_sales/.test(error.message)) {
+  const extended = {
+    ...base,
+    open_min: cafe.openMin ?? null,
+    close_min: cafe.closeMin ?? null,
+    record_sales: cafe.recordSales ?? false,
+    pos_enabled: cafe.posEnabled ?? false,
+    service_charge_rate: cafe.serviceChargeRate ?? 0,
+  };
+  let { error } = await supabase.from("cafes").update(extended).eq("id", cafeId);
+  // Pre-migration DBs (0010 hours / 0011 record_sales / 0016 POS) miss the new
+  // columns — retry without them so profile saves keep working (hours text
+  // still saves, and the phase engine falls back to parsing it).
+  if (error && /open_min|close_min|record_sales|pos_enabled|service_charge_rate/.test(error.message)) {
     ({ error } = await supabase.from("cafes").update(base).eq("id", cafeId));
   }
   if (!error) revalidatePath(`/m/[slug]`, "page");
