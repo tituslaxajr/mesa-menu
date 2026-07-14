@@ -6,12 +6,13 @@
 // path as confirmed counter orders (see StudioProvider.effectiveOrders).
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Search, X, Trash2, Banknote, Check, DoorOpen, DoorClosed, ShoppingCart } from "lucide-react";
+import { Search, X, Trash2, Banknote, Check, DoorOpen, DoorClosed, ShoppingCart, Printer, FileText } from "lucide-react";
 import { Button, Card, Input, Badge } from "@/components/ds";
 import { useStudio } from "../StudioProvider";
 import { PageWrap, SectionTitle } from "../shared";
 import { cartKey, unitPrice, choiceLabels, defaultChoiceIds } from "@/lib/cart";
 import { ticketTotals, changeDue } from "@/lib/pos-pricing";
+import { printReceipt, printXReading, printZReading } from "@/lib/pos-receipt";
 import {
   openShift, closeShift, getOpenShift, recordSale, getShiftSales,
   type Shift, type PosSale,
@@ -130,11 +131,13 @@ export function PosTab() {
   const doCloseShift = async (counted: number, note: string) => {
     if (!shift) return;
     const r = await closeShift(shift.id, counted, note);
+    const salesSnapshot = shiftSales;
     if (r.ok) {
       setClosing(false);
       setShift(null);
       setShiftSales([]);
       const s = r.shift;
+      printZReading(cafe.name, s, salesSnapshot); // Z reading on drawer close
       const os = s.overShort ?? 0;
       toast(os === 0 ? "Drawer balanced — shift closed"
         : `Shift closed · ${os > 0 ? "over" : "short"} ${money(Math.abs(os))}`);
@@ -201,7 +204,10 @@ export function PosTab() {
             </div>
           </div>
         </div>
-        <Button variant="secondary" onClick={() => setClosing(true)}><DoorClosed size={15} /> Close drawer</Button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <Button variant="ghost" onClick={() => printXReading(cafe.name, shift, shiftSales, Date.now())}><FileText size={15} /> X reading</Button>
+          <Button variant="secondary" onClick={() => setClosing(true)}><DoorClosed size={15} /> Close drawer</Button>
+        </div>
       </div>
 
       <div className="mesa-dash-2col" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.5fr) minmax(0, 1fr)", gap: 18, alignItems: "start" }}>
@@ -487,7 +493,10 @@ function ReceiptModal({ sale, cafeName, onClose }: { sale: PosSale; cafeName: st
       <p style={{ fontSize: 11, color: "var(--text-subtle)", textAlign: "center", marginBottom: 14 }}>
         This is a courtesy receipt, not a BIR Official Receipt.
       </p>
-      <Button variant="primary" block onClick={onClose}>New sale</Button>
+      <div style={{ display: "flex", gap: 8 }}>
+        <Button variant="secondary" block onClick={() => printReceipt(cafeName, sale)}><Printer size={16} /> Print</Button>
+        <Button variant="primary" block onClick={onClose}>New sale</Button>
+      </div>
     </Overlay>
   );
 }
