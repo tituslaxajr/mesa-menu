@@ -7,6 +7,7 @@ import { capsFor, clampBrand, clampTheme, resolveOrderMode, type BrandKit, type 
 import { brandVars, surfaceVars } from "@/lib/brand";
 import { placeOrder, useMyOrders, type Order } from "@/lib/orders-store";
 import { submitCounterOrder } from "@/lib/order-actions";
+import { cartKey, unitPrice, choiceLabels, defaultChoiceIds, type CartEntry } from "@/lib/cart";
 import { hoursForCafe, minToLabel, MERIENDA_END } from "@/lib/day-phase";
 import { usePhase } from "@/lib/use-phase";
 import { applyPromosToMenu } from "@/lib/promo-pricing";
@@ -22,35 +23,10 @@ const PROMO_BG: Record<string, string> = { highlight: "var(--highlight-soft)", b
 const PROMO_FG: Record<string, string> = { highlight: "var(--honey-700)", brand: "var(--brand-active)", neutral: "var(--text-muted)" };
 
 /* ── Cart / option helpers ───────────────────────────────────────────
- * Choice ids are unique within an item, so a flat list of chosen ids is
- * enough to key, price, and label a configured line. */
-type CartEntry = { itemId: string; qty: number; choiceIds: string[] };
+ * cartKey/unitPrice/choiceLabels/defaultChoiceIds live in src/lib/cart.ts so
+ * the staff cashier terminal (PosTab) builds a line exactly like the guest menu
+ * does; CartEntry is imported from there too. This view type stays local. */
 type CartLineView = MenuItemType & { key: string; qty: number; choiceIds: string[]; unitPrice: number; optionLabels: string[] };
-
-/** Stable cart key: the item id, plus its sorted choice ids when configured. */
-const cartKey = (itemId: string, choiceIds: string[]) =>
-  choiceIds.length ? `${itemId}#${[...choiceIds].sort().join(",")}` : itemId;
-
-/** Base price plus every chosen option's delta. */
-function unitPrice(item: MenuItemType, choiceIds: string[]): number {
-  let p = item.price;
-  for (const g of item.options ?? []) for (const c of g.choices) if (choiceIds.includes(c.id)) p += c.priceDelta ?? 0;
-  return p;
-}
-
-/** Human labels for the chosen options (add-ons prefixed with "+"). */
-function choiceLabels(item: MenuItemType, choiceIds: string[]): string[] {
-  const out: string[] = [];
-  for (const g of item.options ?? []) for (const c of g.choices) if (choiceIds.includes(c.id)) out.push(g.multi ? `+${c.label}` : c.label);
-  return out;
-}
-
-/** Pre-select the first choice of each required single-select group. */
-function defaultChoiceIds(item: MenuItemType): string[] {
-  const ids: string[] = [];
-  for (const g of item.options ?? []) if (g.required && !g.multi && g.choices[0]) ids.push(g.choices[0].id);
-  return ids;
-}
 
 function usePrefersReducedMotion() {
   return useSyncExternalStore(
@@ -865,6 +841,9 @@ const STATUS_META: Record<Order["status"], { label: string; msg: string; icon: t
   ready: { label: "Ready!", msg: "Your order is ready — your server will bring it over.", icon: BellRing, tint: "var(--sage-50)", fg: "var(--sage-600)" },
   completed: { label: "Completed", msg: "Hope you enjoyed it! 🙏", icon: CheckCircle2, tint: "var(--sage-50)", fg: "var(--sage-600)" },
   cancelled: { label: "Cancelled", msg: "This order was cancelled — please ask your server.", icon: X, tint: "var(--surface-muted)", fg: "var(--text-muted)" },
+  // Guests never reach this (refunds happen on the staff POS), but the map must
+  // stay exhaustive over OrderStatus.
+  refunded: { label: "Refunded", msg: "This order was refunded — please ask your server.", icon: X, tint: "var(--surface-muted)", fg: "var(--text-muted)" },
 };
 
 function ProgressDots({ active }: { active: number }) {

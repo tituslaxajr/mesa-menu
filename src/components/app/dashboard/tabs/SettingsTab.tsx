@@ -5,7 +5,7 @@ import {
   Check,
 } from "lucide-react";
 import { Button, Input, Switch, Badge, Card } from "@/components/ds";
-import { PLANS, type Cafe, type OrderMode, PHASE2_ORDERING } from "@/lib/data";
+import { PLANS, type Cafe, type OrderMode, PHASE2_ORDERING, planAllowsPos } from "@/lib/data";
 import { hoursForCafe, hoursDisplay } from "@/lib/day-phase";
 import { PageWrap, SectionTitle } from "../shared";
 
@@ -36,6 +36,8 @@ export function SettingsTab({ cafe, setCafe, toast }: { cafe: Cafe; setCafe: (f:
   if (currentMode === "kitchen" && !PHASE2_ORDERING) currentMode = "counter";
   // Phase 2 recording needs an ordering plan (Brew/Roast).
   const canRecord = !!PLANS.find((p) => p.id === cafe.plan)?.ordering;
+  // The staff cashier terminal (POS) is a Brew/Roast opt-in.
+  const canPos = planAllowsPos(cafe.plan);
   return (
     <PageWrap max={620}>
       <Card variant="flat" padded>
@@ -108,6 +110,38 @@ export function SettingsTab({ cafe, setCafe, toast }: { cafe: Cafe; setCafe: (f:
             <p style={{ fontSize: 12.5, color: "var(--text-muted)", marginTop: 8 }}>
               Guests send their order to the counter with a short code; your staff taps the matching code in <strong>Today</strong> to confirm it — only confirmed orders count in your sales and Day Close. Off: guests just show a summary and nothing is recorded.
             </p>
+          </div>
+        )}
+      </Card>
+      <Card variant="flat" padded style={{ marginTop: 18 }}>
+        <SectionTitle>Cashier terminal (POS)</SectionTitle>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <Switch
+            checked={!!cafe.posEnabled && canPos}
+            tone="brand"
+            onChange={(v) => {
+              if (!canPos) { toast("The cashier terminal needs an ordering plan (Brew or Roast)"); return; }
+              set("posEnabled", v);
+              toast(v ? "Cashier terminal on — open the Register tab" : "Cashier terminal off");
+            }}
+            label="Enable the staff cashier terminal"
+          />
+          {!canPos && <Badge variant="neutral">Brew+</Badge>}
+        </div>
+        <p style={{ fontSize: 12.5, color: "var(--text-muted)", marginTop: 8 }}>
+          Ring up walk-in sales at the counter: add items, take cash or manual payment, and record the sale in your books. A <strong>Register</strong> tab appears in your dashboard. Mesa doesn&rsquo;t process card payments — you handle the money as you do today.
+        </p>
+        {!!cafe.posEnabled && canPos && (
+          <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--border-soft)", maxWidth: 240 }}>
+            <Input
+              label="Default service charge (%)"
+              type="number"
+              min={0}
+              max={100}
+              value={String(cafe.serviceChargeRate ?? 0)}
+              onChange={(e) => set("serviceChargeRate", Math.max(0, Math.min(100, Number(e.target.value) || 0)))}
+              hint="Added to each ticket (VAT-free). 0 = none. Still adjustable per sale."
+            />
           </div>
         )}
       </Card>
