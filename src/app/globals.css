@@ -70,9 +70,11 @@ html { scroll-behavior: smooth; }
    below that it collapses to the "Preview" toggle, which opens a drawer. */
 .mesa-dash-preview { display: none; }
 .mesa-dash-preview-toggle { display: inline-flex; }
+.mesa-dash-preview-switch { display: none; }   /* wide-only show/hide toggle */
 @media (min-width: 1280px) {
   .mesa-dash-preview { display: flex; }
   .mesa-dash-preview-toggle { display: none; }
+  .mesa-dash-preview-switch { display: inline-flex; }
 }
 
 @media (max-width: 860px) {
